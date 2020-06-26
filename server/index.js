@@ -77,8 +77,26 @@ app.post('/api/params', async ({ body }, response) => {
     temperature: parseFloat(body.temperature),
   });
 
-  response.send(JSON.stringify(result));
+  response.json(result);
 });
+
+app.get('/api/params', async (request, response) => {
+  // @TODO:
+  // get start time + get duration
+  // get flags based on current time
+  // get ms before switch based on current time - duration
+
+  const result = {
+    isLightOn: false,
+    isFanOn: false,
+    msBeforeLightSwitch: 0,
+    msBeforeFanSwitch: 0,
+    lightCycleDurationMs: 0,
+    fanCycleDurationMs: 0,
+  };
+
+  response.json(result);
+})
 
 app.listen(config.port, () => {
   console.log('server launched on :3000');

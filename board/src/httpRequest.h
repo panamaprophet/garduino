@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <WiFiEspClient.h>
 
 enum RequestType {
@@ -8,19 +7,11 @@ enum RequestType {
   DELETE,
 };
 
-bool httpRequest(
+String httpRequest(
   WiFiEspClient &http,
   char path[], 
   char server[], 
   uint16_t port = 80, 
-  RequestType type = GET, 
-  String payload = ""
-);
-
-bool httpSecureRequest(
-  WiFiEspClient &http,
-  char path[], 
-  char server[], 
   RequestType type = GET, 
   String payload = ""
 );
