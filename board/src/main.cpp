@@ -120,7 +120,7 @@ void setup() {
 
     Serial.println("Connected to: " + String(WiFi.SSID()) + " with IP: " + String(WiFi.localIP()));
 
-    config = getRemoteConfig(http, REQUEST_DOMAIN, REQUEST_PATH, REQUEST_PORT);
+    config = getRemoteConfig(http, REQUEST_DOMAIN, REQUEST_CONFIG_PATH, REQUEST_PORT);
 
     config.isLightOn ? turnOnLight() : turnOffLight();
     config.isFanOn ? setHighFanSpeed() : setLowFanSpeed();

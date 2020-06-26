@@ -10,7 +10,85 @@ const bot = new Telegraf(config.telegram.token);
 app.use(bot.webhookCallback('/api/bot'));
 app.use(express.json());
 
+/**
+ * @typedef {Object} GarduinoConfigEntity
+ * @property {boolean} isOn — current state of entity (represents controller's module state)
+ * @property {number} duration — phase duration in ms
+ * @property {number} msBeforeSwitch — remaining time before state switch in ms
+ */
 
+/**
+ * @typedef {Object.<string,GarduinoConfigEntity>} GarduinoConfig
+ */
+
+/**
+ * @typedef {Object} GarduinoDataEntry
+ * @property {number} humidity — humidity level in percent
+ * @property {number} temperature — temperature in degree celsius
+ * @property {number} timestamp — timestamp
+ */
+
+/**
+  * @typedef {number[]} Time [hours, minutes]
+  */
+
+const getMinutesFromMs = ms => ((ms / (1000 * 60)) % 60);
+const getHoursFromMs = ms => ((ms / (1000 * 60 * 60)) % 24);
+const getTimeFromMs = ms => [getHoursFromMs(ms), getMinutesFromMs(ms)];
+const getTimeFromString = string => string.split(':').map(Number);
+const getMsFromTimeArray = ([hours, minutes]) => hours * 60 * 60 * 1000 + minutes * 60 * 1000;
+const getHoursAndMinutes = ([hours, minutes]) => [hours % 24, minutes % 60];
+const getRemainTime = ([h, m], [hh, mm]) => [getRemainTimeForUnits(h, hh, 24), getRemainTimeForUnits(m, mm, 60)];
+const getRemainTimeForUnits = (a, b, units) => ((a > b) ? (getRemainTimeForUnits(a, units) + (a - b)) : b - a);
+
+/**
+ * @param {number} duration — in milliseconds
+ * @param {string} onTime — switch on time in milliseconds from the start of the day
+ * @returns {GarduinoConfigEntity}
+ */
+const getConfigEntity = (duration, onTime) => {
+  const currentDate = new Date();
+
+  const [currentHours, currentMinutes] = [currentDate.getHours(), currentDate.getMinutes()];
+  const [onHours, onMinutes] = getTimeFromString(onTime);
+  const [durationHours, durationMinutes] = getTimeFromMs(duration);
+  const [offHours, offMinutes] = getHoursAndMinutes([onHours + durationHours, onMinutes + durationMinutes]);
+
+  const isOn = (
+    (onHours < currentHours || (onHours === currentHours && onMinutes <= currentMinutes)) && 
+    (offHours > currentHours || (offHours === currentHours && offMinutes > currentMinutes))
+  );
+
+  const timeBeforeSwitch = getRemainTime([currentHours, currentMinutes], isOn ? [offHours, offMinutes] : [onHours, onMinutes]);
+  const msBeforeSwitch = getMsFromTimeArray(timeBeforeSwitch);
+
+  return {
+    isOn,
+    duration,
+    msBeforeSwitch,
+  };
+}
+
+/**
+ * @returns {Promise<GarduinoConfig|Error>}
+ */
+const getConfig = () => new Promise((resolve, reject) => {
+  pool.query('SELECT lightCycleDurationMs, fanCycleDurationMs, lightCycleOnTime, fanCycleOnTime FROM config', (error, results) => {
+    if (!error) {
+      const { lightCycleDurationMs, fanCycleDurationMs, lightCycleOnTime, fanCycleOnTime } = results[0];
+      const light = getConfigEntity(lightCycleDurationMs, lightCycleOnTime);
+      const fan = getConfigEntity(fanCycleDurationMs, fanCycleOnTime);
+
+      return resolve({ light, fan });
+    }
+
+    return reject(error);
+  });
+});
+
+/**
+ * @returns {Promise<GarduinoDataEntry|Error>}
+ */
 const getLastAvailableData = () => new Promise((resolve, reject) => {
   pool.query('SELECT timestamp, humidity, temperature from data ORDER BY timestamp DESC LIMIT 1', (error, results) => {
     if (!error) {
@@ -23,17 +101,20 @@ const getLastAvailableData = () => new Promise((resolve, reject) => {
       });
     }
 
-    return reject({error});
+    return reject(error);
   });
 });
 
+/**
+ * @returns {Promise<Object|Error>}
+ */
 const addData = ({humidity, temperature}) => new Promise((resolve, reject) => {
   pool.query('INSERT INTO data SET ?', {humidity, temperature}, error => {
-    if (error) {
-      return reject({error});
+    if (!error) {
+        return resolve({success: true});
     }
 
-    return resolve({success: true});
+    return reject(error);
   });
 });
 
@@ -81,21 +162,16 @@ app.post('/api/params', async ({ body }, response) => {
 });
 
 app.get('/api/params', async (request, response) => {
-  // @TODO:
-  // get start time + get duration
-  // get flags based on current time
-  // get ms before switch based on current time - duration
+  const config = await getConfig();
 
-  const result = {
-    isLightOn: false,
-    isFanOn: false,
-    msBeforeLightSwitch: 0,
-    msBeforeFanSwitch: 0,
-    lightCycleDurationMs: 0,
-    fanCycleDurationMs: 0,
-  };
-
-  response.json(result);
+  response.json({
+    isLightOn: config.light.isOn,
+    isFanOn: config.fan.isOn,
+    msBeforeLightSwitch: config.light.msBeforeSwitch,
+    msBeforeFanSwitch: config.fan.msBeforeSwitch,
+    lightCycleDurationMs: config.light.duration,
+    fanCycleDurationMs: config.fan.duration,
+  });
 })
 
 app.listen(config.port, () => {
