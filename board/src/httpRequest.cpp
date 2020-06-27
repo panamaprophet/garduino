@@ -30,6 +30,7 @@ String httpRequest(
   http.println("Host: " + String(server));
   http.println("Accept: */*");
   http.println("User-Agent: Garduino/4.20");
+  http.println("Connection: keep-alive");
 
   if (payload.length() > 0) {
     http.println("Content-Length: " + String(payload.length()));
@@ -40,10 +41,12 @@ String httpRequest(
     http.println();
   }
 
+  // headers end with double line endings 
+  // so we can skip it from response like this:
+  http.find("\r\n\r\n");
+
   while (http.available()) {
-    response += http.read();
-    // char c = http.read();
-    // Serial.write(c);
+    response += http.readString();
   }
 
   http.stop();

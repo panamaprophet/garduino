@@ -20,10 +20,10 @@ struct Config {
   bool isLightOn;
   bool isFanOn;
 
-  int msBeforeLightSwitch;
-  int msBeforeFanSwitch;
-  int lightCycleDurationMs;
-  int fanCycleDurationMs;
+  unsigned long msBeforeLightSwitch;
+  unsigned long msBeforeFanSwitch;
+  unsigned long lightCycleDurationMs;
+  unsigned long fanCycleDurationMs;
 };
 
 
@@ -36,9 +36,9 @@ unsigned long lastDataSendTime = 0;
 unsigned long lastScheduleCheckTime = 0;
 
 const unsigned long SCHEDULE_CHECK_INTERVAL = 1000L;
-const unsigned long DATA_SEND_INTERVAL = 10L * 1000L;
+const unsigned long DATA_SEND_INTERVAL = 60L * 1000L; // @todo: should be configurable
 const unsigned long DAY_MS = 86400000;
-const unsigned long REMOTE_CONFIG_FIELDS_COUNT = 6;
+const unsigned long REMOTE_CONFIG_FIELDS_COUNT = 20;  // @todo: figure out exact required bites amount
 
 
 String getPayloadJSON(int temperature, int humidity) {
@@ -81,7 +81,7 @@ Config getRemoteConfig(WiFiEspClient &http, char server[], char path[], uint16_t
   const String response = httpRequest(http, path, server, port, GET);
   const int capacity = JSON_OBJECT_SIZE(REMOTE_CONFIG_FIELDS_COUNT);
 
-  StaticJsonDocument<capacity> responseJson;
+  DynamicJsonDocument responseJson(capacity);
   Config config;
   DeserializationError error = deserializeJson(responseJson, response);
 
@@ -114,7 +114,7 @@ void setup() {
     }
 
     while (status != WL_CONNECTED) {
-      Serial.println("connecting to " + String(NETWORK_SSID));
+      Serial.println("Connecting to " + String(NETWORK_SSID));
       status = WiFi.begin(NETWORK_SSID, NETWORK_PASS);
     }
 
