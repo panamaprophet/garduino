@@ -36,7 +36,7 @@ unsigned long lastDataSendTime = 0;
 unsigned long lastScheduleCheckTime = 0;
 
 const unsigned long SCHEDULE_CHECK_INTERVAL = 1000L;
-const unsigned long DATA_SEND_INTERVAL = 60L * 1000L; // @todo: should be configurable
+const unsigned long DATA_SEND_INTERVAL = 5 * 60L * 1000L; // @todo: should be configurable
 const unsigned long DAY_MS = 86400000;
 const unsigned long REMOTE_CONFIG_FIELDS_COUNT = 20;  // @todo: figure out exact required bites amount
 

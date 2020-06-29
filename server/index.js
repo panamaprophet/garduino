@@ -7,6 +7,13 @@ const app = express();
 const pool = mysql.createPool(config.db);
 const bot = new Telegraf(config.telegram.token);
 
+const CONFIG_FIELDS = [
+  'lightCycleDurationMs',
+  'fanCycleDurationMs',
+  'lightCycleOnTime',
+  'fanCycleOnTime'
+];
+
 app.use(bot.webhookCallback('/api/bot'));
 app.use(express.json());
 
@@ -128,10 +135,38 @@ const getConfigEntity = (duration, onTime) => {
 }
 
 /**
+ * extract available config fields from raw data
+ * @param {Object} data 
+ */
+const extractConfig = data => Object.keys(data).reduce((result, key) => {
+  if (CONFIG_FIELDS.includes(key)) {
+    result[key] = data[key];
+  }
+
+  return result;
+}, {});
+
+/**
+ * updates config table with passed params
+ * @param {Object} params 
+ */
+const setConfig = params => new Promise((resolve, reject) => {
+  const queryParams = extractConfig(params);
+
+  pool.query('UPDATE config SET ?', queryParams, error => {
+    if (!error) {
+      return resolve({success: true});
+    }
+
+    return reject(error);
+  });
+});
+
+/**
  * @returns {Promise<GarduinoConfig|Error>}
  */
 const getConfig = () => new Promise((resolve, reject) => {
-  pool.query('SELECT lightCycleDurationMs, fanCycleDurationMs, lightCycleOnTime, fanCycleOnTime FROM config', (error, results) => {
+  pool.query('SELECT ?? FROM config', [CONFIG_FIELDS], (error, results) => {
     if (!error) {
       const { lightCycleDurationMs, fanCycleDurationMs, lightCycleOnTime, fanCycleOnTime } = results[0];
       const light = getConfigEntity(lightCycleDurationMs, lightCycleOnTime);
@@ -210,7 +245,7 @@ app.get('/api', (request, response) => {
   response.send('OK');
 });
 
-app.post('/api/params', async ({ body }, response) => {
+app.post('/api/params', async ({body}, response) => {
   const result = await addData({
     humidity: parseFloat(body.humidity),
     temperature: parseFloat(body.temperature),
@@ -219,18 +254,24 @@ app.post('/api/params', async ({ body }, response) => {
   response.json(result);
 });
 
-app.get('/api/params', async (request, response) => {
-  const config = await getConfig();
+app.route('/api/config')
+  .get(async (request, response) => {
+    const config = await getConfig();
 
-  response.json({
-    isLightOn: config.light.isOn,
-    isFanOn: config.fan.isOn,
-    msBeforeLightSwitch: config.light.msBeforeSwitch,
-    msBeforeFanSwitch: config.fan.msBeforeSwitch,
-    lightCycleDurationMs: config.light.duration,
-    fanCycleDurationMs: config.fan.duration,
+    response.json({
+      isLightOn: config.light.isOn,
+      isFanOn: config.fan.isOn,
+      msBeforeLightSwitch: config.light.msBeforeSwitch,
+      msBeforeFanSwitch: config.fan.msBeforeSwitch,
+      lightCycleDurationMs: config.light.duration,
+      fanCycleDurationMs: config.fan.duration,
+    });
+  })
+  .post(async ({body}, response) => {
+    const result = await setConfig(body); 
+
+    response.json(result);
   });
-})
 
 app.listen(config.port, () => {
   console.log('server launched on :3000');
