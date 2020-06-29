@@ -14,16 +14,19 @@
 #define DHTPIN 2
 #define ESP_TX 6
 #define ESP_RX 7
+#define DAY_MS 86400000
+#define DEFAULT_DURATION_MS (DAY_MS / 2)
 
 
 struct Config {
-  bool isLightOn;
-  bool isFanOn;
+  bool isLightOn = true;
+  bool isFanOn = true;
+  bool isRemote = false;
 
-  unsigned long msBeforeLightSwitch;
-  unsigned long msBeforeFanSwitch;
-  unsigned long lightCycleDurationMs;
-  unsigned long fanCycleDurationMs;
+  unsigned long msBeforeLightSwitch = DEFAULT_DURATION_MS;
+  unsigned long msBeforeFanSwitch = DEFAULT_DURATION_MS;
+  unsigned long lightCycleDurationMs = DEFAULT_DURATION_MS;
+  unsigned long fanCycleDurationMs = DEFAULT_DURATION_MS;
 };
 
 
@@ -37,7 +40,6 @@ unsigned long lastScheduleCheckTime = 0;
 
 const unsigned long SCHEDULE_CHECK_INTERVAL = 1000L;
 const unsigned long DATA_SEND_INTERVAL = 5 * 60L * 1000L; // @todo: should be configurable
-const unsigned long DAY_MS = 86400000;
 const unsigned long REMOTE_CONFIG_FIELDS_COUNT = 20;  // @todo: figure out exact required bites amount
 
 
@@ -61,7 +63,7 @@ void setHighFanSpeed(uint8_t pin = RELAY_FAN) {
   digitalWrite(pin, HIGH);
 }
 
-bool toggleLight() {
+bool toggleLight(Config &config) {
   config.msBeforeLightSwitch = config.isLightOn ? (DAY_MS - config.lightCycleDurationMs) : config.lightCycleDurationMs;
   config.isLightOn ? turnOffLight() : turnOnLight();
   config.isLightOn = !config.isLightOn;
@@ -69,7 +71,7 @@ bool toggleLight() {
   return config.isLightOn;
 }
 
-bool toggleFan() {
+bool toggleFan(Config &config) {
   config.msBeforeFanSwitch = config.isFanOn ? (DAY_MS - config.fanCycleDurationMs) : config.fanCycleDurationMs;
   config.isFanOn ? setLowFanSpeed() : setHighFanSpeed();
   config.isFanOn = !config.isFanOn;
@@ -87,8 +89,10 @@ Config getRemoteConfig(WiFiEspClient &http, char server[], char path[], uint16_t
 
   if (error) {
     Serial.println(error.c_str());
+    return config;
   }
 
+  config.isRemote = true;
   config.isLightOn = responseJson["isLightOn"];
   config.isFanOn = responseJson["isFanOn"];
   config.msBeforeLightSwitch = responseJson["msBeforeLightSwitch"];
@@ -134,11 +138,11 @@ void loop() {
     config.msBeforeFanSwitch -= SCHEDULE_CHECK_INTERVAL;
 
     if (config.msBeforeLightSwitch <= 0) {
-      toggleLight();
+      toggleLight(config);
     }
 
     if (config.msBeforeFanSwitch <= 0) {
-      toggleFan();
+      toggleFan(config);
     }
 
     lastScheduleCheckTime = millis();
