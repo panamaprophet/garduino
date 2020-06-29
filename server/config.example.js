@@ -9,5 +9,6 @@ module.exports = {
     port: 'server-port',
     telegram: {
         token: 'telegram-bot-token',
+        webHookPath: '/api/bot',
     },
  };

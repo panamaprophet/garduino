@@ -1,278 +1,68 @@
 const express = require('express');
 const mysql = require('mysql');
-const { Telegraf } = require('telegraf');
+
 const config = require('./config');
+const {setConfig, getConfig} = require('./resolvers/config');
+const {addData, getLastAvailableData} = require('./resolvers/sensors');
+const {createBot, actionHelp, actionNow, actionStat, actionLight} = require('./helpers/bot');
 
 const app = express();
 const pool = mysql.createPool(config.db);
-const bot = new Telegraf(config.telegram.token);
+const bot = createBot(
+    config.telegram.token, 
+    config.hostname + config.telegram.webHookPath
+);
 
-const CONFIG_FIELDS = [
-  'lightCycleDurationMs',
-  'fanCycleDurationMs',
-  'lightCycleOnTime',
-  'fanCycleOnTime'
-];
+const getConfigFromDb = getConfig(pool);
+const setConfigToDb = setConfig(pool);
+const addSensorDataToDb = addData(pool);
+const getLastAvailableSensorDataFromDb = getLastAvailableData(pool);
 
-app.use(bot.webhookCallback('/api/bot'));
+app.use(bot.webhookCallback(config.telegram.webHookPath));
 app.use(express.json());
 
-/**
- * @typedef {Object} GarduinoConfigEntity
- * @property {boolean} isOn — current state of entity (represents controller's module state)
- * @property {number} duration — phase duration in ms
- * @property {number} msBeforeSwitch — remaining time before state switch in ms
- */
+bot.command('help', actionHelp);
+bot.command('now', actionNow(getLastAvailableSensorDataFromDb));
+bot.command('stat', actionStat);
+bot.command('light', actionLight);
 
-/**
- * @typedef {Object.<string,GarduinoConfigEntity>} GarduinoConfig
- */
+app.route('/api')
+    .get((request, response) => {
+        response.send('OK');
+    });
 
-/**
- * @typedef {Object} GarduinoDataEntry
- * @property {number} humidity — humidity level in percent
- * @property {number} temperature — temperature in degree celsius
- * @property {number} timestamp — timestamp
- */
+app.route('/api/params')
+    .get(async (request, response) => {
+        const lastAvailableData = await getLastAvailableSensorDataFromDb();
 
-/**
-  * @typedef {number[]} Time — [hours, minutes]
-  * @property {number} 0 — hours
-  * @property {number} 1 — minutes
-  */
+        response.json(lastAvailableData);
+    })
+    .post(async ({body}, response) => {
+        const result = await addSensorDataToDb({
+            humidity: parseFloat(body.humidity),
+            temperature: parseFloat(body.temperature),
+        });
 
-/**
- * @param {number} ms — milliseconds
- * @returns {number} minutes
- */
-const getMinutesFromMs = ms => ((ms / (1000 * 60)) % 60);
-
-/**
- * @param {number} ms — milliseconds
- * @returns {number} hours
- */
-const getHoursFromMs = ms => ((ms / (1000 * 60 * 60)) % 24);
-
-/**
- * @param {number} ms — milliseconds
- * @returns {Time}
- */
-const getTimeFromMs = ms => [getHoursFromMs(ms), getMinutesFromMs(ms)];
-
-/**
- * @param {string} string — time in format 'HH:mm'
- * @returns {Time} time in format [h, m]
- */
-const getTimeFromString = string => string.split(':').map(Number);
-
-/**
- * @param {Time} time
- * @returns {number} milliseconds
- */
-const getMsFromTimeArray = ([hours, minutes]) => hours * 60 * 60 * 1000 + minutes * 60 * 1000;
-
-/**
- * removes the excess time from hours and minutes
- * @param {Time} time
- * @returns {Time}
- */
-const extractHoursAndMinutes = ([hours, minutes]) => [hours % 24 + (minutes / 60), minutes % 60];
-
-/**
- * @param {Time} time
- * @returns {number}
- */
-const extractDays = ([hours, minutes]) => (hours + minutes / 60) / 24;
-
-/**
- * gets time between two times
- * @param {Time} a
- * @param {Time} b
- */
-const getRemainTime = ([h, m], [hh, mm]) => [getRemainTimeForUnits(h, hh, 24), getRemainTimeForUnits(m, mm, 60)];
-
-/**
- * gets time between two times
- * @param {Time} a
- * @param {Time} b
- * @param {number} units — amount of units [24,60,...]
- */
-const getRemainTimeForUnits = (a, b, units) => ((a > b) ? (getRemainTimeForUnits(a, units) + (a - b)) : b - a);
-
-/**
- * @param {number} duration — in milliseconds
- * @param {string} onTime — switch on time in milliseconds from the start of the day
- * @returns {GarduinoConfigEntity}
- */
-const getConfigEntity = (duration, onTime) => {
-  const currentDate = new Date();
-
-  const [currentHours, currentMinutes] = [currentDate.getHours(), currentDate.getMinutes()];
-  const [onHours, onMinutes] = getTimeFromString(onTime);
-  const [durationHours, durationMinutes] = getTimeFromMs(duration);
-  const offTime = [onHours + durationHours, onMinutes + durationMinutes];
-  const [offHours, offMinutes] = extractHoursAndMinutes(offTime);
-  const hasNextDaySwitching = extractDays(offTime) | 0;
-
-  const isOn = (
-    (onHours < currentHours || (onHours === currentHours && onMinutes <= currentMinutes)) && 
-    (
-      offHours > currentHours ||
-      (offHours === currentHours && offMinutes > currentMinutes) ||
-      (offHours < currentHours && hasNextDaySwitching) ||
-      (offHours === currentHours && offMinutes < currentMinutes && hasNextDaySwitching)
-    )
-  );
-
-  const timeBeforeSwitch = getRemainTime([currentHours, currentMinutes], isOn ? [offHours, offMinutes] : [onHours, onMinutes]);
-  const msBeforeSwitch = getMsFromTimeArray(timeBeforeSwitch);
-
-  return {
-    isOn,
-    duration,
-    msBeforeSwitch,
-  };
-}
-
-/**
- * extract available config fields from raw data
- * @param {Object} data 
- */
-const extractConfig = data => Object.keys(data).reduce((result, key) => {
-  if (CONFIG_FIELDS.includes(key)) {
-    result[key] = data[key];
-  }
-
-  return result;
-}, {});
-
-/**
- * updates config table with passed params
- * @param {Object} params 
- */
-const setConfig = params => new Promise((resolve, reject) => {
-  const queryParams = extractConfig(params);
-
-  pool.query('UPDATE config SET ?', queryParams, error => {
-    if (!error) {
-      return resolve({success: true});
-    }
-
-    return reject(error);
-  });
-});
-
-/**
- * @returns {Promise<GarduinoConfig|Error>}
- */
-const getConfig = () => new Promise((resolve, reject) => {
-  pool.query('SELECT ?? FROM config', [CONFIG_FIELDS], (error, results) => {
-    if (!error) {
-      const { lightCycleDurationMs, fanCycleDurationMs, lightCycleOnTime, fanCycleOnTime } = results[0];
-      const light = getConfigEntity(lightCycleDurationMs, lightCycleOnTime);
-      const fan = getConfigEntity(fanCycleDurationMs, fanCycleOnTime);
-
-      return resolve({ light, fan });
-    }
-
-    return reject(error);
-  });
-});
-
-/**
- * @returns {Promise<GarduinoDataEntry|Error>}
- */
-const getLastAvailableData = () => new Promise((resolve, reject) => {
-  pool.query('SELECT timestamp, humidity, temperature from data ORDER BY timestamp DESC LIMIT 1', (error, results) => {
-    if (!error) {
-      const { temperature, humidity, timestamp } = results[0];
-
-      return resolve({
-        humidity,
-        temperature,
-        timestamp,
-      });
-    }
-
-    return reject(error);
-  });
-});
-
-/**
- * @returns {Promise<Object|Error>}
- */
-const addData = ({humidity, temperature}) => new Promise((resolve, reject) => {
-  pool.query('INSERT INTO data SET ?', {humidity, temperature}, error => {
-    if (!error) {
-        return resolve({success: true});
-    }
-
-    return reject(error);
-  });
-});
-
-
-bot.telegram.setWebhook(config.hostname + '/api/bot');
-
-bot.command('help', ctx => {
-  const response = 
-  `Greetings. These are the things i can do:
-
-  /help — show this message
-  /now — check current parameters
-  /stat — overview the statistics
-  /light — check or change light schedule`;
-
-  ctx.reply(response);
-});
-
-bot.command('now', async ctx => {
-  const { temperature, humidity } = await getLastAvailableData();
-  const response = `Humidity: ${humidity}%, Temperature: ${temperature}°C`;
-
-  return ctx.reply(response);
-});
-
-bot.command('stat', ctx => {
-  ctx.reply('statistics');
-});
-
-bot.command('light', ctx => {
-  ctx.reply('light schedule');
-});
-
-app.get('/api', (request, response) => {
-  response.send('OK');
-});
-
-app.post('/api/params', async ({body}, response) => {
-  const result = await addData({
-    humidity: parseFloat(body.humidity),
-    temperature: parseFloat(body.temperature),
-  });
-
-  response.json(result);
-});
+        response.json(result);
+    });
 
 app.route('/api/config')
-  .get(async (request, response) => {
-    const config = await getConfig();
+    .get(async (request, response) => {
+        const config = await getConfigFromDb();
 
-    response.json({
-      isLightOn: config.light.isOn,
-      isFanOn: config.fan.isOn,
-      msBeforeLightSwitch: config.light.msBeforeSwitch,
-      msBeforeFanSwitch: config.fan.msBeforeSwitch,
-      lightCycleDurationMs: config.light.duration,
-      fanCycleDurationMs: config.fan.duration,
+        response.json({
+            isLightOn: config.light.isOn,
+            isFanOn: config.fan.isOn,
+            msBeforeLightSwitch: config.light.msBeforeSwitch,
+            msBeforeFanSwitch: config.fan.msBeforeSwitch,
+            lightCycleDurationMs: config.light.duration,
+            fanCycleDurationMs: config.fan.duration,
+        });
+    })
+    .post(async ({body}, response) => {
+        const result = await setConfigToDb(body);
+
+        response.json(result);
     });
-  })
-  .post(async ({body}, response) => {
-    const result = await setConfig(body); 
 
-    response.json(result);
-  });
-
-app.listen(config.port, () => {
-  console.log('server launched on :3000');
-});
+app.listen(config.port, () => console.log('server launched on :3000'));
