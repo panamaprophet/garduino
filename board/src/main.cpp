@@ -89,6 +89,7 @@ Config getRemoteConfig(WiFiEspClient &http, char server[], char path[], uint16_t
 
   if (error) {
     Serial.println(error.c_str());
+    Serial.println(response);
     return config;
   }
 
@@ -149,7 +150,7 @@ void loop() {
   }
 
   // send data to server
-  if (millis() - lastDataSendTime > DATA_SEND_INTERVAL) {
+  if ((millis() - lastDataSendTime > DATA_SEND_INTERVAL) || (lastDataSendTime == 0)) {
     const int temperature = dht.getTemperature();
     const int humidity = dht.getHumidity();
 
