@@ -80,10 +80,40 @@ const extractConfig = data => Object.keys(data).reduce((result, key) => {
     return result;
 }, {});
 
+/**
+ * returns where-statement as string
+ * @param {Object} where 
+ * @param {string} separator
+ * 
+ * @returns {string}
+ */
+var whereFromObject = (where, separator = ' AND ') => {
+    const keys = Object.keys(where);
+    const result = [];
+
+    if (Array.isArray(where)) {
+        result.push(...where.map(whereFromObject));
+    } else {
+        keys.forEach(key => {
+            if (key === '$and') {
+                result.push(whereFromObject(where[key], ' AND '));
+            } else if (key === '$or') {
+                result.push(whereFromObject(where[key], ' OR '));
+            } else {
+                result.push(`\`${key}\`=${where[key]}`);
+            }
+        });
+    }
+
+    return keys.length > 1
+        ? result.map(item => `(${item})`).join(separator)
+        : result.join(separator);
+};
 
 module.exports = {
     CONFIG_FIELDS,
 
     extractConfig,
     getConfigEntity,
+    whereFromObject,
 };
