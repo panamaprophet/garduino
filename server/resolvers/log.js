@@ -3,17 +3,17 @@ const {
 } = require('../helpers/log');
 
 const {
-    whereFromObject,
+    getWhereStatement,
 } = require('../helpers');
 
 
-const DEFAULT_FIELDS = ['type', 'source', 'event', 'timestamp', 'payload'];
+const DEFAULT_FIELDS = ['type', 'event', 'timestamp', 'payload'];
 
 
 const getLog = 
     connection => 
-        async (criteria = null, fields = DEFAULT_FIELDS) => new Promise((resolve, reject) => {
-            const where = where && ` WHERE ${whereFromObject(criteria)}`;
+        async (conditions = null, fields = DEFAULT_FIELDS) => new Promise((resolve, reject) => {
+            const where = conditions && ` WHERE ${getWhereStatement(conditions)}`;
 
             connection.query('SELECT ?? FROM log ' + (where || '') + ' ORDER BY timestamp DESC LIMIT 1', [fields], (error, results) => {
                 if (!error) {
@@ -22,6 +22,12 @@ const getLog =
 
                 return reject(error);
             });
+        });
+
+const getLastUpdateEventLog = 
+    connection => 
+        async () => getLog(connection)({
+            event: 'events/update',
         });
 
 const saveLog = 
@@ -45,5 +51,6 @@ const saveLog =
 
 module.exports = {
     getLog,
+    getLastUpdateEventLog,
     saveLog,
 };

@@ -3,9 +3,8 @@ const mysql = require('mysql');
 
 const config = require('./config');
 const {setConfig, getConfig} = require('./resolvers/config');
-const {addData, getLastAvailableData} = require('./resolvers/sensors');
 const {resolveHelp, resolveLastData, resolveLightSchedule, resolveStatistics} = require('./resolvers/bot');
-const {saveLog, getLog} = require('./resolvers/log');
+const {saveLog, getLastUpdateEventLog} = require('./resolvers/log');
 const {createBot} = require('./helpers/bot');
 
 const app = express();
@@ -13,10 +12,8 @@ const pool = mysql.createPool(config.db);
 
 const getConfigFromDb = getConfig(pool);
 const setConfigToDb = setConfig(pool);
-const addSensorDataToDb = addData(pool);
-const getLastAvailableSensorDataFromDb = getLastAvailableData(pool);
 const saveLogToDb = saveLog(pool);
-const getLogFromDb = getLog(pool);
+const getLogFromDb = getLastUpdateEventLog(pool);
 
 const bot = createBot(
     config.telegram.token, 
@@ -35,24 +32,6 @@ app.use(express.json());
 app.route('/api')
     .get((request, response) => {
         response.send('OK');
-    });
-
-/**
- * @deprecated in a favor of api/log
- */
-app.route('/api/params')
-    .get(async (request, response) => {
-        const lastAvailableData = await getLastAvailableSensorDataFromDb();
-
-        response.json(lastAvailableData);
-    })
-    .post(async ({body}, response) => {
-        const result = await addSensorDataToDb({
-            humidity: parseFloat(body.humidity),
-            temperature: parseFloat(body.temperature),
-        });
-
-        response.json(result);
     });
 
 app.route('/api/config')

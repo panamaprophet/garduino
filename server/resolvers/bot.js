@@ -1,4 +1,4 @@
-const {getLastAvailableData} = require('./sensors');
+const {getLastUpdateEventLog} = require('./log');
 
 
 const resolveHelp = connection => ctx => {
@@ -14,10 +14,14 @@ const resolveHelp = connection => ctx => {
 };
 
 const resolveLastData = connection => {
-    const getLastAvailableDataFromDb = getLastAvailableData(connection);
+    const getLastUpdateEventLogFromDb = getLastUpdateEventLog(connection);
+    const extractSensorDataFromLog = (data, key) => data.find(item => key in item)[key];
 
     return async ctx => {
-        const { temperature, humidity } = await getLastAvailableDataFromDb();
+        const eventData = await getLastUpdateEventLogFromDb();
+        const payload = JSON.parse(eventData.payload);
+        const humidity = extractSensorDataFromLog(payload, 'humidity');
+        const temperature = extractSensorDataFromLog(payload, 'temperature');
         const response = `Humidity: ${humidity}%, Temperature: ${temperature}°C`;
 
         return ctx.reply(response);
