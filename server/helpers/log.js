@@ -4,11 +4,6 @@ const LogType = {
     ERROR: 'types/error',
 };
 
-const LogSource = {
-    SENSOR: 'sources/sensor',
-    CONTROLLER: 'sources/controller',
-};
-
 const LogEvent = {
     UPDATE: 'events/update',
     CONNECT: 'events/connect',
@@ -17,8 +12,6 @@ const LogEvent = {
 
 
 const getLogType = type => LogType[type];
-
-const getLogSource = source => LogSource[source];
 
 const getLogEvent = event => LogEvent[event];
 
@@ -39,18 +32,16 @@ const getCurrentDateTime = () => new Date().toISOString().slice(0, 19).replace('
  */
 const getLogEntry = ({
     type, 
-    source,
     event,
     payload = [],
 }) => {
-    if (!type || !source || !event) {
+    if (!type || !event) {
         return null;
     }
 
     return {
         timestamp: getCurrentDateTime(),
         type: getLogType(type),
-        source: getLogSource(source),
         event: getLogEvent(event),
         payload: JSON.stringify(payload),
     };
