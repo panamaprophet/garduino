@@ -128,11 +128,11 @@ void sendUpdateEvent() {
 
 void handleSensorsState() {
     if (config.msBeforeLightSwitch <= 0) {
-      toggleLight(config);
+        toggleLight(config);
     }
 
     if (config.msBeforeFanSwitch <= 0) {
-      toggleFan(config);
+        toggleFan(config);
     }
 }
 
