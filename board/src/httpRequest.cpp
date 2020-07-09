@@ -49,7 +49,7 @@ String httpRequest(WiFiEspClient &http, char path[], char server[], uint16_t por
 
     if (payload.length() > 0) {
         http.println("Content-Length: " + String(payload.length()));
-        http.println("Content-Type: application/json"); // application/x-www-form-urlencoded");
+        http.println("Content-Type: application/json");
         http.println();
         http.println(payload);
     } else {

@@ -15,14 +15,14 @@ const resolveHelp = connection => ctx => {
 
 const resolveLastData = connection => {
     const getLastUpdateEventLogFromDb = getLastUpdateEventLog(connection);
-    const extractSensorDataFromLog = (data, key) => data.find(item => key in item)[key];
+    const getSensorDataByKey = (haystack, needle) => haystack.filter(({key}) => key === needle);
 
     return async ctx => {
         const eventData = await getLastUpdateEventLogFromDb();
         const payload = JSON.parse(eventData.payload);
-        const humidity = extractSensorDataFromLog(payload, 'humidity');
-        const temperature = extractSensorDataFromLog(payload, 'temperature');
-        const response = `Humidity: ${humidity}%, Temperature: ${temperature}°C`;
+        const [humidity] = getSensorDataByKey(payload, 'humidity');
+        const [temperature] = getSensorDataByKey(payload, 'temperature');
+        const response = `Humidity: ${humidity.value}%, Temperature: ${temperature.value}°C`;
 
         return ctx.reply(response);
     };
