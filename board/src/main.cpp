@@ -43,12 +43,12 @@ const unsigned long DATA_SEND_INTERVAL = 5 * 60L * 1000L; // @todo: should be co
 const unsigned long REMOTE_CONFIG_FIELDS_COUNT = 20;  // @todo: figure out exact required bites amount
 
 
-String getJSON(String key, String value) {
-    return "{\"" + key + "\": \"" + value + "\"}";
+String getJsonObjectFromPair(String key, String value) {
+    return "{\"key\":\"" + key + "\",\"value\":\"" + value + "\"}";
 }
 
-String getUpdateEventPayload(int temperature, int humidity) {
-    return "[" + getJSON("humidity", String(humidity)) + "," + getJSON("temperature", String(temperature)) + "]";
+String getUpdateEventPayload(float temperature, float humidity) {
+    return "[" + getJsonObjectFromPair("humidity", String(humidity)) + "," + getJsonObjectFromPair("temperature", String(temperature)) + "]";
 }
 
 String getUpdateEvent(String payload = "") {
@@ -118,8 +118,8 @@ Config getRemoteConfig(WiFiEspClient &http, char server[], char path[], uint16_t
 
 
 void sendUpdateEvent() {
-    const int temperature = dht.getTemperature();
-    const int humidity = dht.getHumidity();
+    const float temperature = dht.getTemperature();
+    const float humidity = dht.getHumidity();
 
     const String payload = getUpdateEventPayload(temperature, humidity);
     const String eventData = getUpdateEvent(payload);
