@@ -1,187 +1,202 @@
 #include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClientSecure.h>
+#include <Ticker.h>
 #include <DHT.h>
-#include <WiFiEsp.h>
-#include <WiFiEspClient.h>
-#include <SoftwareSerial.h>
-#include <httpRequest.h>
-#include <config.h>
 #include <ArduinoJson.h>
 
-#define RELAY_IN1 12
-#define RELAY_IN2 13
-#define RELAY_LIGHT RELAY_IN1
-#define RELAY_FAN RELAY_IN2
-#define DHTPIN 2
-#define ESP_TX 6
-#define ESP_RX 7
+#define WIFI_SSID ""
+#define WIFI_PASS ""
+
+#define CONFIG_FIELDS_COUNT 6
+
+#define UPDATE_INTERVAL 10 * 60 * 1000
+
 #define DAY_MS 86400000
 #define DEFAULT_DURATION_MS (DAY_MS / 2)
 
+#define RELAY_LIGHT_PIN 14
+#define RELAY_FAN_PIN 12
+#define DHT_PIN 4
 
-struct Config {
-    bool isLightOn = true;
-    bool isFanOn = true;
-    bool isRemote = false;
+const String REQUEST_DOMAIN = "https://example.com";
+const String REQUEST_API_LOG = "/api/log";
+const String REQUEST_API_CONFIG = "/api/config";
 
-    unsigned long msBeforeLightSwitch = DEFAULT_DURATION_MS;
-    unsigned long msBeforeFanSwitch = DEFAULT_DURATION_MS;
-    unsigned long lightCycleDurationMs = DEFAULT_DURATION_MS;
-    unsigned long fanCycleDurationMs = DEFAULT_DURATION_MS;
+enum Event {
+    NONE,
+    CONFIG,
+    UPDATE,
+    ERROR,
 };
 
+enum RequestType {
+    GET,
+    POST,
+};
 
-WiFiEspClient http;
-SoftwareSerial esp(ESP_RX, ESP_TX);
-DHT dht;
-Config config;
-int status = WL_IDLE_STATUS;
-unsigned long lastDataSendTime = 0;
-unsigned long lastScheduleCheckTime = 0;
+Event requestedEvent = Event::CONFIG;
 
-const unsigned long SCHEDULE_CHECK_INTERVAL = 1000L;
-const unsigned long DATA_SEND_INTERVAL = 5 * 60L * 1000L; // @todo: should be configurable
-const unsigned long REMOTE_CONFIG_FIELDS_COUNT = 20;  // @todo: figure out exact required bites amount
+bool isLightOn = false;
+bool isFanOn = false;
+unsigned long msBeforeLightSwitch = DEFAULT_DURATION_MS;
+unsigned long msBeforeFanSwitch = DEFAULT_DURATION_MS;
+unsigned long lightCycleDurationMs = DEFAULT_DURATION_MS;
+unsigned long fanCycleDurationMs = DEFAULT_DURATION_MS;
+
+String lastError;
+
+float temperature;
+float humidity;
+
+Ticker ticker;
+Ticker lightCycleTicker;
+Ticker fanCycleTicker;
+
+WiFiClientSecure client;
+HTTPClient http;
+DHT11 dht;
 
 
-String getJsonObjectFromPair(String key, String value) {
-    return "{\"key\":\"" + key + "\",\"value\":\"" + value + "\"}";
+void toggleLight() {
+    digitalWrite(RELAY_LIGHT_PIN, isLightOn ? LOW : HIGH);
+    isLightOn = !isLightOn;
+}
+
+void toggleFan() {
+    digitalWrite(RELAY_FAN_PIN, isFanOn ? LOW : HIGH);
+    isFanOn = !isFanOn;
+}
+
+String sendRequest(String url, RequestType type = GET, String payload = "") {
+    http.begin(client, url);
+    http.addHeader("Accept", "*/*");
+    http.addHeader("Content-Type", "application/json");
+
+    String response = "";
+
+    if (type == RequestType::GET) {
+        http.GET();
+    }
+
+    if (type == RequestType::POST) {
+        http.POST(payload);
+    }
+
+    // @todo: check http code returned by http.GET() and http.POST()
+
+    response = http.getString();
+    http.end();
+
+    return response;
+}
+
+String getErrorEventPayload(String error) {
+    return "{\"type\":\"ERROR\",\"event\":\"ERROR\",\"payload\":[{\"error\": \"" + error + "\"}]}";
 }
 
 String getUpdateEventPayload(float temperature, float humidity) {
-    return "[" + getJsonObjectFromPair("humidity", String(humidity)) + "," + getJsonObjectFromPair("temperature", String(temperature)) + "]";
-}
-
-String getUpdateEvent(String payload = "") {
-    return "{\"type\": \"INFO\", \"event\": \"UPDATE\", \"payload\": " + payload + "}";
-}
-
-
-void turnOnLight(uint8_t pin = RELAY_LIGHT) {
-    digitalWrite(pin, HIGH);
-}
-
-void turnOffLight(uint8_t pin = RELAY_LIGHT) {
-    digitalWrite(pin, LOW);
-}
-
-
-void setLowFanSpeed(uint8_t pin = RELAY_FAN) {
-    digitalWrite(pin, LOW);
-}
-
-void setHighFanSpeed(uint8_t pin = RELAY_FAN) {
-    digitalWrite(pin, HIGH);
-}
-
-
-bool toggleLight(Config &config) {
-    config.msBeforeLightSwitch = config.isLightOn ? (DAY_MS - config.lightCycleDurationMs) : config.lightCycleDurationMs;
-    config.isLightOn ? turnOffLight() : turnOnLight();
-    config.isLightOn = !config.isLightOn;
-
-    return config.isLightOn;
-}
-
-bool toggleFan(Config &config) {
-    config.msBeforeFanSwitch = config.isFanOn ? (DAY_MS - config.fanCycleDurationMs) : config.fanCycleDurationMs;
-    config.isFanOn ? setLowFanSpeed() : setHighFanSpeed();
-    config.isFanOn = !config.isFanOn;
-
-    return config.isFanOn;
-}
-
-
-Config getRemoteConfig(WiFiEspClient &http, char server[], char path[], uint16_t port) {
-    const String response = httpRequest(http, path, server, port, GET);
-    const int capacity = JSON_OBJECT_SIZE(REMOTE_CONFIG_FIELDS_COUNT);
-
-    DynamicJsonDocument responseJson(capacity);
-    Config config;
-    DeserializationError error = deserializeJson(responseJson, response);
-
-    if (error) {
-        Serial.println(error.c_str());
-        Serial.println(response);
-        return config;
-    }
-
-    config.isRemote = true;
-    config.isLightOn = responseJson["isLightOn"];
-    config.isFanOn = responseJson["isFanOn"];
-    config.msBeforeLightSwitch = responseJson["msBeforeLightSwitch"];
-    config.msBeforeFanSwitch = responseJson["msBeforeFanSwitch"];
-    config.lightCycleDurationMs = responseJson["lightCycleDurationMs"];
-    config.fanCycleDurationMs = responseJson["fanCycleDurationMs"];
-
-    return config;
-}
-
-
-void sendUpdateEvent() {
-    const float temperature = dht.getTemperature();
-    const float humidity = dht.getHumidity();
-
-    const String payload = getUpdateEventPayload(temperature, humidity);
-    const String eventData = getUpdateEvent(payload);
-    const String response = httpRequest(http, REQUEST_PATH, REQUEST_DOMAIN, REQUEST_PORT, POST, eventData);
-}
-
-void handleSensorsState() {
-    if (config.msBeforeLightSwitch <= 0) {
-        toggleLight(config);
-    }
-
-    if (config.msBeforeFanSwitch <= 0) {
-        toggleFan(config);
-    }
+    return "{\"type\":\"INFO\",\"event\":\"UPDATE\",\"payload\":[{\"key\":\"humidity\",\"value\":\"" + String(humidity) + "\"},{\"key\":\"temperature\",\"value\":\"" + String(temperature) + "\"}]}";
 }
 
 
 void setup() {
-    pinMode(RELAY_IN1, OUTPUT);
-    pinMode(RELAY_IN2, OUTPUT);
+    Serial.begin(115200);
+    dht.setPin(DHT_PIN);
+    pinMode(RELAY_LIGHT_PIN, OUTPUT);
+    pinMode(RELAY_FAN_PIN, OUTPUT);
 
-    Serial.begin(9600);
-    esp.begin(9600);
-    dht.setup(DHTPIN);
-    WiFi.init(&esp);
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
 
-    int connectionAttempts = 0;
-
-    if (WiFi.status() == WL_NO_SHIELD) {
-        Serial.println("WiFi shield not present");
+    while (WiFi.status() != WL_CONNECTED) {
+        Serial.print(".");
+        delay(1000);
     }
 
-    while (status != WL_CONNECTED) {
-        Serial.println("Connecting to " + String(NETWORK_SSID));
-        status = WiFi.begin(NETWORK_SSID, NETWORK_PASS);
-        connectionAttempts++;
-    }
+    Serial.println();
+    Serial.print("Connected to " + String(WiFi.SSID()) + " with IP ");
+    Serial.println(WiFi.localIP());
 
-    Serial.println("Connected to " + String(WiFi.SSID()) + " with IP " + WiFi.localIP());
-    Serial.println("Connected on " + String(connectionAttempts) + " attempt"); 
+    ticker.attach_ms(UPDATE_INTERVAL, []() {
+        dht.read();
+    });
 
-    config = getRemoteConfig(http, REQUEST_DOMAIN, REQUEST_CONFIG_PATH, REQUEST_PORT);
+    dht.onData([](float h, float t) {
+        temperature = t;
+        humidity = h;
+        requestedEvent = Event::UPDATE;
+    });
 
-    config.isLightOn ? turnOnLight() : turnOffLight();
-    config.isFanOn ? setHighFanSpeed() : setLowFanSpeed();
+    dht.onError([](uint8_t e) {
+        lastError = dht.getError();
+        requestedEvent = Event::ERROR;
+    });
+
+    client.setInsecure();
 }
 
 void loop() {
-    // check schedule and update box state
-    if (millis() - lastScheduleCheckTime >= SCHEDULE_CHECK_INTERVAL) {
-        config.msBeforeLightSwitch -= SCHEDULE_CHECK_INTERVAL;
-        config.msBeforeFanSwitch -= SCHEDULE_CHECK_INTERVAL;
+    if (requestedEvent == Event::CONFIG) {
+        Serial.println("Config was requested");
 
-        handleSensorsState();
+        const int capacity = JSON_OBJECT_SIZE(CONFIG_FIELDS_COUNT);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_CONFIG, RequestType::GET);
 
-        lastScheduleCheckTime = millis();
+        DynamicJsonDocument json(capacity);
+        DeserializationError error = deserializeJson(json, response);
+
+        if (!bool(error)) {
+            lastError = error.c_str();
+            requestedEvent = Event::ERROR;
+        }
+
+        if (bool(error)) {
+            isLightOn = json["isLightOn"];
+            isFanOn = json["isFanOn"];
+            msBeforeLightSwitch = json["msBeforeLightSwitch"];
+            msBeforeFanSwitch = json["msBeforeFanSwitch"];
+            lightCycleDurationMs = json["lightCycleDurationMs"];
+            fanCycleDurationMs = json["fanCycleDurationMs"];
+
+            Serial.println("Config received");
+        }
+
+        digitalWrite(RELAY_LIGHT_PIN, isLightOn ? LOW : HIGH);
+        digitalWrite(RELAY_FAN_PIN, isFanOn ? LOW : HIGH);
+
+        lightCycleTicker.once_ms(msBeforeLightSwitch, []() {
+            toggleLight();
+            lightCycleTicker.attach_ms(lightCycleDurationMs, toggleLight);
+        });
+
+        fanCycleTicker.once_ms(msBeforeFanSwitch, []() {
+            toggleFan();
+            fanCycleTicker.attach_ms(fanCycleDurationMs, toggleFan);
+        });
+
+        requestedEvent = requestedEvent == Event::CONFIG ? Event::NONE : requestedEvent;
     }
 
-    // send data to server
-    if ((millis() - lastDataSendTime > DATA_SEND_INTERVAL) || (lastDataSendTime == 0)) {
-        sendUpdateEvent();
+    if (requestedEvent == Event::UPDATE) {
+        Serial.println("Update event was requested");
 
-        lastDataSendTime = millis();
+        String payload = getUpdateEventPayload(temperature, humidity);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
+
+        Serial.println("Update event response: " + response);
+
+        requestedEvent = requestedEvent == Event::UPDATE ? Event::NONE : requestedEvent;
+    }
+
+    if (requestedEvent == Event::ERROR) {
+        Serial.println("Error event was requested");
+
+        String payload = getErrorEventPayload(lastError);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
+
+        Serial.println("Error event response: " + response);
+
+        requestedEvent = requestedEvent == Event::ERROR ? Event::NONE : requestedEvent;
     }
 }
