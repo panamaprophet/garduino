@@ -1,19 +1,12 @@
-const LogType = {
-    INFO: 'types/info',
-    WARNING: 'types/warning',
-    ERROR: 'types/error',
-};
+const {format} = require("date-fns");
 
-const LogEvent = {
-    UPDATE: 'events/update',
-    CONNECT: 'events/connect',
-    ERROR: 'events/error',
-};
+const {LOG_TYPE, LOG_EVENT} = require("../constants");
 
 
-const getLogType = type => LogType[type];
+const getLogType = type => LOG_TYPE[type];
 
-const getLogEvent = event => LogEvent[event];
+const getLogEvent = event => LOG_EVENT[event];
+
 
 /**
  * @typedef {Object} LogEntry
@@ -25,10 +18,9 @@ const getLogEvent = event => LogEvent[event];
  * @property {string} payload — serialized json
  */
 
-const getCurrentDateTime = () => new Date().toISOString().slice(0, 19).replace('T', ' ');
 
 /**
- * @returns {LogEntry}
+ * @returns {LogEntry|null}
  */
 const getLogEntry = ({
     type, 
@@ -40,7 +32,7 @@ const getLogEntry = ({
     }
 
     return {
-        timestamp: getCurrentDateTime(),
+        timestamp: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
         type: getLogType(type),
         event: getLogEvent(event),
         payload: JSON.stringify(payload),
@@ -50,4 +42,6 @@ const getLogEntry = ({
 
 module.exports = {
     getLogEntry,
+    getLogType,
+    getLogEvent,
 }
