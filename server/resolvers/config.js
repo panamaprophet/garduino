@@ -1,5 +1,6 @@
 const {getConfigEntity, extractConfig} = require('../helpers');
-const {CONFIG_FIELDS} = require('../helpers/index');
+const {CONFIG_FIELDS} = require('../constants');
+
 
 /**
  * updates config table with passed params

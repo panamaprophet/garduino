@@ -1,21 +1,14 @@
-const {
-    getLogEntry,
-} = require('../helpers/log');
-
-const {
-    getWhereStatement,
-} = require('../helpers');
-
-
-const DEFAULT_FIELDS = ['type', 'event', 'timestamp', 'payload'];
+const {getLogEntry} = require('../helpers/log');
+const {getWhereStatement} = require('../helpers');
+const {DEFAULT_LOG_FIELDS, LOG_EVENT} = require('../constants');
 
 
 const getLog = 
     connection => 
-        async (conditions = null, fields = DEFAULT_FIELDS) => new Promise((resolve, reject) => {
-            const where = conditions && ` WHERE ${getWhereStatement(conditions)}`;
+        async (conditions = null, fields = DEFAULT_LOG_FIELDS) => new Promise((resolve, reject) => {
+            const where = conditions ? `WHERE ${getWhereStatement(conditions)}` : '';
 
-            connection.query('SELECT ?? FROM log ' + (where || '') + ' ORDER BY timestamp DESC LIMIT 1', [fields], (error, results) => {
+            connection.query(`SELECT ?? FROM log ${where} ORDER BY timestamp DESC LIMIT 1`, [fields], (error, results) => {
                 if (!error) {
                     return resolve(results[0]);
                 }
@@ -27,7 +20,7 @@ const getLog =
 const getLastUpdateEventLog = 
     connection => 
         async () => getLog(connection)({
-            event: 'events/update',
+            event: LOG_EVENT.UPDATE,
         });
 
 const saveLog = 
