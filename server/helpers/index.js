@@ -28,7 +28,7 @@ const {CONFIG_FIELDS} = require('../constants');
  * @returns {GarduinoConfigEntity}
  */
 const getConfigEntity = (duration, onTimeString) => {
-    const currentDate = new Date();
+    const currentDate = Date.now();
     const onTime = parse(onTimeString, 'HH:mm', currentDate);
     const offTime = addMilliseconds(onTime, duration);
     const isOn = compareDesc(onTime, currentDate) >= 0 && compareDesc(offTime, currentDate) < 0;
