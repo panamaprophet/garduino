@@ -5,6 +5,8 @@ enum Event {
     CONFIG,
     UPDATE,
     ERROR,
+    SWITCH,
+    RUN,
 };
 
 enum RequestType {
@@ -29,3 +31,7 @@ struct Config {
 String getErrorEventPayload(String error);
 
 String getUpdateEventPayload(float temperature, float humidity);
+
+String getSwitchEventPayload(bool isLightOn, bool isFanOn);
+
+String getRunEventPayload(bool isLightOn, bool isFanOn);
