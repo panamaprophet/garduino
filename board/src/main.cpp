@@ -1,40 +1,23 @@
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
-#include <Ticker.h>
 #include <DHT.h>
-#include <ArduinoJson.h>
+#include <Ticker.h>
+#include <config.h>
+#include <helpers.h>
 
-#define WIFI_SSID ""
-#define WIFI_PASS ""
-
-#define CONFIG_FIELDS_COUNT 6
-
-#define UPDATE_INTERVAL 10 * 60 * 1000
+#define CONFIG_FIELDS_COUNT 20
 
 #define DAY_MS 86400000
 #define DEFAULT_DURATION_MS (DAY_MS / 2)
+#define UPDATE_INTERVAL_MS 10 * 60 * 1000
 
 #define RELAY_LIGHT_PIN 14
 #define RELAY_FAN_PIN 12
 #define DHT_PIN 4
 
-const String REQUEST_DOMAIN = "https://example.com";
-const String REQUEST_API_LOG = "/api/log";
-const String REQUEST_API_CONFIG = "/api/config";
-
-enum Event {
-    NONE,
-    CONFIG,
-    UPDATE,
-    ERROR,
-};
-
-enum RequestType {
-    GET,
-    POST,
-};
 
 Event requestedEvent = Event::CONFIG;
 
@@ -60,13 +43,15 @@ DHT11 dht;
 
 
 void toggleLight() {
-    digitalWrite(RELAY_LIGHT_PIN, isLightOn ? LOW : HIGH);
     isLightOn = !isLightOn;
+    digitalWrite(RELAY_LIGHT_PIN, isLightOn ? HIGH : LOW);
+    requestedEvent = Event::SWITCH;
 }
 
 void toggleFan() {
-    digitalWrite(RELAY_FAN_PIN, isFanOn ? LOW : HIGH);
     isFanOn = !isFanOn;
+    digitalWrite(RELAY_FAN_PIN, isFanOn ? HIGH : LOW);
+    requestedEvent = Event::SWITCH;
 }
 
 String sendRequest(String url, RequestType type = GET, String payload = "") {
@@ -92,14 +77,6 @@ String sendRequest(String url, RequestType type = GET, String payload = "") {
     return response;
 }
 
-String getErrorEventPayload(String error) {
-    return "{\"type\":\"ERROR\",\"event\":\"ERROR\",\"payload\":[{\"error\": \"" + error + "\"}]}";
-}
-
-String getUpdateEventPayload(float temperature, float humidity) {
-    return "{\"type\":\"INFO\",\"event\":\"UPDATE\",\"payload\":[{\"key\":\"humidity\",\"value\":\"" + String(humidity) + "\"},{\"key\":\"temperature\",\"value\":\"" + String(temperature) + "\"}]}";
-}
-
 
 void setup() {
     Serial.begin(115200);
@@ -118,7 +95,7 @@ void setup() {
     Serial.print("Connected to " + String(WiFi.SSID()) + " with IP ");
     Serial.println(WiFi.localIP());
 
-    ticker.attach_ms(UPDATE_INTERVAL, []() {
+    ticker.attach_ms(UPDATE_INTERVAL_MS, []() {
         dht.read();
     });
 
@@ -146,24 +123,32 @@ void loop() {
         DynamicJsonDocument json(capacity);
         DeserializationError error = deserializeJson(json, response);
 
-        if (!bool(error)) {
+        if (error) {
             lastError = error.c_str();
             requestedEvent = Event::ERROR;
         }
 
-        if (bool(error)) {
+        if (!error) {
             isLightOn = json["isLightOn"];
             isFanOn = json["isFanOn"];
-            msBeforeLightSwitch = json["msBeforeLightSwitch"];
-            msBeforeFanSwitch = json["msBeforeFanSwitch"];
-            lightCycleDurationMs = json["lightCycleDurationMs"];
-            fanCycleDurationMs = json["fanCycleDurationMs"];
+            msBeforeLightSwitch = json["msBeforeLightSwitch"].as<long>();
+            msBeforeFanSwitch = json["msBeforeFanSwitch"].as<long>();
+            lightCycleDurationMs = json["lightCycleDurationMs"].as<long>();
+            fanCycleDurationMs = json["fanCycleDurationMs"].as<long>();
 
             Serial.println("Config received");
+            Serial.println("isLightOn = " + String(isLightOn));
+            Serial.println("isFanOn = " + String(isFanOn));
+            Serial.println("msBeforeLightSwitch = " + String(msBeforeLightSwitch));
+            Serial.println("msBeforeFanSwitch = " + String(msBeforeFanSwitch));
+            Serial.println("lightCycleDurationMs = " + String(lightCycleDurationMs));
+            Serial.println("fanCycleDurationMs = " + String(fanCycleDurationMs));
+
+            requestedEvent = Event::RUN;
         }
 
-        digitalWrite(RELAY_LIGHT_PIN, isLightOn ? LOW : HIGH);
-        digitalWrite(RELAY_FAN_PIN, isFanOn ? LOW : HIGH);
+        digitalWrite(RELAY_LIGHT_PIN, isLightOn ? HIGH : LOW);
+        digitalWrite(RELAY_FAN_PIN, isFanOn ? HIGH : LOW);
 
         lightCycleTicker.once_ms(msBeforeLightSwitch, []() {
             toggleLight();
@@ -176,6 +161,28 @@ void loop() {
         });
 
         requestedEvent = requestedEvent == Event::CONFIG ? Event::NONE : requestedEvent;
+    }
+
+    if (requestedEvent == Event::RUN) {
+        Serial.println("Run event was requested");
+
+        String payload = getRunEventPayload(isLightOn, isFanOn);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
+
+        Serial.println("Run event response: " + response);
+
+        requestedEvent = requestedEvent == Event::RUN ? Event::NONE : requestedEvent;
+    }
+
+    if (requestedEvent == Event::SWITCH) {
+        Serial.println("Switch event was requested");
+
+        String payload = getSwitchEventPayload(isLightOn, isFanOn);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
+
+        Serial.println("Switch event response: " + response);
+
+        requestedEvent = requestedEvent == Event::SWITCH ? Event::NONE : requestedEvent;
     }
 
     if (requestedEvent == Event::UPDATE) {

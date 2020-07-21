@@ -1,6 +1,8 @@
-#define NETWORK_SSID "wifi_ssid"
-#define NETWORK_PASS "wifi_pass"
+#include <Arduino.h>
 
-#define REQUEST_PATH "/api/params"
-#define REQUEST_CONFIG_PATH "/api/config"
-#define REQUEST_DOMAIN "domain.example"
+#define WIFI_SSID "wi-fi ssid"
+#define WIFI_PASS "wi-fi pass"
+
+const String REQUEST_DOMAIN = "https://example.com";
+const String REQUEST_API_LOG = "/api/log";
+const String REQUEST_API_CONFIG = "/api/config";
