@@ -1,10 +1,20 @@
 #include <Arduino.h>
 
 String getErrorEventPayload(String error) {
-    return "{\"type\":\"ERROR\",\"event\":\"ERROR\",\"payload\":[{\"error\": \"" + error + "\"}]}";
+    return "{\"event\":\"ERROR\",\"payload\":[{\"error\": \"" + error + "\"}]}";
 }
 
 String getUpdateEventPayload(float temperature, float humidity) {
-    return "{\"type\":\"INFO\",\"event\":\"UPDATE\",\"payload\":[{\"key\":\"humidity\",\"value\":\"" + 
-    String(humidity) + "\"},{\"key\":\"temperature\",\"value\":\"" + String(temperature) + "\"}]}";
+    return "{\"event\":\"UPDATE\",\"payload\":[{\"key\":\"humidity\",\"value\":\"" + 
+        String(humidity) + "\"},{\"key\":\"temperature\",\"value\":\"" + String(temperature) + "\"}]}";
+}
+
+String getSwitchEventPayload(bool isLightOn, bool isFanOn) {
+    return "{\"event\":\"SWITCH\",\"payload\":[{\"key\":\"isLightOn\",\"value\":\"" + 
+        String(isLightOn) + "\"},{\"key\":\"isFanOn\",\"value\":\"" + String(isFanOn) + "\"}]}";
+}
+
+String getRunEventPayload(bool isLightOn, bool isFanOn) {
+    return "{\"event\":\"RUN\",\"payload\":[{\"key\":\"isLightOn\",\"value\":\"" + 
+        String(isLightOn) + "\"},{\"key\":\"isFanOn\",\"value\":\"" + String(isFanOn) + "\"}]}";
 }

@@ -8,7 +8,7 @@
 #include <config.h>
 #include <helpers.h>
 
-#define CONFIG_FIELDS_COUNT 6
+#define CONFIG_FIELDS_COUNT 20
 
 #define DAY_MS 86400000
 #define DEFAULT_DURATION_MS (DAY_MS / 2)
@@ -43,13 +43,15 @@ DHT11 dht;
 
 
 void toggleLight() {
-    digitalWrite(RELAY_LIGHT_PIN, isLightOn ? LOW : HIGH);
     isLightOn = !isLightOn;
+    digitalWrite(RELAY_LIGHT_PIN, isLightOn ? HIGH : LOW);
+    requestedEvent = Event::SWITCH;
 }
 
 void toggleFan() {
-    digitalWrite(RELAY_FAN_PIN, isFanOn ? LOW : HIGH);
     isFanOn = !isFanOn;
+    digitalWrite(RELAY_FAN_PIN, isFanOn ? HIGH : LOW);
+    requestedEvent = Event::SWITCH;
 }
 
 String sendRequest(String url, RequestType type = GET, String payload = "") {
@@ -121,24 +123,32 @@ void loop() {
         DynamicJsonDocument json(capacity);
         DeserializationError error = deserializeJson(json, response);
 
-        if (!bool(error)) {
+        if (error) {
             lastError = error.c_str();
             requestedEvent = Event::ERROR;
         }
 
-        if (bool(error)) {
+        if (!error) {
             isLightOn = json["isLightOn"];
             isFanOn = json["isFanOn"];
-            msBeforeLightSwitch = json["msBeforeLightSwitch"];
-            msBeforeFanSwitch = json["msBeforeFanSwitch"];
-            lightCycleDurationMs = json["lightCycleDurationMs"];
-            fanCycleDurationMs = json["fanCycleDurationMs"];
+            msBeforeLightSwitch = json["msBeforeLightSwitch"].as<long>();
+            msBeforeFanSwitch = json["msBeforeFanSwitch"].as<long>();
+            lightCycleDurationMs = json["lightCycleDurationMs"].as<long>();
+            fanCycleDurationMs = json["fanCycleDurationMs"].as<long>();
 
             Serial.println("Config received");
+            Serial.println("isLightOn = " + String(isLightOn));
+            Serial.println("isFanOn = " + String(isFanOn));
+            Serial.println("msBeforeLightSwitch = " + String(msBeforeLightSwitch));
+            Serial.println("msBeforeFanSwitch = " + String(msBeforeFanSwitch));
+            Serial.println("lightCycleDurationMs = " + String(lightCycleDurationMs));
+            Serial.println("fanCycleDurationMs = " + String(fanCycleDurationMs));
+
+            requestedEvent = Event::RUN;
         }
 
-        digitalWrite(RELAY_LIGHT_PIN, isLightOn ? LOW : HIGH);
-        digitalWrite(RELAY_FAN_PIN, isFanOn ? LOW : HIGH);
+        digitalWrite(RELAY_LIGHT_PIN, isLightOn ? HIGH : LOW);
+        digitalWrite(RELAY_FAN_PIN, isFanOn ? HIGH : LOW);
 
         lightCycleTicker.once_ms(msBeforeLightSwitch, []() {
             toggleLight();
@@ -151,6 +161,28 @@ void loop() {
         });
 
         requestedEvent = requestedEvent == Event::CONFIG ? Event::NONE : requestedEvent;
+    }
+
+    if (requestedEvent == Event::RUN) {
+        Serial.println("Run event was requested");
+
+        String payload = getRunEventPayload(isLightOn, isFanOn);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
+
+        Serial.println("Run event response: " + response);
+
+        requestedEvent = requestedEvent == Event::RUN ? Event::NONE : requestedEvent;
+    }
+
+    if (requestedEvent == Event::SWITCH) {
+        Serial.println("Switch event was requested");
+
+        String payload = getSwitchEventPayload(isLightOn, isFanOn);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
+
+        Serial.println("Switch event response: " + response);
+
+        requestedEvent = requestedEvent == Event::SWITCH ? Event::NONE : requestedEvent;
     }
 
     if (requestedEvent == Event::UPDATE) {
