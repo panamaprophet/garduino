@@ -13,6 +13,7 @@
 #define DAY_MS 86400000
 #define DEFAULT_DURATION_MS (DAY_MS / 2)
 #define UPDATE_INTERVAL_MS 10 * 60 * 1000
+#define SCHEDULE_CHECK_INTERVAL_MS 1000
 
 #define RELAY_LIGHT_PIN 14
 #define RELAY_FAN_PIN 12
@@ -23,8 +24,8 @@ Event requestedEvent = Event::CONFIG;
 
 bool isLightOn = false;
 bool isFanOn = false;
-unsigned long msBeforeLightSwitch = DEFAULT_DURATION_MS;
-unsigned long msBeforeFanSwitch = DEFAULT_DURATION_MS;
+long msBeforeLightSwitch = DEFAULT_DURATION_MS;
+long msBeforeFanSwitch = DEFAULT_DURATION_MS;
 unsigned long lightCycleDurationMs = DEFAULT_DURATION_MS;
 unsigned long fanCycleDurationMs = DEFAULT_DURATION_MS;
 
@@ -34,25 +35,11 @@ float temperature;
 float humidity;
 
 Ticker ticker;
-Ticker lightCycleTicker;
-Ticker fanCycleTicker;
-
+Ticker scheduleTicker;
 WiFiClientSecure client;
 HTTPClient http;
 DHT11 dht;
 
-
-void toggleLight() {
-    isLightOn = !isLightOn;
-    digitalWrite(RELAY_LIGHT_PIN, isLightOn ? HIGH : LOW);
-    requestedEvent = Event::SWITCH;
-}
-
-void toggleFan() {
-    isFanOn = !isFanOn;
-    digitalWrite(RELAY_FAN_PIN, isFanOn ? HIGH : LOW);
-    requestedEvent = Event::SWITCH;
-}
 
 String sendRequest(String url, RequestType type = GET, String payload = "") {
     http.begin(client, url);
@@ -75,6 +62,32 @@ String sendRequest(String url, RequestType type = GET, String payload = "") {
     http.end();
 
     return response;
+}
+
+void handleSchedule() {
+    msBeforeLightSwitch -= SCHEDULE_CHECK_INTERVAL_MS;
+    msBeforeFanSwitch -= SCHEDULE_CHECK_INTERVAL_MS;
+
+    if (msBeforeFanSwitch <= 0) {
+        isFanOn = !isFanOn;
+        msBeforeFanSwitch = isFanOn ? fanCycleDurationMs : DAY_MS - fanCycleDurationMs;
+        requestedEvent = Event::SWITCH;
+    }
+
+    if (msBeforeLightSwitch <= 0) {
+        isLightOn = !isLightOn;
+        msBeforeLightSwitch = isLightOn ? lightCycleDurationMs : DAY_MS - lightCycleDurationMs;
+        requestedEvent = Event::SWITCH;
+    }
+}
+
+void updateRelay(int pin, bool isOn) {
+    digitalWrite(pin, isOn ? HIGH : LOW);
+}
+
+void updateRelays() {
+    updateRelay(RELAY_LIGHT_PIN, isLightOn);
+    updateRelay(RELAY_FAN_PIN, isFanOn);
 }
 
 
@@ -115,7 +128,7 @@ void setup() {
 
 void loop() {
     if (requestedEvent == Event::CONFIG) {
-        Serial.println("Config was requested");
+        Serial.println("[Event::CONFIG] requested");
 
         const int capacity = JSON_OBJECT_SIZE(CONFIG_FIELDS_COUNT);
         String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_CONFIG, RequestType::GET);
@@ -136,7 +149,8 @@ void loop() {
             lightCycleDurationMs = json["lightCycleDurationMs"].as<long>();
             fanCycleDurationMs = json["fanCycleDurationMs"].as<long>();
 
-            Serial.println("Config received");
+            Serial.println("[Event::CONFIG] config received");
+
             Serial.println("isLightOn = " + String(isLightOn));
             Serial.println("isFanOn = " + String(isFanOn));
             Serial.println("msBeforeLightSwitch = " + String(msBeforeLightSwitch));
@@ -147,62 +161,49 @@ void loop() {
             requestedEvent = Event::RUN;
         }
 
-        digitalWrite(RELAY_LIGHT_PIN, isLightOn ? HIGH : LOW);
-        digitalWrite(RELAY_FAN_PIN, isFanOn ? HIGH : LOW);
-
-        lightCycleTicker.once_ms(msBeforeLightSwitch, []() {
-            toggleLight();
-            lightCycleTicker.attach_ms(lightCycleDurationMs, toggleLight);
-        });
-
-        fanCycleTicker.once_ms(msBeforeFanSwitch, []() {
-            toggleFan();
-            fanCycleTicker.attach_ms(fanCycleDurationMs, toggleFan);
-        });
-
         requestedEvent = requestedEvent == Event::CONFIG ? Event::NONE : requestedEvent;
     }
 
     if (requestedEvent == Event::RUN) {
-        Serial.println("Run event was requested");
+        Serial.println("[Event::RUN] requested");
+
+        updateRelays();
+
+        scheduleTicker.attach_ms(SCHEDULE_CHECK_INTERVAL_MS, handleSchedule);
 
         String payload = getRunEventPayload(isLightOn, isFanOn);
         String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
-
-        Serial.println("Run event response: " + response);
+        Serial.println("[Event::RUN] response: " + response);
 
         requestedEvent = requestedEvent == Event::RUN ? Event::NONE : requestedEvent;
     }
 
     if (requestedEvent == Event::SWITCH) {
-        Serial.println("Switch event was requested");
+        Serial.println("[Event::SWITCH] requested");
+
+        updateRelays();
 
         String payload = getSwitchEventPayload(isLightOn, isFanOn);
         String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
-
-        Serial.println("Switch event response: " + response);
+        Serial.println("[Event::SWITCH] response: " + response);
 
         requestedEvent = requestedEvent == Event::SWITCH ? Event::NONE : requestedEvent;
     }
 
     if (requestedEvent == Event::UPDATE) {
-        Serial.println("Update event was requested");
-
+        Serial.println("[Event::UPDATE] requested");
         String payload = getUpdateEventPayload(temperature, humidity);
         String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
-
-        Serial.println("Update event response: " + response);
+        Serial.println("[Event::UPDATE] response: " + response);
 
         requestedEvent = requestedEvent == Event::UPDATE ? Event::NONE : requestedEvent;
     }
 
     if (requestedEvent == Event::ERROR) {
-        Serial.println("Error event was requested");
-
+        Serial.println("[Event::ERROR] requested");
         String payload = getErrorEventPayload(lastError);
         String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
-
-        Serial.println("Error event response: " + response);
+        Serial.println("[Event::ERROR] response: " + response);
 
         requestedEvent = requestedEvent == Event::ERROR ? Event::NONE : requestedEvent;
     }
