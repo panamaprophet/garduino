@@ -1,69 +1,21 @@
 const express = require('express');
-const mysql = require('mysql');
-
-const config = require('./config');
-const {setConfig, getConfig} = require('./resolvers/config');
-const {resolveHelp, resolveLastData, resolveLightSchedule, resolveStatistics} = require('./resolvers/bot');
-const {saveLog, getLastUpdateEventLog} = require('./resolvers/log');
+const MongoClient = require('mongodb').MongoClient;
 const {createBot} = require('./helpers/bot');
-
+const config = require('./config');
 const app = express();
-const pool = mysql.createPool(config.db);
+const uri = `mongodb+srv://${config.db.user}:${config.db.pass}@${config.db.host}/${config.db.database}?retryWrites=true&w=majority`;
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
-const getConfigFromDb = getConfig(pool);
-const setConfigToDb = setConfig(pool);
-const saveLogToDb = saveLog(pool);
-const getLogFromDb = getLastUpdateEventLog(pool);
 
-const bot = createBot(
-    config.telegram.token, 
-    config.hostname + config.telegram.webHookPath, 
-    {
-        help: resolveHelp(pool),
-        now: resolveLastData(pool),
-        stat: resolveStatistics(pool),
-        light: resolveLightSchedule(pool),
-    }
-);
+client.connect().then(client => {
+    const db = client.db();
+    const bot = createBot(config.bot, require('./resolvers/bot'));
 
-app.use(bot.webhookCallback(config.telegram.webHookPath));
-app.use(express.json());
+    app.locals.db = db;
 
-app.route('/api')
-    .get((request, response) => {
-        response.send('OK');
-    });
+    app.use(express.json());
+    app.use(bot.webhookCallback(config.telegram.webHookPath));
+    app.use('/api', require('./routes'));
 
-app.route('/api/config')
-    .get(async (request, response) => {
-        const config = await getConfigFromDb();
-
-        response.json({
-            isLightOn: config.light.isOn,
-            isFanOn: config.fan.isOn,
-            msBeforeLightSwitch: config.light.msBeforeSwitch,
-            msBeforeFanSwitch: config.fan.msBeforeSwitch,
-            lightCycleDurationMs: config.light.duration,
-            fanCycleDurationMs: config.fan.duration,
-        });
-    })
-    .post(async ({body}, response) => {
-        const result = await setConfigToDb(body);
-
-        response.json(result);
-    });
-
-app.route('/api/log')
-    .get(async ({body}, response) => {
-        const {timestamp = null} = body;
-        const result = await getLogFromDb(timestamp);
-
-        response.json(result);
-    })
-    .post(async ({body}, response) => {
-        const result = await saveLogToDb(body);
-
-        response.json(result);
-    });
-
-app.listen(config.port, () => console.log('server launched on :3000'));
+    app.listen(config.port, () => console.log(`server launched on :${config.port}`));
+});

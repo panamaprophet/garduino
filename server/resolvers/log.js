@@ -1,45 +1,26 @@
-const {getLogEntry} = require('../helpers/log');
-const {getWhereStatement} = require('../helpers');
-const {DEFAULT_LOG_FIELDS, LOG_EVENT} = require('../constants');
+const {LOG_EVENT} = require('../constants');
 
 
-const getLog = 
-    connection => 
-        async (conditions = null, fields = DEFAULT_LOG_FIELDS) => new Promise((resolve, reject) => {
-            const where = conditions ? `WHERE ${getWhereStatement(conditions)}` : '';
+const getLog = async (db, controllerId, conditions = {}) => {
+    const result = await db.collection('log').findOne(
+        {controllerId, ...conditions},
+        {sort: {$natural: -1}}
+    );
 
-            connection.query(`SELECT ?? FROM log ${where} ORDER BY timestamp DESC LIMIT 1`, [fields], (error, results) => {
-                if (!error) {
-                    return resolve(results[0]);
-                }
+    return result;
+};
 
-                return reject(error);
-            });
-        });
+const getLastUpdateEventLog = (db, controllerId) => {
+    return getLog(db, controllerId, {event: LOG_EVENT.UPDATE});
+};
 
-const getLastUpdateEventLog = 
-    connection => 
-        async () => getLog(connection)({
-            event: LOG_EVENT.UPDATE,
-        });
+const saveLog = async (db, controllerId, data) => {
+    const {result} = await db.collection('log').insertOne({controllerId, ...data});
 
-const saveLog = 
-    connection => 
-        data => new Promise((resolve, reject) => {
-            const log = getLogEntry(data);
-
-            if (!log) {
-                return reject({success: false});
-            }
-            
-            connection.query('INSERT INTO log SET ?', log, (error, result) => {
-                if (!error) {
-                    return resolve({success: true});
-                }
-
-                return reject(error);
-            });
-        });
+    return {
+        success: Boolean(result.ok),
+    };
+};
 
 
 module.exports = {

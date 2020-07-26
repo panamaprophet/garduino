@@ -1,45 +1,42 @@
+const {getContext, getSensorDataByKey} = require('../helpers');
 const {getLastUpdateEventLog} = require('./log');
 
 
-const resolveHelp = connection => ctx => {
+const help = async ({reply}) => {
     const response = 
     `Greetings. These are the things i can do:
   
     /help — show this message
     /now — show current params of sensors
     /stat — show data overview
-    /light — show/edit light schedule`;
+    /setup — edit configuration`;
   
-    ctx.reply(response);
+    reply(response);
 };
 
-const resolveLastData = connection => {
-    const getLastUpdateEventLogFromDb = getLastUpdateEventLog(connection);
-    const getSensorDataByKey = (haystack, needle) => haystack.filter(({key}) => key === needle);
+const now = async ({request, reply}) => {
+    const {db, controllerId} = getContext(request);
+    const eventData = await getLastUpdateEventLog(db, controllerId);
+    const payload = JSON.parse(eventData.payload);
+    const [humidity] = getSensorDataByKey(payload, 'humidity');
+    const [temperature] = getSensorDataByKey(payload, 'temperature');
+    const response = `Humidity: ${humidity.value}%, Temperature: ${temperature.value}°C`;
 
-    return async ctx => {
-        const eventData = await getLastUpdateEventLogFromDb();
-        const payload = JSON.parse(eventData.payload);
-        const [humidity] = getSensorDataByKey(payload, 'humidity');
-        const [temperature] = getSensorDataByKey(payload, 'temperature');
-        const response = `Humidity: ${humidity.value}%, Temperature: ${temperature.value}°C`;
-
-        return ctx.reply(response);
-    };
+    return reply(response);
 };
 
-const resolveStatistics = connection => ctx => {
-    ctx.reply('statistics');
+const stat = async ({reply}) => {
+    reply('statistics');
 };
 
-const resolveLightSchedule = connection => ctx => {
-    ctx.reply('light schedule');
+const setup = async ({reply}) => {
+    reply('light schedule');
 };
 
 
 module.exports = {
-    resolveHelp, 
-    resolveLastData, 
-    resolveStatistics, 
-    resolveLightSchedule,
+    help, 
+    now, 
+    stat, 
+    setup,
 };
