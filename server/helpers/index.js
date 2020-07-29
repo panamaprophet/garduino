@@ -7,6 +7,7 @@ const getContext = request => ({
 
 const getSensorDataByKey = (haystack, needle) => haystack.filter(({key}) => key === needle);
 
+
 module.exports = {
     getContext,
     getSensorDataByKey,

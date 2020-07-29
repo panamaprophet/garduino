@@ -14,7 +14,7 @@ client.connect().then(client => {
     app.locals.db = db;
 
     app.use(express.json());
-    app.use(bot.webhookCallback(config.telegram.webHookPath));
+    app.use(bot.webhookCallback(config.bot.webHookPath));
     app.use('/api', require('./routes'));
 
     app.listen(config.port, () => console.log(`server launched on :${config.port}`));

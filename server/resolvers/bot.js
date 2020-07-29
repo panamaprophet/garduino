@@ -1,5 +1,6 @@
 const {getContext, getSensorDataByKey} = require('../helpers');
 const {getLastUpdateEventLog} = require('./log');
+const {getControllerIds} = require('./controller');
 
 
 const help = async ({reply}) => {
@@ -15,7 +16,17 @@ const help = async ({reply}) => {
 };
 
 const now = async ({request, reply}) => {
-    const {db, controllerId} = getContext(request);
+    const {db, controllerId: requestedControllerId} = getContext(request);
+
+    const controllerIds = await getControllerIds(db);
+
+    // for dev purposes only
+    const [controllerId] = controllerIds;
+
+    // @todo: here and below
+    // set keyboard with controllers
+    // on select proceed with following code
+
     const eventData = await getLastUpdateEventLog(db, controllerId);
     const payload = JSON.parse(eventData.payload);
     const [humidity] = getSensorDataByKey(payload, 'humidity');
