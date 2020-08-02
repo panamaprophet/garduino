@@ -97,6 +97,7 @@ void setup() {
     pinMode(RELAY_LIGHT_PIN, OUTPUT);
     pinMode(RELAY_FAN_PIN, OUTPUT);
 
+    WiFi.hostname(CONTROLLER_ID);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
 
     while (WiFi.status() != WL_CONNECTED) {

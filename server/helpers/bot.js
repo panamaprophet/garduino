@@ -1,4 +1,4 @@
-const {Telegraf} = require('telegraf');
+const {Telegraf, Markup} = require('telegraf');
 
 
 const createBot = ({token, webHookPath}, commands = {}) => {
@@ -10,7 +10,19 @@ const createBot = ({token, webHookPath}, commands = {}) => {
     return bot;
 };
 
+const getInlineKeyboard = options => {
+    const keyboard = Markup.inlineKeyboard(options.map(option => {
+        return Markup.callbackButton(option.title, option.action);
+    }))
+    .oneTime()
+    .resize()
+    .extra()
+
+    return keyboard;
+};
+
 
 module.exports = {
     createBot,
+    getInlineKeyboard,
 };
