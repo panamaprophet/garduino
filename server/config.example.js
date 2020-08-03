@@ -2,12 +2,12 @@ module.exports = {
     db: {
         host: 'hostname',
         user: 'username',
-        password: 'password',
+        pass: 'password',
         database: 'database',
     },
     hostname: 'server-hostname',
     port: 'server-port',
-    telegram: {
+    bot: {
         token: 'telegram-bot-token',
         webHookPath: '/api/bot',
     },

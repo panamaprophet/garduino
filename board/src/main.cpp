@@ -97,6 +97,7 @@ void setup() {
     pinMode(RELAY_LIGHT_PIN, OUTPUT);
     pinMode(RELAY_FAN_PIN, OUTPUT);
 
+    WiFi.hostname(CONTROLLER_ID);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
 
     while (WiFi.status() != WL_CONNECTED) {
@@ -131,7 +132,7 @@ void loop() {
         Serial.println("[Event::CONFIG] requested");
 
         const int capacity = JSON_OBJECT_SIZE(CONFIG_FIELDS_COUNT);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_CONFIG, RequestType::GET);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_CONFIG + CONTROLLER_ID, RequestType::GET);
 
         DynamicJsonDocument json(capacity);
         DeserializationError error = deserializeJson(json, response);
@@ -172,7 +173,7 @@ void loop() {
         scheduleTicker.attach_ms(SCHEDULE_CHECK_INTERVAL_MS, handleSchedule);
 
         String payload = getRunEventPayload(isLightOn, isFanOn);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
         Serial.println("[Event::RUN] response: " + response);
 
         requestedEvent = requestedEvent == Event::RUN ? Event::NONE : requestedEvent;
@@ -184,7 +185,7 @@ void loop() {
         updateRelays();
 
         String payload = getSwitchEventPayload(isLightOn, isFanOn);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
         Serial.println("[Event::SWITCH] response: " + response);
 
         requestedEvent = requestedEvent == Event::SWITCH ? Event::NONE : requestedEvent;
@@ -193,7 +194,7 @@ void loop() {
     if (requestedEvent == Event::UPDATE) {
         Serial.println("[Event::UPDATE] requested");
         String payload = getUpdateEventPayload(temperature, humidity);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
         Serial.println("[Event::UPDATE] response: " + response);
 
         requestedEvent = requestedEvent == Event::UPDATE ? Event::NONE : requestedEvent;
@@ -202,7 +203,7 @@ void loop() {
     if (requestedEvent == Event::ERROR) {
         Serial.println("[Event::ERROR] requested");
         String payload = getErrorEventPayload(lastError);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG, RequestType::POST, payload);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
         Serial.println("[Event::ERROR] response: " + response);
 
         requestedEvent = requestedEvent == Event::ERROR ? Event::NONE : requestedEvent;

@@ -1,39 +1,17 @@
-const {getConfigEntity, extractConfig} = require('../helpers');
-const {CONFIG_FIELDS} = require('../constants');
+const setConfig = async (db, controllerId, updatedParams) => {
+    const {ok} = await db.collection('config').findOneAndUpdate({controllerId}, {$set: updatedParams});
 
+    return {
+        success: Boolean(ok),
+    };
+};
 
-/**
- * updates config table with passed params
- * @param {Object} params 
- */
-const setConfig = connection => params => new Promise((resolve, reject) => {
-    const queryParams = extractConfig(params);
-  
-    connection.query('UPDATE config SET ?', queryParams, error => {
-        if (!error) {
-            return resolve({success: true});
-        }
-    
-        return reject(error);
-    });
-});
+const getConfig = async (db, controllerId) => {
+    const config = await db.collection('config').findOne({controllerId});
 
-/**
- * @returns {Promise<GarduinoConfig|Error>}
- */
-const getConfig = connection => () => new Promise((resolve, reject) => {
-    connection.query('SELECT ?? FROM config', [CONFIG_FIELDS], (error, results) => {
-        if (!error) {
-            const { lightCycleDurationMs, fanCycleDurationMs, lightCycleOnTime, fanCycleOnTime } = results[0];
-            const light = getConfigEntity(lightCycleDurationMs, lightCycleOnTime);
-            const fan = getConfigEntity(fanCycleDurationMs, fanCycleOnTime);
+    return config;
+};
 
-            return resolve({ light, fan });
-        }
-
-        return reject(error);
-    });
-});
 
 module.exports = {
     getConfig,
