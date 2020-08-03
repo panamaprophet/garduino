@@ -17,9 +17,10 @@ const processAction = async ({db}, action, controllerId) => {
 };
 
 
-const createMainSceneController = db => new WizardScene('now',
+const MainSceneController = new WizardScene('now',
     // select a controller
     async ctx => {
+        const {db} = ctx;
         const controllerIds = await getControllerIds(db);
 
         ctx.reply('Select a controller', getInlineKeyboard(controllerIds));
@@ -28,6 +29,7 @@ const createMainSceneController = db => new WizardScene('now',
     },
     // select an action
     async ctx => {
+        const {db} = ctx;
         const selectedControllerId = ctx.update.callback_query.data;
         const controllerIds = await getControllerIds(db);
 
@@ -54,11 +56,9 @@ const createMainSceneController = db => new WizardScene('now',
             return ctx.wizard.back();
         }
 
-        ctx.session.selectedAction = selectedAction;
-
         const response = await processAction(ctx, selectedAction, controllerId);
 
-        await ctx.reply(response);
+        ctx.reply(response);
 
         return ctx.scene.leave();
     },
@@ -66,5 +66,5 @@ const createMainSceneController = db => new WizardScene('now',
 
 
 module.exports = {
-    createMainSceneController,
+    MainSceneController,
 };

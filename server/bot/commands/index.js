@@ -10,21 +10,11 @@ const help = async ({reply}) => {
     reply(response);
 };
 
-const now = async (ctx) => {
-    const {scene, db} = ctx;
+const now = async ({scene}) => scene.enter('now');
 
-    return scene.enter('now', {
-        context: {db},
-    });
-};
+const stat = async ({reply}) => reply('statistics');
 
-const stat = async ({reply}) => {
-    reply('statistics');
-};
-
-const setup = async ({reply}) => {
-    reply('light schedule');
-};
+const setup = async ({reply}) => reply('light schedule');
 
 
 module.exports = {
