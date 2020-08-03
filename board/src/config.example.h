@@ -2,7 +2,8 @@
 
 #define WIFI_SSID "wi-fi ssid"
 #define WIFI_PASS "wi-fi pass"
+#define CONTROLLER_ID "controller identifier"
 
 const String REQUEST_DOMAIN = "https://example.com";
-const String REQUEST_API_LOG = "/api/log";
-const String REQUEST_API_CONFIG = "/api/config";
+const String REQUEST_API_LOG = "/api/log/";
+const String REQUEST_API_CONFIG = "/api/config/";
