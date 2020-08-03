@@ -28,8 +28,9 @@ const setup = async ({reply}) => {
 
 
 module.exports = {
-    help, 
-    now, 
-    stat, 
+    help,
+    now,
+    stat,
     setup,
+    start: help,
 };
