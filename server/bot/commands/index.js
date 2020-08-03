@@ -1,5 +1,3 @@
-const { getContext } = require("../helpers");
-
 const help = async ({reply}) => {
     const response = 
     `Greetings. These are the things i can do:
@@ -13,7 +11,7 @@ const help = async ({reply}) => {
 };
 
 const now = async (ctx) => {
-const {scene,request,db} = ctx;
+    const {scene, db} = ctx;
 
     return scene.enter('now', {
         context: {db},
