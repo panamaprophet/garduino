@@ -1,11 +1,12 @@
 const {session, Stage, Telegraf} = require('telegraf');
-const {MainSceneController} = require('./controllers');
+const MainSceneController = require('./controllers/index');
+const SetupSceneController = require('./controllers/setup');
 const commands = require('./commands');
 
 
 const createBotInstance = (db, {token, webHookPath}) => {
     const bot = new Telegraf(token);
-    const stage = new Stage([MainSceneController]);
+    const stage = new Stage([MainSceneController, SetupSceneController]);
 
     bot.telegram.setWebhook(webHookPath);
     bot.context.db = db;
