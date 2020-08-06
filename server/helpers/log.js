@@ -1,4 +1,3 @@
-const {format} = require("date-fns");
 const {LOG_EVENT} = require("../constants");
 
 
@@ -10,9 +9,9 @@ const getLogEntry = ({event, payload = []}) => {
     }
 
     return {
-        timestamp: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
-        event: getLogEvent(event),
         payload,
+        date: new Date(),
+        event: getLogEvent(event),
     };
 };
 

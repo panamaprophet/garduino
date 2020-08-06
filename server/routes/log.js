@@ -1,7 +1,7 @@
 const express = require('express');
 const {getContext} = require('../helpers');
 const {getLogEntry} = require('../helpers/log');
-const {getLastUpdateEventLog, saveLog} = require('../resolvers/log');
+const {getLastUpdateEventLog, saveLog, getUpdateEventLogStat} = require('../resolvers/log');
 
 const router = express.Router();
 
@@ -9,6 +9,13 @@ const router = express.Router();
 router.get('/:controllerId', async (request, response) => {
     const {db, controllerId} = getContext(request);
     const result = await getLastUpdateEventLog(db, controllerId);
+
+    response.json(result);
+});
+
+router.get('/:controllerId/stat', async (request, response) => {
+    const {db, controllerId} = getContext(request);
+    const result = await getUpdateEventLogStat(db, controllerId);
 
     response.json(result);
 });
