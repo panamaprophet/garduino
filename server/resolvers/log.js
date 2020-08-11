@@ -71,7 +71,7 @@ const getUpdateEventLogStat = async (db, controllerId, date = null) => {
             },
         }, {
             $sort: {
-                date: -1,
+                date: 1,
             },
         },
     ]).toArray();

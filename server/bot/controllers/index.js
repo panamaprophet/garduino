@@ -45,9 +45,15 @@ const handleAction = async ctx => {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
     }
 
-    const result = await actionHandler(selectedAction, {db, controllerId});
+    const {text, image} = await actionHandler(selectedAction, {db, controllerId});
 
-    ctx.reply(result);
+    if (image) {
+        await ctx.replyWithPhoto({source: image});
+    }
+
+    if (text) {
+        await ctx.reply(text);
+    }
 
     return ctx.scene.leave();
 };
