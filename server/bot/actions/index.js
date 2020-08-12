@@ -1,10 +1,15 @@
 const {last} = require('ramda');
+const {format, subDays, subWeeks} = require('date-fns');
 const {getSensorDataByKey} = require('../../helpers');
 const {getLastUpdateEventLog, getUpdateEventLogStat} = require('../../resolvers/log');
 const {createSvgChart, svg2png} = require('../../helpers/chart');
-const { format } = require('date-fns');
 
 
+const ACTION_NOW = 'main/now';
+
+const ACTION_STAT_WEEK = 'main/stat/week';
+
+const ACTION_STAT_DAY = 'main/stat/day';
 
 /**
  * @typedef {Object} ActionResult
@@ -30,15 +35,15 @@ const getLastUpdateEventLogByControllerId = async ({db, controllerId}) => {
 /**
  * @returns {Promise<ActionResult>}
  */
-const getLastWeekStat = async ({db, controllerId}) => {
-    const data = await getUpdateEventLogStat(db, controllerId);
+const getStat = async ({db, controllerId}, dateFrom) => {
+    const data = await getUpdateEventLogStat(db, controllerId, dateFrom);
 
     const chartData = data.reduce((result, item, index) => {
         if (index % 2 === 0) {
             return result;
         }
 
-        result.date.push(item.date);
+        result.date.push(format(item.date, 'dd.MM.yy HH:mm'));
         result.temperature.push(item.temperature);
         result.humidity.push(item.humidity);
 
@@ -52,27 +57,25 @@ const getLastWeekStat = async ({db, controllerId}) => {
     const svgChart = createSvgChart(chartData);
     const pngChart = await svg2png(svgChart);
 
-    const dateFrom = format(new Date(chartData.date[0]), 'dd.MM.yy');
-    const dateTo = format(new Date(last(chartData.date)), 'dd.MM.yy');
-
     return {
         image: pngChart,
-        text: `${dateFrom} — ${dateTo}`,
+        text: `${chartData.date[0]} — ${last(chartData.date)}`,
     };
-}
+};
 
+const getDayStat = context => getStat(context, subDays(Date.now(), 1));
 
-const ACTION_NOW = 'main/now';
-
-const ACTION_STAT = 'main/stat';
+const getWeekStat = context => getStat(context, subWeeks(Date.now(), 1));
 
 
 const actionHandler = async (action, context) => {
     switch (action) {
         case ACTION_NOW:
             return await getLastUpdateEventLogByControllerId(context);
-        case ACTION_STAT:
-            return await getLastWeekStat(context);
+        case ACTION_STAT_WEEK:
+            return await getWeekStat(context);
+        case ACTION_STAT_DAY:
+            return await getDayStat(context);
         default:
             return 'action is not supported';
     };
@@ -81,6 +84,7 @@ const actionHandler = async (action, context) => {
 
 module.exports = {
     ACTION_NOW,
-    ACTION_STAT,
+    ACTION_STAT_WEEK,
+    ACTION_STAT_DAY,
     actionHandler,
 };

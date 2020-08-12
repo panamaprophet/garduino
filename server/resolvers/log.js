@@ -2,7 +2,7 @@ const {subWeeks} = require('date-fns');
 const {LOG_EVENT} = require('../constants');
 
 
-const getDefaultRange = () => subWeeks(Date.now(), 1);
+const getDefaultDateFrom = () => subWeeks(Date.now(), 1);
 
 
 const getLog = async (db, controllerId, conditions = {}) => {
@@ -26,14 +26,14 @@ const saveLog = async (db, controllerId, data) => {
     };
 };
 
-const getUpdateEventLogStat = async (db, controllerId, date = null) => {
+const getUpdateEventLogStat = async (db, controllerId, dateFrom = null) => {
     const result = await db.collection('log').aggregate([
         {
             $match: {
                 controllerId,
                 event: LOG_EVENT.UPDATE,
                 date: {
-                    $gte: date || getDefaultRange(),
+                    $gte: dateFrom || getDefaultDateFrom(),
                 },
             },
         }, {

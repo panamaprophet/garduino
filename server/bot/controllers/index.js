@@ -2,7 +2,8 @@ const WizardScene = require('telegraf/scenes/wizard');
 const {
     actionHandler,
     ACTION_NOW,
-    ACTION_STAT,
+    ACTION_STAT_DAY,
+    ACTION_STAT_WEEK,
 } = require('../actions');
 const {getInlineKeyboard} = require('../helpers');
 const {getControllerIds} = require('../../resolvers/controller');
@@ -31,7 +32,7 @@ const selectAction = async ctx => {
 
     ctx.session.controllerId = selectedControllerId;
 
-    ctx.reply('Select an action', getInlineKeyboard([ACTION_NOW, ACTION_STAT]));
+    ctx.reply('Select an action', getInlineKeyboard([ACTION_NOW, ACTION_STAT_DAY, ACTION_STAT_WEEK]));
 
     return ctx.wizard.next();
 };
