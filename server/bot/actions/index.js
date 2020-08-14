@@ -1,6 +1,6 @@
 const {last} = require('ramda');
 const {format, subDays, subWeeks} = require('date-fns');
-const {getSensorDataByKey} = require('../../helpers');
+const {getSensorDataByKey, processData} = require('../../helpers');
 const {getLastUpdateEventLog, getUpdateEventLogStat} = require('../../resolvers/log');
 const {createSvgChart, svg2png} = require('../../helpers/chart');
 
@@ -37,29 +37,23 @@ const getLastUpdateEventLogByControllerId = async ({db, controllerId}) => {
  */
 const getStat = async ({db, controllerId}, dateFrom) => {
     const data = await getUpdateEventLogStat(db, controllerId, dateFrom);
-
-    const chartData = data.reduce((result, item, index) => {
-        if (index % 2 === 0) {
-            return result;
-        }
-
-        result.date.push(format(item.date, 'dd.MM.yy HH:mm'));
-        result.temperature.push(item.temperature);
-        result.humidity.push(item.humidity);
-
-        return result;
-    }, {
-        date: [],
-        temperature: [],
-        humidity: [],
-    });
-
+    const {minHumidity, maxHumidity, minTemperature, maxTemperature, ...chartData} = processData(data);
     const svgChart = createSvgChart(chartData);
     const pngChart = await svg2png(svgChart);
 
+    const text = [
+        `${chartData.date[0]} — ${last(chartData.date)}`,
+        '',
+        `max humidity: ${maxHumidity.humidity}% on ${format(maxHumidity.date, 'dd.MM.yy HH:mm')}`,
+        `max temperature: ${maxTemperature.temperature}°C on ${format(maxTemperature.date, 'dd.MM.yy HH:mm')}`,
+        '',
+        `min humidity: ${minHumidity.humidity}% on ${format(minHumidity.date, 'dd.MM.yy HH:mm')}`,
+        `min temperature: ${minTemperature.temperature}°C on ${format(minTemperature.date, 'dd.MM.yy HH:mm')}`,
+    ].join('\n');
+
     return {
+        text,
         image: pngChart,
-        text: `${chartData.date[0]} — ${last(chartData.date)}`,
     };
 };
 

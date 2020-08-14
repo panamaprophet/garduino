@@ -1,3 +1,5 @@
+const {format} = require('date-fns');
+
 const getContext = request => ({
     db: request.app.locals.db,
     params: request.params,
@@ -27,6 +29,48 @@ const reduceItemsCountBy = (items, limit) => {
     return result;
 };
 
+
+const processData = data => {
+    const initData = {
+        date: [],
+        temperature: [],
+        humidity: [],
+        maxHumidity: data[0],
+        minHumidity: data[0],
+        minTemperature: data[0],
+        maxTemperature: data[0],
+    };
+
+    return data.reduce((result, item, index) => {
+        if (result.maxHumidity.humidity < item.humidity) {
+            result.maxHumidity = item;
+        }
+
+        if (result.minHumidity.humidity > item.humidity) {
+            result.minHumidity = item;
+        }
+
+        if (result.maxTemperature.temperature < item.temperature) {
+            result.maxTemperature = item;
+        }
+
+        if (result.minTemperature.temperature > item.temperature) {
+            result.minTemperature = item;
+        }
+
+        if (index % 2 === 0) {
+            return result;
+        }
+
+        result.date.push(format(item.date, 'dd.MM.yy HH:mm'));
+        result.temperature.push(item.temperature);
+        result.humidity.push(item.humidity);
+
+        return result;
+    }, initData);
+};
+
+
 // function distributedCopy(items, n) {
 //     const result = [items[0]];
 //     const totalItems = items.length - 2;
@@ -46,4 +90,5 @@ module.exports = {
     getSensorDataByKey,
     range,
     reduceItemsCountBy,
+    processData,
 };
