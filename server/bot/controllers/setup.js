@@ -1,8 +1,8 @@
 const WizardScene = require('telegraf/scenes/wizard');
 const {
-    actionHandler, 
-    ACTION_LIGHT_ONTIME, 
-    ACTION_FAN_ONTIME, 
+    actionHandler,
+    ACTION_LIGHT_ONTIME,
+    ACTION_FAN_ONTIME,
     ACTION_LIGHT_DURATION,
     ACTION_FAN_DURATION,
     ACTION_TEMPERATURE_THRESHOLD,
@@ -38,13 +38,17 @@ const selectAction = async ctx => {
 
     const currentSettings = await getConfig(db, selectedControllerId);
 
-    const text = `
-        Current config:
-
-        ${JSON.stringify(currentSettings)}
-
-        Select setting to modify:
-    `;
+    const text = [
+        'Light:',
+        `On time = ${currentSettings.light.onTime} UTC`,
+        `Duration = ${currentSettings.light.duration} ms`,
+        '',
+        'Fan:',
+        `On time = ${currentSettings.fan.onTime} UTC`,
+        `Duration = ${currentSettings.fan.duration} ms`,
+        '',
+        `Temperature threshold = ${currentSettings.temperatureThreshold}°C`,
+    ].join('\n');
 
     await ctx.reply(text, getInlineKeyboard([
         ACTION_LIGHT_ONTIME,
@@ -86,7 +90,7 @@ const handleAction = async ctx => {
 };
 
 
-module.exports = new WizardScene('setup', 
+module.exports = new WizardScene('setup',
     selectController,
     selectAction,
     collectValue,
