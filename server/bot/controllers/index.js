@@ -13,8 +13,9 @@ const SELECT_CONTROLLER_STEP_INDEX = 0;
 
 
 const selectController = async ctx => {
-    const {db} = ctx;
-    const controllerIds = await getControllerIds(db);
+    const {db, chat} = ctx;
+    const {id: chatId} = chat;
+    const controllerIds = await getControllerIds(db, {chatId});
 
     ctx.reply('Select a controller', getInlineKeyboard(controllerIds));
 
@@ -22,9 +23,10 @@ const selectController = async ctx => {
 };
 
 const selectAction = async ctx => {
-    const {db} = ctx;
+    const {db, chat} = ctx;
+    const {id: chatId} = chat;
     const selectedControllerId = ctx.update.callback_query.data;
-    const controllerIds = await getControllerIds(db);
+    const controllerIds = await getControllerIds(db, {chatId});
 
     if (!controllerIds.includes(selectedControllerId)) {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
@@ -38,7 +40,8 @@ const selectAction = async ctx => {
 };
 
 const handleAction = async ctx => {
-    const {db} = ctx;
+    const {db, chat} = ctx;
+    const {id: chatId} = chat;
     const selectedAction = ctx.update.callback_query.data;
     const {controllerId} = ctx.session;
 
@@ -46,7 +49,7 @@ const handleAction = async ctx => {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
     }
 
-    const {text, image} = await actionHandler(selectedAction, {db, controllerId});
+    const {text, image} = await actionHandler(selectedAction, {db, chatId, controllerId});
 
     if (image) {
         await ctx.replyWithPhoto({source: image});

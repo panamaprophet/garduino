@@ -22,6 +22,13 @@ const ACTION_STAT_DAY = 'main/stat/day';
  */
 const getLastUpdateEventLogByControllerId = async ({db, controllerId}) => {
     const eventData = await getLastUpdateEventLog(db, controllerId);
+
+    if (!eventData) {
+        return {
+            text: `No data for ${controllerId}`,
+        };
+    }
+
     const {payload} = eventData;
     const [humidity] = getSensorDataByKey(payload, 'humidity');
     const [temperature] = getSensorDataByKey(payload, 'temperature');
