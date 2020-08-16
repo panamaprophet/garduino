@@ -28,9 +28,23 @@ const flattenConfig = ({light, fan}) => ({
     msBeforeFanSwitch: fan.msBeforeSwitch,
 });
 
+const formatConfig = data => {
+    return [
+        'Light:',
+        `On time = ${data.light.onTime} UTC`,
+        `Duration = ${data.light.duration} ms`,
+        '',
+        'Fan:',
+        `On time = ${data.fan.onTime} UTC`,
+        `Duration = ${data.fan.duration} ms`,
+        '',
+        `Temperature threshold = ${data.temperatureThreshold}°C`,
+    ].join('\n');
+};
 
 module.exports = {
     getConfigEntity,
     flattenConfig,
+    formatConfig,
     extractConfig,
 };
