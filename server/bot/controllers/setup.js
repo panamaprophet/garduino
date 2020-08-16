@@ -10,6 +10,7 @@ const {
 const {getInlineKeyboard} = require('../helpers');
 const {getConfig} = require('../../resolvers/config');
 const {getControllerIds} = require('../../resolvers/controller');
+const {formatConfig} = require('../../helpers/config');
 
 
 const SELECT_CONTROLLER_STEP_INDEX = 0;
@@ -17,8 +18,9 @@ const SELECT_ACTION_STEP_INDEX = 1;
 
 
 const selectController = async ctx => {
-    const {db} = ctx;
-    const controllerIds = await getControllerIds(db);
+    const {db, chat} = ctx;
+    const {id: chatId} = chat;
+    const controllerIds = await getControllerIds(db, {chatId});
 
     ctx.reply('Select a controller', getInlineKeyboard(controllerIds));
 
@@ -26,9 +28,11 @@ const selectController = async ctx => {
 };
 
 const selectAction = async ctx => {
-    const {db} = ctx;
+    const {db, chat} = ctx;
+    const {id: chatId} = chat;
     const selectedControllerId = ctx.update.callback_query.data;
-    const controllerIds = await getControllerIds(db);
+
+    const controllerIds = await getControllerIds(db, {chatId});
 
     if (!controllerIds.includes(selectedControllerId)) {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
@@ -37,18 +41,7 @@ const selectAction = async ctx => {
     ctx.session.controllerId = selectedControllerId;
 
     const currentSettings = await getConfig(db, selectedControllerId);
-
-    const text = [
-        'Light:',
-        `On time = ${currentSettings.light.onTime} UTC`,
-        `Duration = ${currentSettings.light.duration} ms`,
-        '',
-        'Fan:',
-        `On time = ${currentSettings.fan.onTime} UTC`,
-        `Duration = ${currentSettings.fan.duration} ms`,
-        '',
-        `Temperature threshold = ${currentSettings.temperatureThreshold}°C`,
-    ].join('\n');
+    const text = formatConfig(currentSettings);
 
     await ctx.reply(text, getInlineKeyboard([
         ACTION_LIGHT_ONTIME,
@@ -70,7 +63,8 @@ const collectValue = async ctx => {
 };
 
 const handleAction = async ctx => {
-    const {db} = ctx;
+    const {db, chat} = ctx;
+    const {id: chatId} = chat;
     const {controllerId, action} = ctx.session;
     const {text: value} = ctx.message;
 
@@ -82,7 +76,7 @@ const handleAction = async ctx => {
         return ctx.wizard.selectStep(SELECT_ACTION_STEP_INDEX);
     }
 
-    const result = await actionHandler(action, {db, controllerId, value});
+    const result = await actionHandler(action, {db, chatId, controllerId, value});
 
     ctx.reply(result);
 
