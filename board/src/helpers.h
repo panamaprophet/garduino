@@ -32,6 +32,6 @@ String getErrorEventPayload(String error);
 
 String getUpdateEventPayload(float temperature, float humidity);
 
-String getSwitchEventPayload(bool isLightOn, bool isFanOn);
+String getSwitchEventPayload(bool isLightOn, bool isFanOn, bool isEmergencyOff);
 
 String getRunEventPayload(bool isLightOn, bool isFanOn);

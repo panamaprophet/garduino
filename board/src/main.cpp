@@ -12,6 +12,7 @@
 
 #define DAY_MS 86400000
 #define DEFAULT_DURATION_MS (DAY_MS / 2)
+#define DEFAULT_TEMPERATURE_THRESHOLD 30
 #define UPDATE_INTERVAL_MS 10 * 60 * 1000
 #define SCHEDULE_CHECK_INTERVAL_MS 1000
 
@@ -24,10 +25,12 @@ Event requestedEvent = Event::CONFIG;
 
 bool isLightOn = false;
 bool isFanOn = false;
+bool isEmergencyOff = false;
 long msBeforeLightSwitch = DEFAULT_DURATION_MS;
 long msBeforeFanSwitch = DEFAULT_DURATION_MS;
 unsigned long lightCycleDurationMs = DEFAULT_DURATION_MS;
 unsigned long fanCycleDurationMs = DEFAULT_DURATION_MS;
+float temperatureThreshold = DEFAULT_TEMPERATURE_THRESHOLD;
 
 String lastError;
 
@@ -149,6 +152,7 @@ void loop() {
             msBeforeFanSwitch = json["msBeforeFanSwitch"].as<long>();
             lightCycleDurationMs = json["lightCycleDurationMs"].as<long>();
             fanCycleDurationMs = json["fanCycleDurationMs"].as<long>();
+            temperatureThreshold = json["temperatureThreshold"].as<float>();
 
             Serial.println("[Event::CONFIG] config received");
 
@@ -158,6 +162,7 @@ void loop() {
             Serial.println("msBeforeFanSwitch = " + String(msBeforeFanSwitch));
             Serial.println("lightCycleDurationMs = " + String(lightCycleDurationMs));
             Serial.println("fanCycleDurationMs = " + String(fanCycleDurationMs));
+            Serial.println("temperatureThreshold = " + String(temperatureThreshold));
 
             requestedEvent = Event::RUN;
         }
@@ -184,9 +189,14 @@ void loop() {
 
         updateRelays();
 
-        String payload = getSwitchEventPayload(isLightOn, isFanOn);
+        String payload = getSwitchEventPayload(isLightOn, isFanOn, isEmergencyOff);
         String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
         Serial.println("[Event::SWITCH] response: " + response);
+
+        // reset emergency flag after switching light back
+        if (isEmergencyOff && isLightOn) {
+            isEmergencyOff = false;
+        }
 
         requestedEvent = requestedEvent == Event::SWITCH ? Event::NONE : requestedEvent;
     }
@@ -196,6 +206,17 @@ void loop() {
         String payload = getUpdateEventPayload(temperature, humidity);
         String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
         Serial.println("[Event::UPDATE] response: " + response);
+
+        if (temperature >= temperatureThreshold) {
+            isEmergencyOff = true;
+            isLightOn = false;
+            requestedEvent = Event::SWITCH;
+        }
+
+        if ((temperature < temperatureThreshold) && isEmergencyOff) {
+            isLightOn = true;
+            requestedEvent = Event::SWITCH;
+        }
 
         requestedEvent = requestedEvent == Event::UPDATE ? Event::NONE : requestedEvent;
     }
