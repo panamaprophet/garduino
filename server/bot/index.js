@@ -1,7 +1,7 @@
 const {session, Stage, Telegraf} = require('telegraf');
-const MainSceneController = require('./controllers/index');
+const MainSceneController = require('./controllers/now');
 const SetupSceneController = require('./controllers/setup');
-const ControllerManagerController = require('./controllers/controllerManager');
+const ControllerManagerController = require('./controllers/manager');
 const commands = require('./commands');
 
 

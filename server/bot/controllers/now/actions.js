@@ -1,8 +1,8 @@
 const {last} = require('ramda');
 const {format, subDays, subWeeks} = require('date-fns');
-const {getSensorDataByKey, processData} = require('../../helpers');
-const {getLastUpdateEventLog, getUpdateEventLogStat} = require('../../resolvers/log');
-const {createSvgChart, svg2png} = require('../../helpers/chart');
+const {getSensorDataByKey, processData} = require('../../../helpers');
+const {getLastUpdateEventLog, getUpdateEventLogStat} = require('../../../resolvers/log');
+const {createSvgChart, svg2png} = require('../../../helpers/chart');
 
 
 const ACTION_NOW = 'main/now';

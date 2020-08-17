@@ -1,5 +1,5 @@
-const {setConfig, getConfig} = require('../../resolvers/config');
 const {mergeDeepRight} = require('ramda');
+const {setConfig, getConfig} = require('../../../resolvers/config');
 
 
 const ACTION_LIGHT_ONTIME = 'setup/light/ontime';

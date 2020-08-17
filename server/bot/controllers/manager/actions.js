@@ -1,5 +1,5 @@
-const {addController, removeController} = require('../../resolvers/controller');
-const {DEFAULT_CONFIG} = require('../../constants');
+const {addController, removeController} = require('../../../resolvers/controller');
+const {DEFAULT_CONFIG} = require('../../../constants');
 
 
 const ACTION_CONTROLLER_ADD = 'setup/controller/add';

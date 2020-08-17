@@ -10,8 +10,7 @@ const setup = async ({scene}) => scene.enter('setup');
 
 const manage = async ({scene}) => scene.enter('controllerManager');
 
-const start = async ({db, chat, scene, reply}) => {
-    const {id: chatId} = chat;
+const start = async ({db, chat: {id: chatId}, scene, reply}) => {
     const controllerIds = await getControllerIds(db, {chatId});
 
     if (controllerIds.length > 0) {

@@ -3,9 +3,12 @@
  */
 const getControllerIds = async (db, options = {}) => {
     const result = await db.collection('config').find(options).project({controllerId: 1}).toArray();
-    const controllerIds = result.map(({controllerId}) => controllerId);
 
-    return controllerIds;
+    if (!result) {
+        return [];
+    }
+
+    return result.map(({controllerId}) => controllerId);
 };
 
 const addController = async (db, controllerId, chatId, configuration) => {
