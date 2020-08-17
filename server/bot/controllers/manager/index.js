@@ -1,11 +1,11 @@
 const WizardScene = require('telegraf/scenes/wizard');
+const {getInlineKeyboard} = require('../../helpers');
+const {getControllerIds} = require('../../../resolvers/controller');
 const {
     actionHandler,
     ACTION_CONTROLLER_ADD,
     ACTION_CONTROLLER_REMOVE,
-} = require('../actions/controllerManager');
-const {getInlineKeyboard} = require('../helpers');
-const {getControllerIds} = require('../../resolvers/controller');
+} = require('./actions');
 
 
 const SELECT_ACTION_STEP_INDEX = 0;
@@ -34,8 +34,7 @@ const collectValue = async ctx => {
     }
 
     if (selectedAction === ACTION_CONTROLLER_REMOVE) {
-        const {db, chat} = ctx;
-        const {id: chatId} = chat;
+        const {db, chat: {id: chatId}} = ctx;
         const controllerIds = await getControllerIds(db, {chatId});
 
         await ctx.reply('Select controller to remove', getInlineKeyboard(controllerIds));
@@ -45,8 +44,7 @@ const collectValue = async ctx => {
 };
 
 const handleAction = async ctx => {
-    const {db, chat} = ctx;
-    const {id: chatId} = chat;
+    const {db, chat: {id: chatId}} = ctx;
     const {action} = ctx.session;
     const controllerId = (action === ACTION_CONTROLLER_ADD)
         ? ctx.message.text

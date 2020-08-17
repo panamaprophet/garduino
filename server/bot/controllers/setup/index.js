@@ -1,4 +1,9 @@
 const WizardScene = require('telegraf/scenes/wizard');
+const {getInlineKeyboard} = require('../../helpers');
+const {getConfig} = require('../../../resolvers/config');
+const {getControllerIds} = require('../../../resolvers/controller');
+const {formatConfig} = require('../../../helpers/config');
+const {selectController} = require('../common');
 const {
     actionHandler,
     ACTION_LIGHT_ONTIME,
@@ -6,30 +11,16 @@ const {
     ACTION_LIGHT_DURATION,
     ACTION_FAN_DURATION,
     ACTION_TEMPERATURE_THRESHOLD,
-} = require('../actions/setup');
-const {getInlineKeyboard} = require('../helpers');
-const {getConfig} = require('../../resolvers/config');
-const {getControllerIds} = require('../../resolvers/controller');
-const {formatConfig} = require('../../helpers/config');
+} = require('./actions');
 
 
 const SELECT_CONTROLLER_STEP_INDEX = 0;
+
 const SELECT_ACTION_STEP_INDEX = 1;
 
 
-const selectController = async ctx => {
-    const {db, chat} = ctx;
-    const {id: chatId} = chat;
-    const controllerIds = await getControllerIds(db, {chatId});
-
-    ctx.reply('Select a controller', getInlineKeyboard(controllerIds));
-
-    return ctx.wizard.next();
-};
-
 const selectAction = async ctx => {
-    const {db, chat} = ctx;
-    const {id: chatId} = chat;
+    const {db, chat: {id: chatId}} = ctx;
     const selectedControllerId = ctx.update.callback_query.data;
 
     const controllerIds = await getControllerIds(db, {chatId});
@@ -56,15 +47,13 @@ const selectAction = async ctx => {
 
 const collectValue = async ctx => {
     ctx.session.action = ctx.update.callback_query.data;
-
     await ctx.reply('Provide new value');
 
     return ctx.wizard.next();
 };
 
 const handleAction = async ctx => {
-    const {db, chat} = ctx;
-    const {id: chatId} = chat;
+    const {db, chat: {id: chatId}} = ctx;
     const {controllerId, action} = ctx.session;
     const {text: value} = ctx.message;
 
