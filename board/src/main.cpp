@@ -6,13 +6,11 @@
 #include <DHT.h>
 #include <Ticker.h>
 #include <config.h>
+#include <stateManager.h>
 #include <helpers.h>
 
 #define CONFIG_FIELDS_COUNT 20
 
-#define DAY_MS 86400000
-#define DEFAULT_DURATION_MS (DAY_MS / 2)
-#define DEFAULT_TEMPERATURE_THRESHOLD 30
 #define UPDATE_INTERVAL_MS 10 * 60 * 1000
 #define SCHEDULE_CHECK_INTERVAL_MS 1000
 
@@ -22,20 +20,7 @@
 
 
 Event requestedEvent = Event::CONFIG;
-
-bool isLightOn = false;
-bool isFanOn = false;
-bool isEmergencyOff = false;
-long msBeforeLightSwitch = DEFAULT_DURATION_MS;
-long msBeforeFanSwitch = DEFAULT_DURATION_MS;
-unsigned long lightCycleDurationMs = DEFAULT_DURATION_MS;
-unsigned long fanCycleDurationMs = DEFAULT_DURATION_MS;
-float temperatureThreshold = DEFAULT_TEMPERATURE_THRESHOLD;
-
-String lastError;
-
-float temperature;
-float humidity;
+StateManager stateManager;
 
 Ticker ticker;
 Ticker scheduleTicker;
@@ -67,19 +52,12 @@ String sendRequest(String url, RequestType type = GET, String payload = "") {
     return response;
 }
 
+
 void handleSchedule() {
-    msBeforeLightSwitch -= SCHEDULE_CHECK_INTERVAL_MS;
-    msBeforeFanSwitch -= SCHEDULE_CHECK_INTERVAL_MS;
+    const bool isLightSwitched = stateManager.updateLightCounter(-1 * SCHEDULE_CHECK_INTERVAL_MS);
+    const bool isFanSwitched = stateManager.updateFanCounter(-1 * SCHEDULE_CHECK_INTERVAL_MS);
 
-    if (msBeforeFanSwitch <= 0) {
-        isFanOn = !isFanOn;
-        msBeforeFanSwitch = isFanOn ? fanCycleDurationMs : DAY_MS - fanCycleDurationMs;
-        requestedEvent = Event::SWITCH;
-    }
-
-    if (msBeforeLightSwitch <= 0) {
-        isLightOn = !isLightOn;
-        msBeforeLightSwitch = isLightOn ? lightCycleDurationMs : DAY_MS - lightCycleDurationMs;
+    if (isLightSwitched || isFanSwitched) {
         requestedEvent = Event::SWITCH;
     }
 }
@@ -89,8 +67,8 @@ void updateRelay(int pin, bool isOn) {
 }
 
 void updateRelays() {
-    updateRelay(RELAY_LIGHT_PIN, isLightOn);
-    updateRelay(RELAY_FAN_PIN, isFanOn);
+    updateRelay(RELAY_LIGHT_PIN, stateManager.isLightOn());
+    updateRelay(RELAY_FAN_PIN, stateManager.isFanOn());
 }
 
 
@@ -117,13 +95,12 @@ void setup() {
     });
 
     dht.onData([](float h, float t) {
-        temperature = t;
-        humidity = h;
+        stateManager.setCurrentData(h, t);
         requestedEvent = Event::UPDATE;
     });
 
     dht.onError([](uint8_t e) {
-        lastError = dht.getError();
+        stateManager.setLastError(dht.getError());
         requestedEvent = Event::ERROR;
     });
 
@@ -141,28 +118,22 @@ void loop() {
         DeserializationError error = deserializeJson(json, response);
 
         if (error) {
-            lastError = error.c_str();
+            stateManager.setLastError(error.c_str());
             requestedEvent = Event::ERROR;
         }
 
         if (!error) {
-            isLightOn = json["isLightOn"];
-            isFanOn = json["isFanOn"];
-            msBeforeLightSwitch = json["msBeforeLightSwitch"].as<long>();
-            msBeforeFanSwitch = json["msBeforeFanSwitch"].as<long>();
-            lightCycleDurationMs = json["lightCycleDurationMs"].as<long>();
-            fanCycleDurationMs = json["fanCycleDurationMs"].as<long>();
-            temperatureThreshold = json["temperatureThreshold"].as<float>();
+            State state;
 
-            Serial.println("[Event::CONFIG] config received");
+            state.isLightOn = json["isLightOn"];
+            state.isFanOn = json["isFanOn"];
+            state.msBeforeLightSwitch = json["msBeforeLightSwitch"].as<long>();
+            state.msBeforeFanSwitch = json["msBeforeFanSwitch"].as<long>();
+            state.lightCycleDurationMs = json["lightCycleDurationMs"].as<long>();
+            state.fanCycleDurationMs = json["fanCycleDurationMs"].as<long>();
+            state.temperatureThreshold = json["temperatureThreshold"].as<float>();
 
-            Serial.println("isLightOn = " + String(isLightOn));
-            Serial.println("isFanOn = " + String(isFanOn));
-            Serial.println("msBeforeLightSwitch = " + String(msBeforeLightSwitch));
-            Serial.println("msBeforeFanSwitch = " + String(msBeforeFanSwitch));
-            Serial.println("lightCycleDurationMs = " + String(lightCycleDurationMs));
-            Serial.println("fanCycleDurationMs = " + String(fanCycleDurationMs));
-            Serial.println("temperatureThreshold = " + String(temperatureThreshold));
+            stateManager.setState(state);
 
             requestedEvent = Event::RUN;
         }
@@ -171,61 +142,44 @@ void loop() {
     }
 
     if (requestedEvent == Event::RUN) {
-        Serial.println("[Event::RUN] requested");
-
         updateRelays();
 
         scheduleTicker.attach_ms(SCHEDULE_CHECK_INTERVAL_MS, handleSchedule);
 
-        String payload = getRunEventPayload(isLightOn, isFanOn);
+        String payload = getRunEventPayload(stateManager.isLightOn(), stateManager.isFanOn());
         String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
-        Serial.println("[Event::RUN] response: " + response);
 
         requestedEvent = requestedEvent == Event::RUN ? Event::NONE : requestedEvent;
     }
 
-    if (requestedEvent == Event::SWITCH) {
-        Serial.println("[Event::SWITCH] requested");
-
+    if (requestedEvent == Event::EMERGENCY_SWITCH) {
         updateRelays();
 
-        String payload = getSwitchEventPayload(isLightOn, isFanOn, isEmergencyOff);
+        String payload = getSwitchEventPayload(stateManager.isLightOn(), stateManager.isFanOn(), stateManager.isEmergencySwitchOff());
         String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
-        Serial.println("[Event::SWITCH] response: " + response);
 
-        // reset emergency flag after switching light back
-        if (isEmergencyOff && isLightOn) {
-            isEmergencyOff = false;
-        }
+        requestedEvent = requestedEvent == Event::EMERGENCY_SWITCH ? Event::NONE : requestedEvent;
+    }
+
+    if (requestedEvent == Event::SWITCH) {
+        updateRelays();
+
+        String payload = getSwitchEventPayload(stateManager.isLightOn(), stateManager.isFanOn(), stateManager.isEmergencySwitchOff());
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
 
         requestedEvent = requestedEvent == Event::SWITCH ? Event::NONE : requestedEvent;
     }
 
     if (requestedEvent == Event::UPDATE) {
-        Serial.println("[Event::UPDATE] requested");
-        String payload = getUpdateEventPayload(temperature, humidity);
+        String payload = getUpdateEventPayload(stateManager.getTemperature(), stateManager.getHumidity());
         String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
-        Serial.println("[Event::UPDATE] response: " + response);
-
-        if (temperature >= temperatureThreshold) {
-            isEmergencyOff = true;
-            isLightOn = false;
-            requestedEvent = Event::SWITCH;
-        }
-
-        if ((temperature < temperatureThreshold) && isEmergencyOff) {
-            isLightOn = true;
-            requestedEvent = Event::SWITCH;
-        }
 
         requestedEvent = requestedEvent == Event::UPDATE ? Event::NONE : requestedEvent;
     }
 
     if (requestedEvent == Event::ERROR) {
-        Serial.println("[Event::ERROR] requested");
-        String payload = getErrorEventPayload(lastError);
+        String payload = getErrorEventPayload(stateManager.getLastError());
         String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
-        Serial.println("[Event::ERROR] response: " + response);
 
         requestedEvent = requestedEvent == Event::ERROR ? Event::NONE : requestedEvent;
     }
