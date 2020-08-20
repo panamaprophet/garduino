@@ -1,12 +1,17 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <EEPROM.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <ESP8266WebServer.h>
 #include <WiFiClientSecure.h>
+#include <DNSServer.h>
 #include <DHT.h>
 #include <Ticker.h>
+
 #include <config.h>
 #include <helpers.h>
+#include <setupMode.h>
 
 #define CONFIG_FIELDS_COUNT 20
 
@@ -20,6 +25,8 @@
 #define RELAY_FAN_PIN 12
 #define DHT_PIN 4
 
+const IPAddress CONFIGURATION_MODE_IP(192, 168, 4, 20);
+const char* CONFIGURATION_MODE_SSID = "CONFIGURATION_MODE";
 
 Event requestedEvent = Event::CONFIG;
 
@@ -37,6 +44,8 @@ Ticker scheduleTicker;
 WiFiClientSecure client;
 HTTPClient http;
 DHT11 dht;
+DNSServer dnsServer;
+ESP8266WebServer webServer(80);
 
 
 String sendRequest(String url, RequestType type = GET, String payload = "") {
@@ -112,8 +121,17 @@ void updateRelays() {
     updateRelay(RELAY_FAN_PIN, fan.isOn);
 }
 
+int connectionRetryCount = 10;
+
+enum ControllerMode {
+    RUNNING,
+    SETUP,
+};
+
+ControllerMode mode = ControllerMode::RUNNING;
 
 void setup() {
+    EEPROM.begin(512);
     Serial.begin(115200);
     dht.setPin(DHT_PIN);
     pinMode(RELAY_LIGHT_PIN, OUTPUT);
@@ -125,6 +143,30 @@ void setup() {
     while (WiFi.status() != WL_CONNECTED) {
         Serial.print(".");
         delay(1000);
+
+        connectionRetryCount--;
+
+        if (connectionRetryCount == 0) {
+            break;
+        }
+    }
+
+    if (!WiFi.status() != WL_CONNECTED) {
+        Serial.println("Switching to configuration mode");
+
+        mode = ControllerMode::SETUP;
+
+        WiFi.mode(WIFI_AP);
+        WiFi.softAPConfig(CONFIGURATION_MODE_IP, CONFIGURATION_MODE_IP, IPAddress(255, 255, 255, 0));
+        WiFi.softAP(CONFIGURATION_MODE_SSID);
+
+        dnsServer.start(53, "*", CONFIGURATION_MODE_IP);
+
+        setupWebserver(webServer);
+
+        webServer.begin();
+
+        return;
     }
 
     Serial.println();
@@ -150,6 +192,14 @@ void setup() {
 }
 
 void loop() {
+    if (mode == ControllerMode::SETUP) {
+        dnsServer.processNextRequest();
+        webServer.handleClient();
+
+        return;
+    }
+
+
     if (requestedEvent == Event::CONFIG) {
         Serial.println("[Event::CONFIG] requested");
 
