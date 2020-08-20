@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+
 String getErrorEventPayload(String error) {
     return "{\"event\":\"ERROR\",\"payload\":[{\"error\": \"" + error + "\"}]}";
 }
