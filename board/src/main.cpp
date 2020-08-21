@@ -3,10 +3,16 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
+#include <ESP8266WebServer.h>
+#include <DNSServer.h>
 #include <DHT.h>
 #include <Ticker.h>
+
 #include <config.h>
 #include <helpers.h>
+#include <ConfigurationManager.h>
+#include <ConfigurationServer.h>
+
 
 #define CONFIG_FIELDS_COUNT 20
 
@@ -21,7 +27,13 @@
 #define DHT_PIN 4
 
 
+const IPAddress CONFIGURATION_MODE_IP(192, 168, 4, 20);
+const char* CONFIGURATION_MODE_SSID = "CONFIGURATION_MODE";
+
+
 Event requestedEvent = Event::CONFIG;
+ControllerMode controllerMode = ControllerMode::RUNNING;
+ControllerConfigurationManager configManager;
 
 ModuleConfig light;
 ModuleConfig fan;
@@ -37,6 +49,8 @@ Ticker scheduleTicker;
 WiFiClientSecure client;
 HTTPClient http;
 DHT11 dht;
+DNSServer dnsServer;
+ESP8266WebServer webServer(80);
 
 
 String sendRequest(String url, RequestType type = GET, String payload = "") {
@@ -119,8 +133,45 @@ void setup() {
     pinMode(RELAY_LIGHT_PIN, OUTPUT);
     pinMode(RELAY_FAN_PIN, OUTPUT);
 
-    WiFi.hostname(CONTROLLER_ID);
-    WiFi.begin(WIFI_SSID, WIFI_PASS);
+    if (!configManager.isConfigured()) {
+        Serial.println("No configuration was found. Switching to setup mode");
+
+        webServer.on("/", HTTP_GET, []() {
+            String ssid = configManager.getSSID();
+            String password = configManager.getPassword();
+            String controllerId = configManager.getControllerId();
+
+            webServer.send(200, "text/html", handleRoot(ssid, password, controllerId));
+        });
+
+        webServer.on("/submit", HTTP_POST, []() {
+            String ssid = webServer.arg("ssid");
+            String password = webServer.arg("password");
+            String controllerId = webServer.arg("controllerId");
+
+            configManager.set(ssid, password, controllerId);
+
+            webServer.send(200, "text/html", handleSubmit());
+        });
+
+        WiFi.mode(WIFI_AP);
+        WiFi.softAPConfig(CONFIGURATION_MODE_IP, CONFIGURATION_MODE_IP, IPAddress(255, 255, 255, 0));
+        WiFi.softAP(CONFIGURATION_MODE_SSID);
+
+        dnsServer.start(53, "*", CONFIGURATION_MODE_IP);
+        webServer.begin();
+
+        controllerMode = ControllerMode::SETUP;
+
+        return;
+    }
+
+    WiFi.mode(WIFI_STA);
+    WiFi.hostname(configManager.getControllerId());
+    WiFi.begin(
+        configManager.getSSID(),
+        configManager.getPassword()
+    );
 
     while (WiFi.status() != WL_CONNECTED) {
         Serial.print(".");
@@ -150,11 +201,18 @@ void setup() {
 }
 
 void loop() {
+    if (controllerMode == ControllerMode::SETUP) {
+        dnsServer.processNextRequest();
+        webServer.handleClient();
+
+        return;
+    }
+
     if (requestedEvent == Event::CONFIG) {
         Serial.println("[Event::CONFIG] requested");
 
         const int capacity = JSON_OBJECT_SIZE(CONFIG_FIELDS_COUNT);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_CONFIG + CONTROLLER_ID, RequestType::GET);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_CONFIG + configManager.getControllerId(), RequestType::GET);
 
         DynamicJsonDocument json(capacity);
         DeserializationError error = deserializeJson(json, response);
@@ -199,7 +257,7 @@ void loop() {
         scheduleTicker.attach_ms(SCHEDULE_CHECK_INTERVAL_MS, handleSchedule);
 
         String payload = getRunEventPayload(light.isOn, fan.isOn);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + configManager.getControllerId(), RequestType::POST, payload);
         Serial.println("[Event::RUN] response: " + response);
 
         requestedEvent = requestedEvent == Event::RUN ? Event::NONE : requestedEvent;
@@ -211,7 +269,7 @@ void loop() {
         updateRelays();
 
         String payload = getSwitchEventPayload(light.isOn, fan.isOn, light.isEmergencyOff);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + configManager.getControllerId(), RequestType::POST, payload);
         Serial.println("[Event::SWITCH] response: " + response);
 
         // reset emergency flag after switching light back
@@ -228,7 +286,7 @@ void loop() {
         updateRelays();
 
         String payload = getSwitchEventPayload(light.isOn, fan.isOn, light.isEmergencyOff);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + configManager.getControllerId(), RequestType::POST, payload);
         Serial.println("[Event::SWITCH] response: " + response);
 
         requestedEvent = requestedEvent == Event::SWITCH ? Event::NONE : requestedEvent;
@@ -237,7 +295,7 @@ void loop() {
     if (requestedEvent == Event::UPDATE) {
         Serial.println("[Event::UPDATE] requested");
         String payload = getUpdateEventPayload(temperature, humidity);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + configManager.getControllerId(), RequestType::POST, payload);
         Serial.println("[Event::UPDATE] response: " + response);
 
         if (temperature >= temperatureThreshold) {
@@ -257,7 +315,7 @@ void loop() {
     if (requestedEvent == Event::ERROR) {
         Serial.println("[Event::ERROR] requested");
         String payload = getErrorEventPayload(lastError);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + CONTROLLER_ID, RequestType::POST, payload);
+        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + configManager.getControllerId(), RequestType::POST, payload);
         Serial.println("[Event::ERROR] response: " + response);
 
         requestedEvent = requestedEvent == Event::ERROR ? Event::NONE : requestedEvent;
