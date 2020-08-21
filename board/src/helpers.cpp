@@ -22,3 +22,7 @@ String getRunEventPayload(bool isLightOn, bool isFanOn) {
     return "{\"event\":\"RUN\",\"payload\":[{\"key\":\"isLightOn\",\"value\":\"" +
         String(isLightOn) + "\"},{\"key\":\"isFanOn\",\"value\":\"" + String(isFanOn) + "\"}]}";
 }
+
+bool isEmpty(String str) {
+    return str.length() == 0;
+}
