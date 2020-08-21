@@ -19,7 +19,8 @@ const getConfigEntity = ({duration, onTime: onTimeString}) => {
 // @todo: add validation
 const extractConfig = data => identity(data);
 
-const flattenConfig = ({light, fan}) => ({
+const flattenConfig = ({light, fan, temperatureThreshold}) => ({
+    temperatureThreshold,
     isLightOn: light.isOn,
     lightCycleDurationMs: light.duration,
     msBeforeLightSwitch: light.msBeforeSwitch,
