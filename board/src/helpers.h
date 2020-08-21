@@ -1,3 +1,4 @@
+#pragma once
 #include <Arduino.h>
 
 enum Event {
@@ -15,6 +16,11 @@ enum RequestType {
     POST,
 };
 
+enum ControllerMode {
+    RUNNING,
+    SETUP,
+};
+
 struct ModuleConfig {
     bool isOn;
     bool isEmergencyOff;
@@ -30,3 +36,5 @@ String getUpdateEventPayload(float temperature, float humidity);
 String getSwitchEventPayload(bool isLightOn, bool isFanOn, bool isEmergencyOff);
 
 String getRunEventPayload(bool isLightOn, bool isFanOn);
+
+bool isEmpty(String str);
