@@ -9,3 +9,4 @@ server/config.js
 board/build
 board/libdeps
 board/src/config.h
+dist
