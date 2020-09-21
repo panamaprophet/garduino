@@ -4,7 +4,6 @@ const {getControllerIds} = require('../../../resolvers/controller');
 const {selectController} = require('../common');
 const {
     actionHandler,
-    ACTION_NOW,
     ACTION_STAT_DAY,
     ACTION_STAT_WEEK,
 } = require('./actions');
@@ -24,7 +23,7 @@ const selectAction = async ctx => {
 
     ctx.session.controllerId = selectedControllerId;
 
-    ctx.reply('Select an action', getInlineKeyboard([ACTION_NOW, ACTION_STAT_DAY, ACTION_STAT_WEEK]));
+    ctx.reply('Select an action', getInlineKeyboard([ACTION_STAT_DAY, ACTION_STAT_WEEK]));
 
     return ctx.wizard.next();
 };
@@ -52,7 +51,7 @@ const handleAction = async ctx => {
 };
 
 
-module.exports = new WizardScene('now',
+module.exports = new WizardScene('stat',
     selectController,
     selectAction,
     handleAction,
