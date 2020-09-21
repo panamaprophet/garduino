@@ -1,5 +1,6 @@
-const {subWeeks} = require('date-fns');
+const {subWeeks, format} = require('date-fns');
 const {LOG_EVENT} = require('../constants');
+const {getSensorDataByKey} = require('../helpers');
 
 
 const getDefaultDateFrom = () => subWeeks(Date.now(), 1);
@@ -16,6 +17,27 @@ const getLog = async (db, controllerId, conditions = {}) => {
 
 const getLastUpdateEventLog = (db, controllerId) => {
     return getLog(db, controllerId, {event: LOG_EVENT.UPDATE});
+};
+
+const getLastUpdateEventLogByControllerId = async ({db, controllerId}) => {
+    const eventData = await getLastUpdateEventLog(db, controllerId);
+
+    if (!eventData) {
+        return {
+            text: `No data for ${controllerId}`,
+        };
+    }
+
+    const {payload, date} = eventData;
+    const [humidity] = getSensorDataByKey(payload, 'humidity');
+    const [temperature] = getSensorDataByKey(payload, 'temperature');
+    const formattedDate = format(date, 'dd.MM.yy HH:mm');
+
+    const response = `#${controllerId} @ ${formattedDate}\n\r\n\rTemperature: ${temperature.value}°C\n\rHumidity: ${humidity.value}%`;
+
+    return {
+        text: response,
+    };
 };
 
 const saveLog = async (db, controllerId, data) => {
@@ -83,6 +105,7 @@ const getUpdateEventLogStat = async (db, controllerId, dateFrom = null) => {
 module.exports = {
     getLog,
     getLastUpdateEventLog,
+    getLastUpdateEventLogByControllerId,
     getUpdateEventLogStat,
     saveLog,
 };

@@ -1,11 +1,9 @@
 const {last} = require('ramda');
 const {format, subDays, subWeeks} = require('date-fns');
-const {getSensorDataByKey, processData} = require('../../../helpers');
-const {getLastUpdateEventLog, getUpdateEventLogStat} = require('../../../resolvers/log');
+const {processData} = require('../../../helpers');
+const {getUpdateEventLogStat} = require('../../../resolvers/log');
 const {createSvgChart, svg2png} = require('../../../helpers/chart');
 
-
-const ACTION_NOW = 'main/now';
 
 const ACTION_STAT_WEEK = 'main/stat/week';
 
@@ -16,28 +14,6 @@ const ACTION_STAT_DAY = 'main/stat/day';
  * @property {String} text
  * @property {Buffer} [image]
  */
-
-/**
- * @returns {Promise<ActionResult>}
- */
-const getLastUpdateEventLogByControllerId = async ({db, controllerId}) => {
-    const eventData = await getLastUpdateEventLog(db, controllerId);
-
-    if (!eventData) {
-        return {
-            text: `No data for ${controllerId}`,
-        };
-    }
-
-    const {payload} = eventData;
-    const [humidity] = getSensorDataByKey(payload, 'humidity');
-    const [temperature] = getSensorDataByKey(payload, 'temperature');
-    const response = `Humidity: ${humidity.value}%, Temperature: ${temperature.value}°C`;
-
-    return {
-        text: response,
-    };
-};
 
 /**
  * @returns {Promise<ActionResult>}
@@ -71,8 +47,6 @@ const getWeekStat = context => getStat(context, subWeeks(Date.now(), 1));
 
 const actionHandler = async (action, context) => {
     switch (action) {
-        case ACTION_NOW:
-            return await getLastUpdateEventLogByControllerId(context);
         case ACTION_STAT_WEEK:
             return await getWeekStat(context);
         case ACTION_STAT_DAY:
@@ -84,7 +58,6 @@ const actionHandler = async (action, context) => {
 
 
 module.exports = {
-    ACTION_NOW,
     ACTION_STAT_WEEK,
     ACTION_STAT_DAY,
     actionHandler,
