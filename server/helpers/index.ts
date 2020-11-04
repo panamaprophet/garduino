@@ -1,4 +1,3 @@
-import {format} from 'date-fns';
 import express from 'express';
 import mongodb from 'mongodb';
 
@@ -22,7 +21,7 @@ type SensorLogEntity = {
 }
 
 type SensorLogEntityAggregated = {
-    date: string[],
+    date: number[],
     temperature: number[],
     humidity: number[],
     maxHumidity: SensorLogEntity,
@@ -93,7 +92,7 @@ export const processData = (data: SensorLogEntity[]): SensorLogEntityAggregated 
             return result;
         }
 
-        result.date.push(format(item.date, 'dd.MM.yy HH:mm'));
+        result.date.push(item.date);
         result.temperature.push(item.temperature);
         result.humidity.push(item.humidity);
 

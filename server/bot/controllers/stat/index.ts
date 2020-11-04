@@ -1,23 +1,27 @@
-const WizardScene = require('telegraf/scenes/wizard');
-const {getInlineKeyboard} = require('../../helpers');
-const {getControllerIds} = require('../../../resolvers/controller');
-const {selectController} = require('../common');
-const {
+import {WizardScene} from 'telegraf/scenes/wizard/';
+
+import {getInlineKeyboard} from '../../helpers';
+import {getControllerIds} from '../../../resolvers/controller';
+import {selectController} from '../common';
+import {
     actionHandler,
     ACTION_STAT_DAY,
     ACTION_STAT_WEEK,
-} = require('./actions');
+} from './actions';
+
+import type { BotContext } from '../..';
 
 
 const SELECT_CONTROLLER_STEP_INDEX = 0;
 
 
-const selectAction = async ctx => {
-    const {db, chat: {id: chatId}} = ctx;
-    const selectedControllerId = ctx.update.callback_query.data;
+const selectAction = async (ctx: BotContext): Promise<any> => {
+    const {db, chat} = ctx;
+    const chatId = chat?.id;
+    const selectedControllerId = ctx?.update?.callback_query?.data;
     const controllerIds = await getControllerIds(db, {chatId});
 
-    if (!controllerIds.includes(selectedControllerId)) {
+    if (!selectedControllerId || !controllerIds.includes(selectedControllerId)) {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
     }
 
@@ -28,9 +32,10 @@ const selectAction = async ctx => {
     return ctx.wizard.next();
 };
 
-const handleAction = async ctx => {
-    const {db, chat: {id: chatId}} = ctx;
-    const selectedAction = ctx.update.callback_query.data;
+const handleAction = async (ctx: BotContext): Promise<any> => {
+    const {db, chat} = ctx;
+    const chatId = chat?.id;
+    const selectedAction = ctx?.update?.callback_query?.data;
     const {controllerId} = ctx.session;
 
     if (!controllerId) {
@@ -40,6 +45,8 @@ const handleAction = async ctx => {
     const {text, image} = await actionHandler(selectedAction, {db, chatId, controllerId});
 
     if (image) {
+        //@todo: fix
+        //@ts-ignore
         await ctx.replyWithPhoto({source: image});
     }
 
@@ -51,7 +58,7 @@ const handleAction = async ctx => {
 };
 
 
-module.exports = new WizardScene('stat',
+export const StatSceneController = new WizardScene('stat',
     selectController,
     selectAction,
     handleAction,

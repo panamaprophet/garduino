@@ -1,7 +1,8 @@
-const {Markup} = require('telegraf');
+import {Markup} from 'telegraf';
+import {ExtraReplyMessage} from 'telegraf/typings/telegram-types';
 
 
-const getInlineKeyboard = options => {
+export const getInlineKeyboard = (options: string[]): ExtraReplyMessage => {
     const keyboard = Markup.inlineKeyboard(options.map(option => {
         const title = option;
         const action = option;
@@ -13,9 +14,4 @@ const getInlineKeyboard = options => {
     .extra()
 
     return keyboard;
-};
-
-
-module.exports = {
-    getInlineKeyboard,
 };

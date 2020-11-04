@@ -1,5 +1,6 @@
 import _gm from 'gm';
-import stream = require('stream');
+import stream from 'stream';
+import {format} from 'date-fns';
 import {range, reduceItemsCountBy} from './index';
 
 const gm = _gm.subClass({imageMagick: true});
@@ -24,15 +25,18 @@ type SvgChartLegendOptions = {
 
 type SvgChartData = {
     [key: string]: Array<number>;
+    // date: string[],
+    // humidity: number[],
+    // temperature: number[],
 };
 
 type SvgChartOptions = {
-    width: number,
-    height: number,
-    colors: string[],
-    legendTopOffset: number,
-    maxLabelsCount: number,
-    textAttributes: string,
+    width?: number,
+    height?: number,
+    colors?: string[],
+    legendTopOffset?: number,
+    maxLabelsCount?: number,
+    textAttributes?: string,
 };
 
 
@@ -80,7 +84,7 @@ const createSvgChartLabels = (data: Array<number | string>, options: SvgChartLab
 /**
  * @returns {String} svg
  */
-const createSvgChartGrid = (ys: number[], xs: number[]): string => {
+const createSvgChartGrid = (ys: number[] = [], xs: number[] = []): string => {
     const yLines = ys.map((item, index) => {
         const value = index / (ys.length / 100);
 
@@ -103,10 +107,12 @@ const createSvgChartLegend = (data: Array<number | string>, {textAttributes, leg
     });
 };
 
+const formatDates = (dates: Array<Date | number>): string[] => dates.map(date => format(date, 'dd.MM.yy HH:mm'));
+
 /**
  * @returns {String} svg
  */
-export const createSvgChart = ({date, ...data}: SvgChartData, options: SvgChartOptions): string => {
+export const createSvgChart = ({date, ...data}: SvgChartData, options: SvgChartOptions = {}): string => {
     const {
         width,
         height,
@@ -121,9 +127,9 @@ export const createSvgChart = ({date, ...data}: SvgChartData, options: SvgChartO
     const lines = createSvgChartLines(points, {colors});
 
     const ys = reduceItemsCountBy(range(10, 100, 10).reverse(), maxLabelsCount);
-    const xs = reduceItemsCountBy(date, maxLabelsCount);
+    const xs = formatDates(reduceItemsCountBy(date, maxLabelsCount));
 
-    const grid = createSvgChartGrid(ys, xs);
+    const grid = createSvgChartGrid(ys);
     const yLabels = createSvgChartLabels(ys, {x: 5, textAttributes});
     const xLabels = createSvgChartLabels(xs, {y: 95, isVertical: true, textAttributes});
     const legend = createSvgChartLegend(keys, {legendTopOffset, textAttributes, colors});

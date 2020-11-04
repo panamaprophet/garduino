@@ -1,19 +1,21 @@
-const {mergeDeepRight} = require('ramda');
-const {setConfig, getConfig} = require('../../../resolvers/config');
+import {mergeDeepRight} from 'ramda';
+import {setConfig, getConfig} from '../../../resolvers/config';
+
+import type {ActionContext, ActionResult} from '../../index';
 
 
-const ACTION_LIGHT_ONTIME = 'setup/light/ontime';
+export const ACTION_LIGHT_ONTIME: string = 'setup/light/ontime';
 
-const ACTION_FAN_ONTIME = 'setup/fan/ontime';
+export const ACTION_FAN_ONTIME: string = 'setup/fan/ontime';
 
-const ACTION_LIGHT_DURATION = 'setup/light/duration';
+export const ACTION_LIGHT_DURATION: string = 'setup/light/duration';
 
-const ACTION_FAN_DURATION = 'setup/fan/duration';
+export const ACTION_FAN_DURATION: string = 'setup/fan/duration';
 
-const ACTION_TEMPERATURE_THRESHOLD = 'setup/temperature_threshold';
+export const ACTION_TEMPERATURE_THRESHOLD: string = 'setup/temperature_threshold';
 
 
-const setLightOnTime = async ({db, controllerId, value = null}) => {
+const setLightOnTime = async ({db, controllerId, value = null}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
     const updatedConfig = mergeDeepRight(currentConfig, {
         light: {
@@ -26,7 +28,7 @@ const setLightOnTime = async ({db, controllerId, value = null}) => {
     return result;
 };
 
-const setFanOnTime = async ({db, controllerId, value = null}) => {
+const setFanOnTime = async ({db, controllerId, value = null}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
     const updatedConfig = mergeDeepRight(currentConfig, {
         fan: {
@@ -39,7 +41,7 @@ const setFanOnTime = async ({db, controllerId, value = null}) => {
     return result;
 };
 
-const setFanDuration = async ({db, controllerId, value = null}) => {
+const setFanDuration = async ({db, controllerId, value = null}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
     const updatedConfig = mergeDeepRight(currentConfig, {
         fan: {
@@ -52,7 +54,7 @@ const setFanDuration = async ({db, controllerId, value = null}) => {
     return result;
 };
 
-const setLightDuration = async ({db, controllerId, value = null}) => {
+const setLightDuration = async ({db, controllerId, value = null}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
     const updatedConfig = mergeDeepRight(currentConfig, {
         light: {
@@ -65,7 +67,7 @@ const setLightDuration = async ({db, controllerId, value = null}) => {
     return result;
 };
 
-const setTemperatureThreshold = async ({db, controllerId, value = null}) => {
+const setTemperatureThreshold = async ({db, controllerId, value = null}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
     const updatedConfig = mergeDeepRight(currentConfig, {
         temperatureThreshold: Number(value),
@@ -77,7 +79,7 @@ const setTemperatureThreshold = async ({db, controllerId, value = null}) => {
 };
 
 
-const actionHandler = async (action, context) => {
+export const actionHandler = async (action: string | undefined, context: ActionContext): Promise<ActionResult> => {
     switch (action) {
         case ACTION_LIGHT_ONTIME:
             return await setLightOnTime(context);
@@ -90,16 +92,8 @@ const actionHandler = async (action, context) => {
         case ACTION_TEMPERATURE_THRESHOLD:
             return await setTemperatureThreshold(context);
         default:
-            return 'action is not supported';
+            return {
+                text: 'action is not supported',
+            };
     };
 };
-
-
-module.exports = {
-    ACTION_LIGHT_ONTIME,
-    ACTION_LIGHT_DURATION,
-    ACTION_FAN_ONTIME,
-    ACTION_FAN_DURATION,
-    ACTION_TEMPERATURE_THRESHOLD,
-    actionHandler,
-}

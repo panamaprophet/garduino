@@ -1,17 +1,20 @@
-const WizardScene = require('telegraf/scenes/wizard');
-const {getInlineKeyboard} = require('../../helpers');
-const {getConfig} = require('../../../resolvers/config');
-const {getControllerIds} = require('../../../resolvers/controller');
-const {formatConfig} = require('../../../helpers/config');
-const {selectController} = require('../common');
-const {
+import WizardScene from 'telegraf/scenes/wizard';
+
+import {getInlineKeyboard} from '../../helpers';
+import {getConfig} from '../../../resolvers/config';
+import {getControllerIds} from '../../../resolvers/controller';
+import {formatConfig} from '../../../helpers/config';
+import {selectController} from '../common';
+import {
     actionHandler,
     ACTION_LIGHT_ONTIME,
     ACTION_FAN_ONTIME,
     ACTION_LIGHT_DURATION,
     ACTION_FAN_DURATION,
     ACTION_TEMPERATURE_THRESHOLD,
-} = require('./actions');
+} from './actions';
+
+import type {BotContext} from '../../index';
 
 
 const SELECT_CONTROLLER_STEP_INDEX = 0;
@@ -19,13 +22,14 @@ const SELECT_CONTROLLER_STEP_INDEX = 0;
 const SELECT_ACTION_STEP_INDEX = 1;
 
 
-const selectAction = async ctx => {
-    const {db, chat: {id: chatId}} = ctx;
-    const selectedControllerId = ctx.update.callback_query.data;
+const selectAction = async (ctx: BotContext): Promise<any> => {
+    const {db, chat} = ctx;
+    const chatId = chat?.id;
+    const selectedControllerId = ctx.update.callback_query?.data;
 
     const controllerIds = await getControllerIds(db, {chatId});
 
-    if (!controllerIds.includes(selectedControllerId)) {
+    if (!selectedControllerId || !controllerIds.includes(selectedControllerId)) {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
     }
 
@@ -45,17 +49,18 @@ const selectAction = async ctx => {
     return ctx.wizard.next();
 };
 
-const collectValue = async ctx => {
-    ctx.session.action = ctx.update.callback_query.data;
+const collectValue = async (ctx: BotContext): Promise<any> => {
+    ctx.session.action = ctx.update.callback_query?.data;
     await ctx.reply('Provide new value');
 
     return ctx.wizard.next();
 };
 
-const handleAction = async ctx => {
-    const {db, chat: {id: chatId}} = ctx;
+const handleAction = async (ctx: BotContext): Promise<any> => {
+    const {db, chat} = ctx;
+    const chatId = chat?.id;
     const {controllerId, action} = ctx.session;
-    const {text: value} = ctx.message;
+    const value = ctx.message?.text;
 
     if (!controllerId) {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
@@ -65,15 +70,16 @@ const handleAction = async ctx => {
         return ctx.wizard.selectStep(SELECT_ACTION_STEP_INDEX);
     }
 
-    const result = await actionHandler(action, {db, chatId, controllerId, value});
+    const {success} = await actionHandler(action, {db, chatId, controllerId, value});
+    const response = success ? 'Success' : 'Fail';
 
-    ctx.reply(result);
+    ctx.reply(response);
 
     return ctx.scene.leave();
 };
 
 
-module.exports = new WizardScene('setup',
+export const SetupSceneController = new WizardScene('setup',
     selectController,
     selectAction,
     collectValue,
