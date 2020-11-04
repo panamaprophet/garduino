@@ -1,7 +1,7 @@
 import {LOG_EVENT} from '../constants';
 
 
-type LogEntityRaw = {
+export type LogEntityRaw = {
     event: string,
     payload: Array<object>,
 };
@@ -13,9 +13,9 @@ type LogEntity = {
 };
 
 
-const getLogEvent = (event: string): string => LOG_EVENT[event];
+export const getLogEvent = (event: string): string => LOG_EVENT[event];
 
-const getLogEntry = ({event, payload = []}: LogEntityRaw): LogEntity | null => {
+export const getLogEntry = ({event, payload = []}: LogEntityRaw): LogEntity | null => {
     if (!event) {
         return null;
     }
@@ -26,9 +26,3 @@ const getLogEntry = ({event, payload = []}: LogEntityRaw): LogEntity | null => {
         event: getLogEvent(event),
     };
 };
-
-
-module.exports = {
-    getLogEntry,
-    getLogEvent,
-}

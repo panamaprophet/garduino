@@ -1,13 +1,14 @@
-const {mergeDeepRight} = require('ramda');
-const express = require('express');
-const {getConfig, setConfig} = require('../resolvers/config');
-const {extractConfig, getConfigEntity, flattenConfig} = require('../helpers/config');
-const {getContext} = require('../helpers/index');
+import express from 'express';
+import {mergeDeepRight} from 'ramda';
+
+import {getConfig, setConfig} from '../resolvers/config';
+import {extractConfig, getConfigEntity, flattenConfig} from '../helpers/config';
+import {getContext} from '../helpers/index';
 
 const router = express.Router();
 
 
-router.get('/:controllerId', async (request, response) => {
+router.get('/:controllerId', async (request: express.Request, response: express.Response): Promise<any> => {
     const {db, controllerId} = getContext(request);
 
     const {temperatureThreshold, ...config} = await getConfig(db, controllerId);
@@ -18,10 +19,10 @@ router.get('/:controllerId', async (request, response) => {
     response.json(result);
 });
 
-router.post('/:controllerId', async (request, response) => {
+router.post('/:controllerId', async (request: express.Request, response: express.Response): Promise<any> => {
     const {db, body, controllerId} = getContext(request);
 
-    const updatedParams = extractConfig(body);
+    const updatedParams = extractConfig(body) || {};
     const currentConfig = await getConfig(db, controllerId);
     const updatedConfig = mergeDeepRight(currentConfig, updatedParams);
     const result = await setConfig(db, controllerId, updatedConfig);
@@ -30,4 +31,4 @@ router.post('/:controllerId', async (request, response) => {
 });
 
 
-module.exports = router;
+export default router;

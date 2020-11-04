@@ -1,6 +1,8 @@
 import express from 'express';
 import mongodb from 'mongodb';
 
+import type {LogEntityRaw} from './log';
+
 
 type SensorData = {
     key: string,
@@ -11,7 +13,7 @@ type RequestContext = {
     db: mongodb.Db,
     controllerId: string,
     params?: {},
-    body?: {},
+    body?: LogEntityRaw,
 }
 
 type SensorLogEntity = {
