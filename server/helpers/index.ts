@@ -1,15 +1,47 @@
-const {format} = require('date-fns');
+import {format} from 'date-fns';
+import express from 'express';
+import mongodb from 'mongodb';
 
-const getContext = request => ({
+
+type SensorData = {
+    key: string,
+    value: string | number,
+};
+
+type RequestContext = {
+    db: mongodb.Db,
+    controllerId: string,
+    params?: {},
+    body?: {},
+}
+
+type SensorLogEntity = {
+    humidity: number,
+    temperature: number,
+    date: number,
+}
+
+type SensorLogEntityAggregated = {
+    date: string[],
+    temperature: number[],
+    humidity: number[],
+    maxHumidity: SensorLogEntity,
+    minHumidity: SensorLogEntity,
+    maxTemperature: SensorLogEntity,
+    minTemperature: SensorLogEntity,
+};
+
+
+export const getContext = (request: express.Request): RequestContext => ({
     db: request.app.locals.db,
     params: request.params,
     body: request.body,
     controllerId: request.params.controllerId,
 });
 
-const getSensorDataByKey = (haystack, needle) => haystack.filter(({key}) => key === needle);
+export const getSensorDataByKey = (haystack: SensorData[], needle: string): SensorData[] => haystack.filter(({key}) => key === needle);
 
-const range = (from, to, step = 1) => {
+export const range = (from: number, to: number, step: number = 1): number[] => {
     const result = [];
 
     for (let i = from; i <= to; i += step) {
@@ -19,7 +51,7 @@ const range = (from, to, step = 1) => {
     return result;
 };
 
-const reduceItemsCountBy = (items, limit) => {
+export const reduceItemsCountBy = <T>(items: Array<T>, limit: number): Array<T> => {
     if (items.length <= limit) {
         return items;
     }
@@ -29,8 +61,7 @@ const reduceItemsCountBy = (items, limit) => {
     return result;
 };
 
-
-const processData = data => {
+export const processData = (data: SensorLogEntity[]): SensorLogEntityAggregated => {
     const initData = {
         date: [],
         temperature: [],
@@ -41,7 +72,7 @@ const processData = data => {
         maxTemperature: data[0],
     };
 
-    return data.reduce((result, item, index) => {
+    return data.reduce((result: SensorLogEntityAggregated, item: SensorLogEntity, index: number) => {
         if (result.maxHumidity.humidity < item.humidity) {
             result.maxHumidity = item;
         }
@@ -84,11 +115,3 @@ const processData = data => {
 //
 //     return result;
 // }
-
-module.exports = {
-    getContext,
-    getSensorDataByKey,
-    range,
-    reduceItemsCountBy,
-    processData,
-};

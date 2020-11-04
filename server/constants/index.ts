@@ -1,4 +1,7 @@
-const LOG_EVENT = {
+import type {ControllerConfigRaw} from '../helpers/config';
+
+
+export const LOG_EVENT: { [key: string]: string } = {
     UPDATE: 'events/update',
     CONNECT: 'events/connect',
     ERROR: 'events/error',
@@ -7,7 +10,7 @@ const LOG_EVENT = {
 };
 
 
-const HELP_PLACEHOLDER = `Greetings. These are the things i can do:
+export const HELP_PLACEHOLDER: string = `Greetings. These are the things i can do:
 
 /help — show this message
 /now — check current state or get stat
@@ -15,7 +18,7 @@ const HELP_PLACEHOLDER = `Greetings. These are the things i can do:
 /manage - edit controllers list`;
 
 
-const DEFAULT_CONFIG = {
+export const DEFAULT_CONFIG: ControllerConfigRaw = {
     light: {
         onTime: '09:00',
         duration: 43200000,
@@ -25,11 +28,4 @@ const DEFAULT_CONFIG = {
         duration: 43200000,
     },
     temperatureThreshold: 35,
-};
-
-
-module.exports = {
-    LOG_EVENT,
-    HELP_PLACEHOLDER,
-    DEFAULT_CONFIG,
 };

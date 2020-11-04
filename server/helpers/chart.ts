@@ -1,5 +1,39 @@
-const gm = require('gm').subClass({imageMagick: true});
-const {range, reduceItemsCountBy} = require('./index');
+import _gm from 'gm';
+import stream = require('stream');
+import {range, reduceItemsCountBy} from './index';
+
+const gm = _gm.subClass({imageMagick: true});
+
+
+type SvgChartLabelOptions = {
+    x?: number,
+    y?: number,
+    isVertical?: boolean,
+    textAttributes: string,
+};
+
+type SvgChartLineOptions = {
+    colors: string[],
+};
+
+type SvgChartLegendOptions = {
+    textAttributes: string,
+    legendTopOffset: number,
+    colors: string[],
+};
+
+type SvgChartData = {
+    [key: string]: Array<number>;
+};
+
+type SvgChartOptions = {
+    width: number,
+    height: number,
+    colors: string[],
+    legendTopOffset: number,
+    maxLabelsCount: number,
+    textAttributes: string,
+};
 
 
 const DEFAULT_CHART_OPTIONS = {
@@ -13,14 +47,15 @@ const DEFAULT_CHART_OPTIONS = {
 
 
 /**
- * @returns {Array<String>} svg polyline points attribute value
+ * transforms array of numbers to string with coordinates based on percentage
+ * @returns {String} svg polyline points attribute value
  */
-const valuesToPolylinePoints = data => data.map((item, index) => `${index / (data.length / 100)},${100 - item}`).join(' ');
+const valuesToPolylinePoints = (data: number[]): string => data.map((item, index) => `${index / (data.length / 100)},${100 - item}`).join(' ');
 
 /**
  * @returns {Array<String>} svg
  */
-const createSvgChartLines = (points, {colors} = {}) => points.map((p, index) => {
+const createSvgChartLines = (points: string[], {colors}: SvgChartLineOptions): string[] => points.map((p, index) => {
     const color = colors[index % colors.length];
 
     return `<polyline fill="none" stroke="${color}" points="${p}" />`;
@@ -29,7 +64,7 @@ const createSvgChartLines = (points, {colors} = {}) => points.map((p, index) => 
 /**
  * @returns {String} svg
  */
-const createSvgChartLabels = (data, options) => {
+const createSvgChartLabels = (data: Array<number | string>, options: SvgChartLabelOptions): string => {
     const labels = data.map((item, index) => {
         const x = options.x || (index / (data.length / 100));
         const y = options.y || (index / (data.length / 100));
@@ -45,7 +80,7 @@ const createSvgChartLabels = (data, options) => {
 /**
  * @returns {String} svg
  */
-const createSvgChartGrid = (ys, xs) => {
+const createSvgChartGrid = (ys: number[], xs: number[]): string => {
     const yLines = ys.map((item, index) => {
         const value = index / (ys.length / 100);
 
@@ -62,7 +97,7 @@ const createSvgChartGrid = (ys, xs) => {
 /**
  * @returns {Array<String>} svg
  */
-const createSvgChartLegend = (data, {textAttributes, legendTopOffset, colors} = {}) => {
+const createSvgChartLegend = (data: Array<number | string>, {textAttributes, legendTopOffset, colors}: SvgChartLegendOptions): string[] => {
     return data.map((key, index) => {
         return `<text ${textAttributes} x="80" y="${index * legendTopOffset + legendTopOffset}" fill="${colors[index % colors.length]}">${key}</text>`;
     });
@@ -71,7 +106,7 @@ const createSvgChartLegend = (data, {textAttributes, legendTopOffset, colors} = 
 /**
  * @returns {String} svg
  */
-const createSvgChart = ({date, ...data}, options = {}) => {
+export const createSvgChart = ({date, ...data}: SvgChartData, options: SvgChartOptions): string => {
     const {
         width,
         height,
@@ -105,14 +140,13 @@ const createSvgChart = ({date, ...data}, options = {}) => {
     return chart;
 };
 
-const svg2png = svg => {
+/**
+ * renders svg markup to png
+ * @param {String} svg
+ * @returns {Promise<Error | ReadableStream>}
+ */
+export const svg2png = (svg: string): Promise<Error | stream.Readable> => {
     return new Promise((resolve, reject) => {
-        gm(Buffer.from(svg), 'image.svg').stream('png', (error, stream) => error ? reject(error) : resolve(stream));
+        gm(Buffer.from(svg), 'image.svg').stream('png', (error: Error | null, stream: stream.Readable) => error ? reject(error) : resolve(stream));
     });
 };
-
-
-module.exports = {
-    createSvgChart,
-    svg2png,
-}
