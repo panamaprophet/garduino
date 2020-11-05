@@ -18,6 +18,11 @@ export const ACTION_TEMPERATURE_THRESHOLD: string = 'setup/temperature_threshold
 
 const setLightOnTime = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
+
+    if (!currentConfig) {
+        return {success: false};
+    }
+
     const updatedConfig = mergeDeepRight<ControllerConfigRaw, object>(currentConfig, {
         light: {
             onTime: value,
@@ -31,6 +36,11 @@ const setLightOnTime = async ({db, controllerId, value}: ActionContext): Promise
 
 const setFanOnTime = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
+
+    if (!currentConfig) {
+        return {success: false};
+    }
+
     const updatedConfig = mergeDeepRight<ControllerConfigRaw, object>(currentConfig, {
         fan: {
             onTime: value,
@@ -44,6 +54,11 @@ const setFanOnTime = async ({db, controllerId, value}: ActionContext): Promise<A
 
 const setFanDuration = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
+
+    if (!currentConfig) {
+        return {success: false};
+    }
+
     const updatedConfig = mergeDeepRight<ControllerConfigRaw, object>(currentConfig, {
         fan: {
             duration: Number(value),
@@ -57,6 +72,11 @@ const setFanDuration = async ({db, controllerId, value}: ActionContext): Promise
 
 const setLightDuration = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
+
+    if (!currentConfig) {
+        return {success: false};
+    }
+
     const updatedConfig = mergeDeepRight<ControllerConfigRaw, object>(currentConfig, {
         light: {
             duration: Number(value),
@@ -70,6 +90,11 @@ const setLightDuration = async ({db, controllerId, value}: ActionContext): Promi
 
 const setTemperatureThreshold = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
+
+    if (!currentConfig) {
+        return {success: false};
+    }
+
     const updatedConfig = mergeDeepRight<ControllerConfigRaw, object>(currentConfig, {
         temperatureThreshold: Number(value),
     });

@@ -3,8 +3,8 @@ import stream from 'stream';
 import {format} from 'date-fns';
 import {range, reduceItemsCountBy} from './index';
 
-const gm = _gm.subClass({imageMagick: true});
 
+const gm = _gm.subClass({imageMagick: true});
 
 type SvgChartLabelOptions = {
     x?: number,
@@ -25,9 +25,6 @@ type SvgChartLegendOptions = {
 
 type SvgChartData = {
     [key: string]: Array<number>;
-    // date: string[],
-    // humidity: number[],
-    // temperature: number[],
 };
 
 type SvgChartOptions = {

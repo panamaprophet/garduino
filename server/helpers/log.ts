@@ -1,6 +1,7 @@
 import {LOG_EVENT} from '../constants';
 import type {EventData} from './index';
 
+
 export type LogEntityRaw = {
     event: string,
     payload: EventData[],

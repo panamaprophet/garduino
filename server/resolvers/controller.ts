@@ -1,5 +1,4 @@
 import mongodb from 'mongodb';
-
 import type {ControllerConfigRaw} from '../helpers/config';
 
 
@@ -16,7 +15,7 @@ export const getControllerIds = async (db: mongodb.Db, options = {}): Promise<st
     return result.map(({controllerId}) => controllerId);
 };
 
-export const addController = async (db: mongodb.Db, controllerId: string, chatId: number, configuration: ControllerConfigRaw): Promise<any> => {
+export const addController = async (db: mongodb.Db, controllerId: string, chatId: number, configuration: ControllerConfigRaw): Promise<{success: boolean}> => {
     const {result} = await db.collection('config').insertOne({
         controllerId,
         chatId,
@@ -28,7 +27,7 @@ export const addController = async (db: mongodb.Db, controllerId: string, chatId
     };
 };
 
-export const removeController = async (db: mongodb.Db, controllerId: string, chatId: number): Promise<any> => {
+export const removeController = async (db: mongodb.Db, controllerId: string, chatId: number): Promise<{success: boolean}> => {
     const {result} = await db.collection('config').deleteOne({controllerId, chatId});
 
     return {

@@ -1,5 +1,4 @@
 import WizardScene from 'telegraf/scenes/wizard';
-
 import {getInlineKeyboard} from '../../helpers';
 import {getControllerIds} from '../../../resolvers/controller';
 import {selectController} from '../common';
@@ -15,7 +14,7 @@ import type { BotContext } from '../..';
 const SELECT_CONTROLLER_STEP_INDEX = 0;
 
 
-const selectAction = async (ctx: BotContext): Promise<any> => {
+const selectAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const selectedControllerId = ctx?.update?.callback_query?.data;
@@ -32,7 +31,7 @@ const selectAction = async (ctx: BotContext): Promise<any> => {
     return ctx.wizard.next();
 };
 
-const handleAction = async (ctx: BotContext): Promise<any> => {
+const handleAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const selectedAction = ctx?.update?.callback_query?.data;

@@ -16,7 +16,7 @@ type RequestContext = {
     body: LogEntityRaw,
 };
 
-type SensorLogEntity = {
+export type SensorLogEntity = {
     humidity: number,
     temperature: number,
     date: number,

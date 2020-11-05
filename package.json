@@ -2,8 +2,10 @@
   "name": "garduino",
   "version": "1.0.0",
   "description": "home garden controller",
-  "main": "server/index.js",
+  "main": "dist/server/index.js",
   "scripts": {
+    "build": "./node_modules/.bin/tsc --build tsconfig.json",
+    "server": "node dist/server/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "panamaprophet",

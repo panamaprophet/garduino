@@ -13,7 +13,7 @@ import type {BotContext} from '../../index';
 const SELECT_ACTION_STEP_INDEX = 0;
 
 
-const selectAction = async (ctx: BotContext): Promise<any> => {
+const selectAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
     ctx.reply('Select action', getInlineKeyboard([
         ACTION_CONTROLLER_ADD,
         ACTION_CONTROLLER_REMOVE,
@@ -22,7 +22,7 @@ const selectAction = async (ctx: BotContext): Promise<any> => {
     return ctx.wizard.next();
 };
 
-const collectValue = async (ctx: BotContext): Promise<any> => {
+const collectValue = async (ctx: BotContext): Promise<typeof WizardScene> => {
     const selectedAction = ctx.update.callback_query?.data;
 
     if (!selectedAction || ![ACTION_CONTROLLER_ADD, ACTION_CONTROLLER_REMOVE].includes(selectedAction)) {
@@ -46,7 +46,7 @@ const collectValue = async (ctx: BotContext): Promise<any> => {
     return ctx.wizard.next();
 };
 
-const handleAction = async (ctx: BotContext): Promise<any> => {
+const handleAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const {action} = ctx.session;

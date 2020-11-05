@@ -3,7 +3,8 @@ import {LOG_EVENT} from '../constants';
 import {getSensorDataByKey} from '../helpers';
 
 import type {Db} from 'mongodb';
-import {LogEntity} from '../helpers/log';
+import type {SensorLogEntity} from '../helpers/index';
+import type {LogEntity} from '../helpers/log';
 
 
 const getDefaultDateFrom = (): Date => subWeeks(Date.now(), 1);
@@ -39,7 +40,7 @@ export const getLastUpdateEventLogByControllerId = async (db: Db, controllerId: 
     return response;
 };
 
-export const saveLog = async (db: Db, controllerId: string, data: LogEntity): Promise<any> => {
+export const saveLog = async (db: Db, controllerId: string, data: LogEntity): Promise<{success: boolean}> => {
     const {result} = await db.collection('log').insertOne({controllerId, ...data});
 
     return {
@@ -47,7 +48,7 @@ export const saveLog = async (db: Db, controllerId: string, data: LogEntity): Pr
     };
 };
 
-export const getUpdateEventLogStat = async (db: Db, controllerId: string, dateFrom: Date | null = null) => {
+export const getUpdateEventLogStat = async (db: Db, controllerId: string, dateFrom: Date | null = null): Promise<SensorLogEntity[]> => {
     const result = await db.collection('log').aggregate([
         {
             $match: {

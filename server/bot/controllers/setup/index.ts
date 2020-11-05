@@ -1,5 +1,4 @@
 import WizardScene from 'telegraf/scenes/wizard';
-
 import {getInlineKeyboard} from '../../helpers';
 import {getConfig} from '../../../resolvers/config';
 import {getControllerIds} from '../../../resolvers/controller';
@@ -21,8 +20,7 @@ const SELECT_CONTROLLER_STEP_INDEX = 0;
 
 const SELECT_ACTION_STEP_INDEX = 1;
 
-
-const selectAction = async (ctx: BotContext): Promise<any> => {
+const selectAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const selectedControllerId = ctx.update.callback_query?.data;
@@ -36,6 +34,11 @@ const selectAction = async (ctx: BotContext): Promise<any> => {
     ctx.session.controllerId = selectedControllerId;
 
     const currentSettings = await getConfig(db, selectedControllerId);
+
+    if (!currentSettings) {
+        return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
+    }
+
     const text = formatConfig(currentSettings);
 
     await ctx.reply(text, getInlineKeyboard([
@@ -49,14 +52,14 @@ const selectAction = async (ctx: BotContext): Promise<any> => {
     return ctx.wizard.next();
 };
 
-const collectValue = async (ctx: BotContext): Promise<any> => {
+const collectValue = async (ctx: BotContext): Promise<typeof WizardScene> => {
     ctx.session.action = ctx.update.callback_query?.data;
     await ctx.reply('Provide new value');
 
     return ctx.wizard.next();
 };
 
-const handleAction = async (ctx: BotContext): Promise<any> => {
+const handleAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const {controllerId, action} = ctx.session;

@@ -6,36 +6,31 @@ import {getLastUpdateEventLog, saveLog, getUpdateEventLogStat} from '../resolver
 
 const router = express.Router();
 
-router.get('/:controllerId', async (request: express.Request, response: express.Response): Promise<any> => {
+router.get('/:controllerId', async (request: express.Request, response: express.Response): Promise<void> => {
     const {db, controllerId} = getContext(request);
     const result = await getLastUpdateEventLog(db, controllerId);
 
     response.json(result);
 });
 
-router.get('/:controllerId/stat', async (request: express.Request, response: express.Response): Promise<any> => {
+router.get('/:controllerId/stat', async (request: express.Request, response: express.Response): Promise<void> => {
     const {db, controllerId} = getContext(request);
     const result = await getUpdateEventLogStat(db, controllerId);
 
     response.json(result);
 });
 
-router.post('/:controllerId', async (request: express.Request, response: express.Response): Promise<any> => {
+router.post('/:controllerId', async (request: express.Request, response: express.Response): Promise<void> => {
     const {db, body, controllerId} = getContext(request);
-
-    if (!body) {
-        return response.json({success: false});
-    }
-
     const data = getLogEntry(body);
 
-    if (!data) {
-        return response.json({success: false});
+    if (data) {
+        const result = await saveLog(db, controllerId, data);
+
+        response.json(result);
     }
 
-    const result = await saveLog(db, controllerId, data);
-
-    response.json(result);
+    response.json({success: false});
 });
 
 
