@@ -27,9 +27,8 @@ export const start = async ({db, chat, scene, reply}: BotContext): Promise<any> 
 export const now = async ({db, chat, reply}: BotContext): Promise<any> => {
     const chatId = chat?.id;
     const controllerIds = await getControllerIds(db, {chatId});
-    const resultPromises = controllerIds.map(controllerId => getLastUpdateEventLogByControllerId({db, controllerId}));
+    const resultPromises = controllerIds.map(controllerId => getLastUpdateEventLogByControllerId(db, controllerId));
     const results = await Promise.all(resultPromises);
-    const result = results.map(({text}) => text);
 
-    return reply(result.join('\n\r'));
+    return reply(results.join('\n\r'));
 };

@@ -1,15 +1,15 @@
 import {LOG_EVENT} from '../constants';
-
+import type {EventData} from './index';
 
 export type LogEntityRaw = {
     event: string,
-    payload: Array<object>,
+    payload: EventData[],
 };
 
-type LogEntity = {
+export type LogEntity = {
     event: string,
     date: Date,
-    payload: Array<object>,
+    payload: Array<EventData>,
 };
 
 

@@ -6,6 +6,7 @@
 node_modules
 cert
 server/config.js
+server/config.ts
 board/build
 board/libdeps
 board/src/config.h

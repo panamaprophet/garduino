@@ -70,6 +70,10 @@ const handleAction = async (ctx: BotContext): Promise<any> => {
         return ctx.wizard.selectStep(SELECT_ACTION_STEP_INDEX);
     }
 
+    if (!chatId) {
+        return ctx.scene.leave();
+    }
+
     const {success} = await actionHandler(action, {db, chatId, controllerId, value});
     const response = success ? 'Success' : 'Fail';
 

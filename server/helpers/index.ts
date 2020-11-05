@@ -4,7 +4,7 @@ import mongodb from 'mongodb';
 import type {LogEntityRaw} from './log';
 
 
-type SensorData = {
+export type EventData = {
     key: string,
     value: string | number,
 };
@@ -13,14 +13,14 @@ type RequestContext = {
     db: mongodb.Db,
     controllerId: string,
     params?: {},
-    body?: LogEntityRaw,
-}
+    body: LogEntityRaw,
+};
 
 type SensorLogEntity = {
     humidity: number,
     temperature: number,
     date: number,
-}
+};
 
 type SensorLogEntityAggregated = {
     date: number[],
@@ -40,7 +40,7 @@ export const getContext = (request: express.Request): RequestContext => ({
     controllerId: request.params.controllerId,
 });
 
-export const getSensorDataByKey = (haystack: SensorData[], needle: string): SensorData[] => haystack.filter(({key}) => key === needle);
+export const getSensorDataByKey = (haystack: EventData[], needle: string): EventData[] => haystack.filter(({key}) => key === needle);
 
 export const range = (from: number, to: number, step: number = 1): number[] => {
     const result = [];
@@ -57,7 +57,7 @@ export const reduceItemsCountBy = <T>(items: Array<T>, limit: number): Array<T> 
         return items;
     }
 
-    const result = items.filter((item, index) => index % limit === 0);
+    const result = items.filter((_, index) => index % limit === 0);
 
     return result;
 };

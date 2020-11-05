@@ -1,13 +1,16 @@
-const {subWeeks, format} = require('date-fns');
-const {LOG_EVENT} = require('../constants');
-const {getSensorDataByKey} = require('../helpers');
+import {subWeeks, format} from 'date-fns';
+import {LOG_EVENT} from '../constants';
+import {getSensorDataByKey} from '../helpers';
+
+import type {Db} from 'mongodb';
+import {LogEntity} from '../helpers/log';
 
 
-const getDefaultDateFrom = () => subWeeks(Date.now(), 1);
+const getDefaultDateFrom = (): Date => subWeeks(Date.now(), 1);
 
 
-const getLog = async (db, controllerId, conditions = {}) => {
-    const result = await db.collection('log').findOne(
+export const getLog = async (db: Db, controllerId: string, conditions = {}): Promise<LogEntity | null> => {
+    const result = await db.collection('log').findOne<LogEntity>(
         {controllerId, ...conditions},
         {sort: {$natural: -1}}
     );
@@ -15,17 +18,15 @@ const getLog = async (db, controllerId, conditions = {}) => {
     return result;
 };
 
-const getLastUpdateEventLog = (db, controllerId) => {
+export const getLastUpdateEventLog = (db: Db, controllerId: string): Promise<LogEntity | null> => {
     return getLog(db, controllerId, {event: LOG_EVENT.UPDATE});
 };
 
-const getLastUpdateEventLogByControllerId = async ({db, controllerId}) => {
+export const getLastUpdateEventLogByControllerId = async (db: Db, controllerId: string): Promise<string | null> => {
     const eventData = await getLastUpdateEventLog(db, controllerId);
 
     if (!eventData) {
-        return {
-            text: `No data for ${controllerId}`,
-        };
+        return null;
     }
 
     const {payload, date} = eventData;
@@ -35,12 +36,10 @@ const getLastUpdateEventLogByControllerId = async ({db, controllerId}) => {
 
     const response = `#${controllerId} @ ${formattedDate}\n\r\n\rTemperature: ${temperature.value}°C\n\rHumidity: ${humidity.value}%`;
 
-    return {
-        text: response,
-    };
+    return response;
 };
 
-const saveLog = async (db, controllerId, data) => {
+export const saveLog = async (db: Db, controllerId: string, data: LogEntity): Promise<any> => {
     const {result} = await db.collection('log').insertOne({controllerId, ...data});
 
     return {
@@ -48,7 +47,7 @@ const saveLog = async (db, controllerId, data) => {
     };
 };
 
-const getUpdateEventLogStat = async (db, controllerId, dateFrom = null) => {
+export const getUpdateEventLogStat = async (db: Db, controllerId: string, dateFrom: Date | null = null) => {
     const result = await db.collection('log').aggregate([
         {
             $match: {
@@ -99,13 +98,4 @@ const getUpdateEventLogStat = async (db, controllerId, dateFrom = null) => {
     ]).toArray();
 
     return result;
-};
-
-
-module.exports = {
-    getLog,
-    getLastUpdateEventLog,
-    getLastUpdateEventLogByControllerId,
-    getUpdateEventLogStat,
-    saveLog,
 };

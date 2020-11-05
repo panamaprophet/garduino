@@ -1,1 +1,1 @@
-declare module '*';
+declare module 'telegraf/scenes/wizard';

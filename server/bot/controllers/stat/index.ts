@@ -1,4 +1,4 @@
-import {WizardScene} from 'telegraf/scenes/wizard/';
+import WizardScene from 'telegraf/scenes/wizard';
 
 import {getInlineKeyboard} from '../../helpers';
 import {getControllerIds} from '../../../resolvers/controller';
@@ -40,6 +40,10 @@ const handleAction = async (ctx: BotContext): Promise<any> => {
 
     if (!controllerId) {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
+    }
+
+    if (!chatId) {
+        return ctx.scene.leave();
     }
 
     const {text, image} = await actionHandler(selectedAction, {db, chatId, controllerId});

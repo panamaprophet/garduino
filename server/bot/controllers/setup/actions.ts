@@ -2,6 +2,7 @@ import {mergeDeepRight} from 'ramda';
 import {setConfig, getConfig} from '../../../resolvers/config';
 
 import type {ActionContext, ActionResult} from '../../index';
+import type {ControllerConfigRaw} from '../../../helpers/config';
 
 
 export const ACTION_LIGHT_ONTIME: string = 'setup/light/ontime';
@@ -15,9 +16,9 @@ export const ACTION_FAN_DURATION: string = 'setup/fan/duration';
 export const ACTION_TEMPERATURE_THRESHOLD: string = 'setup/temperature_threshold';
 
 
-const setLightOnTime = async ({db, controllerId, value = null}: ActionContext): Promise<ActionResult> => {
+const setLightOnTime = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
-    const updatedConfig = mergeDeepRight(currentConfig, {
+    const updatedConfig = mergeDeepRight<ControllerConfigRaw, object>(currentConfig, {
         light: {
             onTime: value,
         },
@@ -28,9 +29,9 @@ const setLightOnTime = async ({db, controllerId, value = null}: ActionContext): 
     return result;
 };
 
-const setFanOnTime = async ({db, controllerId, value = null}: ActionContext): Promise<ActionResult> => {
+const setFanOnTime = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
-    const updatedConfig = mergeDeepRight(currentConfig, {
+    const updatedConfig = mergeDeepRight<ControllerConfigRaw, object>(currentConfig, {
         fan: {
             onTime: value,
         },
@@ -41,9 +42,9 @@ const setFanOnTime = async ({db, controllerId, value = null}: ActionContext): Pr
     return result;
 };
 
-const setFanDuration = async ({db, controllerId, value = null}: ActionContext): Promise<ActionResult> => {
+const setFanDuration = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
-    const updatedConfig = mergeDeepRight(currentConfig, {
+    const updatedConfig = mergeDeepRight<ControllerConfigRaw, object>(currentConfig, {
         fan: {
             duration: Number(value),
         },
@@ -54,9 +55,9 @@ const setFanDuration = async ({db, controllerId, value = null}: ActionContext): 
     return result;
 };
 
-const setLightDuration = async ({db, controllerId, value = null}: ActionContext): Promise<ActionResult> => {
+const setLightDuration = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
-    const updatedConfig = mergeDeepRight(currentConfig, {
+    const updatedConfig = mergeDeepRight<ControllerConfigRaw, object>(currentConfig, {
         light: {
             duration: Number(value),
         },
@@ -67,9 +68,9 @@ const setLightDuration = async ({db, controllerId, value = null}: ActionContext)
     return result;
 };
 
-const setTemperatureThreshold = async ({db, controllerId, value = null}: ActionContext): Promise<ActionResult> => {
+const setTemperatureThreshold = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
-    const updatedConfig = mergeDeepRight(currentConfig, {
+    const updatedConfig = mergeDeepRight<ControllerConfigRaw, object>(currentConfig, {
         temperatureThreshold: Number(value),
     });
 

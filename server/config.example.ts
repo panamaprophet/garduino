@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     db: {
         host: 'hostname',
         user: 'username',

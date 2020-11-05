@@ -1,12 +1,11 @@
 import express from 'express';
 import {mergeDeepRight} from 'ramda';
-
 import {getConfig, setConfig} from '../resolvers/config';
 import {extractConfig, getConfigEntity, flattenConfig} from '../helpers/config';
 import {getContext} from '../helpers/index';
 
-const router = express.Router();
 
+const router = express.Router();
 
 router.get('/:controllerId', async (request: express.Request, response: express.Response): Promise<any> => {
     const {db, controllerId} = getContext(request);

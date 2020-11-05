@@ -85,14 +85,21 @@ const createSvgChartLabels = (data: Array<number | string>, options: SvgChartLab
  * @returns {String} svg
  */
 const createSvgChartGrid = (ys: number[] = [], xs: number[] = []): string => {
-    const yLines = ys.map((item, index) => {
+    const yLines = ys.map((_, index) => {
         const value = index / (ys.length / 100);
 
         return `<line x1="0" y1="${value}" x2="100%" y2="${value}" stroke="#eee"></line>`;
     });
 
+    const xLines = xs.map((_, index) => {
+        const value = index / (xs.length / 100);
+
+        return `<line x1="${value}" y1="0" x2="${value}" y2="100%" stroke="#eee"></line>`;
+    })
+
     return `
         ${yLines}
+        ${xLines}
         <line x1="0" y1="100%" x2="100%" y2="100%" stroke="#333"></line>
         <line x1="0" y1="100%" x2="0" y2="0" stroke="#333"></line>
     `;

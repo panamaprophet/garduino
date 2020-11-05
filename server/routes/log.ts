@@ -1,11 +1,10 @@
 import express from 'express';
-
 import {getContext} from '../helpers';
 import {getLogEntry} from '../helpers/log';
 import {getLastUpdateEventLog, saveLog, getUpdateEventLogStat} from '../resolvers/log';
 
-const router = express.Router();
 
+const router = express.Router();
 
 router.get('/:controllerId', async (request: express.Request, response: express.Response): Promise<any> => {
     const {db, controllerId} = getContext(request);
@@ -29,9 +28,15 @@ router.post('/:controllerId', async (request: express.Request, response: express
     }
 
     const data = getLogEntry(body);
+
+    if (!data) {
+        return response.json({success: false});
+    }
+
     const result = await saveLog(db, controllerId, data);
 
     response.json(result);
 });
+
 
 export default router;

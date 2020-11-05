@@ -24,9 +24,9 @@ export interface BotContext extends BaseBotContext {
 
 export type ActionContext = {
     db: mongodb.Db,
-    chatId: number | undefined,
+    chatId: number,
     controllerId: string,
-    value?: string | null,
+    value?: string,
 };
 
 export type ActionResult = {
