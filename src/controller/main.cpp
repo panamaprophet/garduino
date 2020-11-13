@@ -298,7 +298,7 @@ void loop() {
         String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + configManager.getControllerId(), RequestType::POST, payload);
         Serial.println("[Event::UPDATE] response: " + response);
 
-        if (temperature >= temperatureThreshold) {
+        if ((temperature >= temperatureThreshold) && light.isOn) {
             light.isEmergencyOff = true;
             light.isOn = false;
             requestedEvent = Event::EMERGENCY_SWITCH;
