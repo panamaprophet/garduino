@@ -28,8 +28,13 @@ export const start = async ({db, chat, scene, reply}: BotContext): Promise<Messa
 export const now = async ({db, chat, reply}: BotContext): Promise<Message> => {
     const chatId = chat?.id;
     const controllerIds = await getControllerIds(db, {chatId});
-    const resultPromises = controllerIds.map(controllerId => getLastUpdateEventLogByControllerId(db, controllerId));
-    const results = await Promise.all(resultPromises);
 
-    return reply(results.join('\n\r'));
+    if (controllerIds.length > 0) {
+        const resultPromises = controllerIds.map(controllerId => getLastUpdateEventLogByControllerId(db, controllerId));
+        const results = await Promise.all(resultPromises);
+
+        return reply(results.join('\n\r'));
+    }
+
+    return reply(JSON.stringify({ error: 'no controllers found' }));
 };
