@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
+
 #include <WiFiClientSecure.h>
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
@@ -10,8 +10,10 @@
 
 #include <config.h>
 #include <helpers.h>
-#include <ConfigurationManager.h>
 #include <ConfigurationServer.h>
+
+#include <Context.h>
+#include <Events.h>
 
 
 #define CONFIG_FIELDS_COUNT 20
@@ -24,61 +26,23 @@
 
 #define RELAY_LIGHT_PIN 14
 #define RELAY_FAN_PIN 12
-#define DHT_PIN 4
+#define DHT_PIN 13
 
 
 const IPAddress CONFIGURATION_MODE_IP(192, 168, 4, 20);
 const char* CONFIGURATION_MODE_SSID = "CONFIGURATION_MODE";
 
 
-Event requestedEvent = Event::CONFIG;
-ControllerMode controllerMode = ControllerMode::RUNNING;
-ControllerConfigurationManager configManager;
-
-ModuleConfig light;
-ModuleConfig fan;
-
-String lastError;
-
-float humidity;
-float temperature;
-float temperatureThreshold = DEFAULT_TEMPERATURE_THRESHOLD;
-
 Ticker ticker;
 Ticker scheduleTicker;
-WiFiClientSecure client;
-HTTPClient http;
 DHT11 dht;
 DNSServer dnsServer;
 ESP8266WebServer webServer(80);
 
 
-String sendRequest(String url, RequestType type = GET, String payload = "") {
-    http.begin(client, url);
-    http.addHeader("Accept", "*/*");
-    http.addHeader("Content-Type", "application/json");
+Context context;
 
-    String response = "";
 
-    if (type == RequestType::GET) {
-        http.GET();
-    }
-
-    if (type == RequestType::POST) {
-        http.POST(payload);
-    }
-
-    // @todo: check http code returned by http.GET() and http.POST()
-
-    response = http.getString();
-    http.end();
-
-    return response;
-}
-
-/**
- * @returns true if state changed
- */
 bool updateModuleState(ModuleConfig &state, unsigned long interval) {
     state.msBeforeSwitch -= interval;
 
@@ -92,9 +56,6 @@ bool updateModuleState(ModuleConfig &state, unsigned long interval) {
     return false;
 }
 
-/**
- * @returns true if state changed
- */
 bool updateState(ModuleConfig &light, ModuleConfig &fan, unsigned long interval) {
     const bool isLightStateChanged = updateModuleState(light, interval);
     const bool isFanStateChanged = updateModuleState(fan, interval);
@@ -106,24 +67,16 @@ bool updateState(ModuleConfig &light, ModuleConfig &fan, unsigned long interval)
     return isLightStateChanged || isFanStateChanged;
 }
 
-/**
- * changes requestedEvent to Event::SWITCH if state changed
- */
 void handleSchedule() {
-    const bool isChanged = updateState(light, fan, SCHEDULE_CHECK_INTERVAL_MS);
+    const bool isChanged = updateState(context.configuration.light, context.configuration.fan, SCHEDULE_CHECK_INTERVAL_MS);
 
     if (isChanged) {
-        requestedEvent = Event::SWITCH;
+        context.events.push_back({Event::SWITCH}); // @todo: pass args
     }
 }
 
 void updateRelay(int pin, bool isOn) {
     digitalWrite(pin, isOn ? HIGH : LOW);
-}
-
-void updateRelays() {
-    updateRelay(RELAY_LIGHT_PIN, light.isOn);
-    updateRelay(RELAY_FAN_PIN, fan.isOn);
 }
 
 
@@ -133,191 +86,87 @@ void setup() {
     pinMode(RELAY_LIGHT_PIN, OUTPUT);
     pinMode(RELAY_FAN_PIN, OUTPUT);
 
-    if (!configManager.isConfigured()) {
-        Serial.println("No configuration was found. Switching to setup mode");
+    auto controller = context.configuration.controller;
 
-        webServer.on("/", HTTP_GET, []() {
-            String ssid = configManager.getSSID();
-            String password = configManager.getPassword();
-            String controllerId = configManager.getControllerId();
+    if (controller.isConfigured()) {
+        WiFi.mode(WIFI_STA);
+        WiFi.hostname(controller.getControllerId());
+        WiFi.begin(controller.getSSID(), controller.getPassword());
 
-            webServer.send(200, "text/html", handleRoot(ssid, password, controllerId));
+        while (WiFi.status() != WL_CONNECTED) {
+            Serial.print(".");
+            delay(1000);
+        }
+
+        Serial.println();
+        Serial.print("Connected to " + String(WiFi.SSID()) + " with IP ");
+        Serial.println(WiFi.localIP());
+
+        ticker.attach_ms(UPDATE_INTERVAL_MS, []() {
+            dht.read();
         });
 
-        webServer.on("/submit", HTTP_POST, []() {
-            String ssid = webServer.arg("ssid");
-            String password = webServer.arg("password");
-            String controllerId = webServer.arg("controllerId");
+        dht.onData([](float h, float t) {
+            context.state.humidity = h;
+            context.state.temperature = t;
 
-            configManager.set(ssid, password, controllerId);
-
-            webServer.send(200, "text/html", handleSubmit());
+            context.events.push_back({Event::UPDATE}); // @todo: pass args
         });
 
-        WiFi.mode(WIFI_AP);
-        WiFi.softAPConfig(CONFIGURATION_MODE_IP, CONFIGURATION_MODE_IP, IPAddress(255, 255, 255, 0));
-        WiFi.softAP(CONFIGURATION_MODE_SSID);
+        dht.onError([](uint8_t e) {
+            context.state.lastError = dht.getError();
+            context.events.push_back({Event::ERROR}); // @todo: pass args
+        });
 
-        dnsServer.start(53, "*", CONFIGURATION_MODE_IP);
-        webServer.begin();
+        context.onUpdate = []() {
+            updateRelay(RELAY_LIGHT_PIN, context.configuration.light.isOn);
+            updateRelay(RELAY_FAN_PIN, context.configuration.fan.isOn);
+        };
 
-        controllerMode = ControllerMode::SETUP;
+        context.onRun = []() {
+            scheduleTicker.attach_ms(SCHEDULE_CHECK_INTERVAL_MS, handleSchedule);
+        };
 
         return;
     }
 
-    WiFi.mode(WIFI_STA);
-    WiFi.hostname(configManager.getControllerId());
-    WiFi.begin(
-        configManager.getSSID(),
-        configManager.getPassword()
-    );
+    Serial.println("No configuration was found. Switching to setup mode");
 
-    while (WiFi.status() != WL_CONNECTED) {
-        Serial.print(".");
-        delay(1000);
-    }
+    webServer.on("/", HTTP_GET, [&controller]() {
+        String ssid = controller.getSSID();
+        String password = controller.getPassword();
+        String controllerId = controller.getControllerId();
 
-    Serial.println();
-    Serial.print("Connected to " + String(WiFi.SSID()) + " with IP ");
-    Serial.println(WiFi.localIP());
-
-    ticker.attach_ms(UPDATE_INTERVAL_MS, []() {
-        dht.read();
+        webServer.send(200, "text/html", handleRoot(ssid, password, controllerId));
     });
 
-    dht.onData([](float h, float t) {
-        temperature = t;
-        humidity = h;
-        requestedEvent = Event::UPDATE;
+    webServer.on("/submit", HTTP_POST, [&controller]() {
+        String ssid = webServer.arg("ssid");
+        String password = webServer.arg("password");
+        String controllerId = webServer.arg("controllerId");
+
+        controller.set(ssid, password, controllerId);
+
+        webServer.send(200, "text/html", handleSubmit());
     });
 
-    dht.onError([](uint8_t e) {
-        lastError = dht.getError();
-        requestedEvent = Event::ERROR;
-    });
+    WiFi.mode(WIFI_AP);
+    WiFi.softAPConfig(CONFIGURATION_MODE_IP, CONFIGURATION_MODE_IP, IPAddress(255, 255, 255, 0));
+    WiFi.softAP(CONFIGURATION_MODE_SSID);
 
-    client.setInsecure();
+    dnsServer.start(53, "*", CONFIGURATION_MODE_IP);
+    webServer.begin();
+
+    context.configuration.mode = ControllerMode::SETUP;
 }
 
+
 void loop() {
-    if (controllerMode == ControllerMode::SETUP) {
+    if (context.configuration.mode == ControllerMode::SETUP) {
         dnsServer.processNextRequest();
         webServer.handleClient();
-
         return;
     }
 
-    if (requestedEvent == Event::CONFIG) {
-        Serial.println("[Event::CONFIG] requested");
-
-        const int capacity = JSON_OBJECT_SIZE(CONFIG_FIELDS_COUNT);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_CONFIG + configManager.getControllerId(), RequestType::GET);
-
-        DynamicJsonDocument json(capacity);
-        DeserializationError error = deserializeJson(json, response);
-
-        if (error) {
-            lastError = error.c_str();
-            requestedEvent = Event::ERROR;
-        }
-
-        if (!error) {
-            light.isOn = json["isLightOn"];
-            light.duration = json["lightCycleDurationMs"].as<long>();
-            light.msBeforeSwitch = json["msBeforeLightSwitch"].as<long>();
-
-            fan.isOn = json["isFanOn"];
-            fan.duration = json["fanCycleDurationMs"].as<long>();
-            fan.msBeforeSwitch = json["msBeforeFanSwitch"].as<long>();
-
-            temperatureThreshold = json["temperatureThreshold"].as<float>();
-
-            Serial.println("[Event::CONFIG] config received");
-
-            Serial.println("isLightOn = " + String(light.isOn));
-            Serial.println("isFanOn = " + String(fan.isOn));
-            Serial.println("msBeforeLightSwitch = " + String(light.msBeforeSwitch));
-            Serial.println("msBeforeFanSwitch = " + String(fan.msBeforeSwitch));
-            Serial.println("lightCycleDurationMs = " + String(light.duration));
-            Serial.println("fanCycleDurationMs = " + String(fan.duration));
-            Serial.println("temperatureThreshold = " + String(temperatureThreshold));
-
-            requestedEvent = Event::RUN;
-        }
-
-        requestedEvent = requestedEvent == Event::CONFIG ? Event::NONE : requestedEvent;
-    }
-
-    if (requestedEvent == Event::RUN) {
-        Serial.println("[Event::RUN] requested");
-
-        updateRelays();
-
-        scheduleTicker.attach_ms(SCHEDULE_CHECK_INTERVAL_MS, handleSchedule);
-
-        String payload = getRunEventPayload(light.isOn, fan.isOn);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + configManager.getControllerId(), RequestType::POST, payload);
-        Serial.println("[Event::RUN] response: " + response);
-
-        requestedEvent = requestedEvent == Event::RUN ? Event::NONE : requestedEvent;
-    }
-
-    if (requestedEvent == Event::EMERGENCY_SWITCH) {
-        Serial.println("[Event::EMERGENCY_SWITCH] requested");
-
-        updateRelays();
-
-        String payload = getSwitchEventPayload(light.isOn, fan.isOn, light.isEmergencyOff);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + configManager.getControllerId(), RequestType::POST, payload);
-        Serial.println("[Event::SWITCH] response: " + response);
-
-        // reset emergency flag after switching light back
-        if (light.isEmergencyOff && light.isOn) {
-            light.isEmergencyOff = false;
-        }
-
-        requestedEvent = requestedEvent == Event::EMERGENCY_SWITCH ? Event::NONE : requestedEvent;
-    }
-
-    if (requestedEvent == Event::SWITCH) {
-        Serial.println("[Event::SWITCH] requested");
-
-        updateRelays();
-
-        String payload = getSwitchEventPayload(light.isOn, fan.isOn, light.isEmergencyOff);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + configManager.getControllerId(), RequestType::POST, payload);
-        Serial.println("[Event::SWITCH] response: " + response);
-
-        requestedEvent = requestedEvent == Event::SWITCH ? Event::NONE : requestedEvent;
-    }
-
-    if (requestedEvent == Event::UPDATE) {
-        Serial.println("[Event::UPDATE] requested");
-        String payload = getUpdateEventPayload(temperature, humidity);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + configManager.getControllerId(), RequestType::POST, payload);
-        Serial.println("[Event::UPDATE] response: " + response);
-
-        if ((temperature >= temperatureThreshold) && light.isOn) {
-            light.isEmergencyOff = true;
-            light.isOn = false;
-            requestedEvent = Event::EMERGENCY_SWITCH;
-        }
-
-        if ((temperature < temperatureThreshold) && light.isEmergencyOff) {
-            light.isOn = true;
-            requestedEvent = Event::EMERGENCY_SWITCH;
-        }
-
-        requestedEvent = requestedEvent == Event::UPDATE ? Event::NONE : requestedEvent;
-    }
-
-    if (requestedEvent == Event::ERROR) {
-        Serial.println("[Event::ERROR] requested");
-        String payload = getErrorEventPayload(lastError);
-        String response = sendRequest(REQUEST_DOMAIN + REQUEST_API_LOG + configManager.getControllerId(), RequestType::POST, payload);
-        Serial.println("[Event::ERROR] response: " + response);
-
-        requestedEvent = requestedEvent == Event::ERROR ? Event::NONE : requestedEvent;
-    }
+    process_next_event(context);
 }
