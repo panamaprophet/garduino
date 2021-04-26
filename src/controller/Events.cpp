@@ -17,6 +17,20 @@ std::map<EventType, String> EventTypeToStringMap = {
 };
 
 
+void logEvent(const Event &event) {
+    Serial.print("event: " + EventTypeToStringMap[event.type]);
+
+    if (event.payload.size() > 0) {
+        Serial.print(" :: ");
+    }
+
+    for (const auto & item: event.payload) {
+        Serial.print(item.first + "=" + item.second + " ");
+    }
+
+    Serial.println("");
+}
+
 String getPayloadString(const Event &event) {
     const String type = EventTypeToStringMap[event.type];
 
@@ -47,8 +61,8 @@ String handleUpdateEvent(Context &context, const Event &event) {
     const float temperature = (event.payload.find("temperature") -> second).toFloat();
     const float temperatureThreshold = context.configuration.temperatureThreshold;
 
-    auto light = context.configuration.light;
-    const auto fan = context.configuration.fan;
+    auto& light = context.configuration.light;
+    const auto& fan = context.configuration.fan;
 
     const String payload = getPayloadString(event); // temperature, humidity
     const String response = context.fetch(REQUEST_API_LOG, RequestType::POST, payload);
@@ -84,7 +98,7 @@ String handleUpdateEvent(Context &context, const Event &event) {
 }
 
 String handleSwitchEvent(Context &context, const Event &event) {
-    context.onUpdate();
+    context.onSwitch();
 
     const bool isLightOn = (event.payload.find("isLightOn") -> second).toInt();
     const bool isEmergencyOff = (event.payload.find("isEmergencyOff") -> second).toInt();
@@ -101,17 +115,17 @@ String handleSwitchEvent(Context &context, const Event &event) {
 }
 
 String handleRunEvent(Context &context, const Event &event) {
-    context.onUpdate();
-    context.onRun();
-
     const String payload = getPayloadString(event);
     const String response = context.fetch(REQUEST_API_LOG, RequestType::POST, payload);
+
+    context.onRun();
 
     return response;
 }
 
 String handleConfigEvent(Context &context, const Event &event) {
     const String response = context.fetch(REQUEST_API_CONFIG);
+
     DynamicJsonDocument json(DOCUMENT_CAPACITY);
     DeserializationError error = deserializeJson(json, response);
 
@@ -124,8 +138,8 @@ String handleConfigEvent(Context &context, const Event &event) {
     }
 
     if (!error) {
-        auto light = context.configuration.light;
-        auto fan = context.configuration.fan;
+        auto& light = context.configuration.light;
+        auto& fan = context.configuration.fan;
 
         light.isOn = json["isLightOn"];
         light.duration = json["lightCycleDurationMs"].as<long>();
@@ -150,32 +164,26 @@ String handleConfigEvent(Context &context, const Event &event) {
 }
 
 
+std::map<EventType, std::function<String(Context&, const Event&)>> EventTypeToHandlerMap = {
+    {EventType::CONFIG, handleConfigEvent},
+    {EventType::RUN, handleRunEvent},
+    {EventType::SWITCH, handleSwitchEvent},
+    {EventType::UPDATE, handleUpdateEvent},
+    {EventType::ERROR, handleErrorEvent},
+};
+
+
 void processNextEvent(Context &context) {
     if (context.events.size() == 0) {
         return;
     }
 
     Event event = context.events[0];
+    const auto& handler = EventTypeToHandlerMap[event.type];
+
+    logEvent(event);
+
+    handler(context, event);
 
     context.events.erase(std::begin(context.events));
-
-    switch (event.type) {
-        case EventType::CONFIG:
-            handleConfigEvent(context, event);
-            break;
-        case EventType::RUN:
-            handleRunEvent(context, event);
-            break;
-        case EventType::SWITCH:
-            handleSwitchEvent(context, event);
-            break;
-        case EventType::UPDATE:
-            handleUpdateEvent(context, event);
-            break;
-        case EventType::ERROR:
-            handleErrorEvent(context, event);
-            break;
-        default:
-            break;
-    }
 }

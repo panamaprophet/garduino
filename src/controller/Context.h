@@ -65,7 +65,7 @@ struct Context {
         State state;
         std::vector<Event> events;
 
-        std::function<void(void)> onUpdate;
+        std::function<void(void)> onSwitch;
         std::function<void(void)> onRun;
 
         String fetch(String endpoint, RequestType type = RequestType::GET, String payload = "") {

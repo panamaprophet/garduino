@@ -1,8 +1,5 @@
-#include <Arduino.h>
+#pragma once
 
-
-const String REQUEST_DOMAIN = "https://example.com";
-
-const String REQUEST_API_LOG = "/api/log/";
-
-const String REQUEST_API_CONFIG = "/api/config/";
+#define REQUEST_DOMAIN "https://example.com"
+#define REQUEST_API_LOG "/api/log/"
+#define REQUEST_API_CONFIG "/api/config/"

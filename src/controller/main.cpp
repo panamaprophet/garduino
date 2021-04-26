@@ -11,8 +11,6 @@
 #include <Events.h>
 
 
-#define CONFIG_FIELDS_COUNT 20
-
 #define DAY_MS 86400000
 #define DEFAULT_DURATION_MS (DAY_MS / 2)
 #define DEFAULT_TEMPERATURE_THRESHOLD 30
@@ -63,7 +61,11 @@ bool updateState(ModuleConfig &light, ModuleConfig &fan, unsigned long interval)
 }
 
 void handleSchedule() {
-    const bool isChanged = updateState(context.configuration.light, context.configuration.fan, SCHEDULE_CHECK_INTERVAL_MS);
+    const bool isChanged = updateState(
+        context.configuration.light,
+        context.configuration.fan,
+        SCHEDULE_CHECK_INTERVAL_MS
+    );
 
     if (isChanged) {
         context.events.push_back({
@@ -77,72 +79,8 @@ void handleSchedule() {
     }
 }
 
-void updateRelay(int pin, bool isOn) {
-    digitalWrite(pin, isOn ? HIGH : LOW);
-}
 
-
-void setup() {
-    Serial.begin(115200);
-    dht.setPin(DHT_PIN);
-    pinMode(RELAY_LIGHT_PIN, OUTPUT);
-    pinMode(RELAY_FAN_PIN, OUTPUT);
-
-    auto controller = context.configuration.controller;
-
-    if (controller.isConfigured()) {
-        WiFi.mode(WIFI_STA);
-        WiFi.hostname(controller.getControllerId());
-        WiFi.begin(controller.getSSID(), controller.getPassword());
-
-        while (WiFi.status() != WL_CONNECTED) {
-            Serial.print(".");
-            delay(1000);
-        }
-
-        Serial.println();
-        Serial.print("Connected to " + String(WiFi.SSID()) + " with IP ");
-        Serial.println(WiFi.localIP());
-
-        ticker.attach_ms(UPDATE_INTERVAL_MS, []() {
-            dht.read();
-        });
-
-        dht.onData([](float humidity, float temperature) {
-            context.state.humidity = humidity;
-            context.state.temperature = temperature;
-
-            context.events.push_back({
-                EventType::UPDATE,
-                {
-                    {"humidity", String(humidity)},
-                    {"temperature", String(temperature)}
-                },
-            });
-        });
-
-        dht.onError([](uint8_t e) {
-            context.state.lastError = dht.getError();
-            context.events.push_back({
-                EventType::ERROR,
-                {{"error", context.state.lastError}}
-            });
-        });
-
-        context.onUpdate = []() {
-            updateRelay(RELAY_LIGHT_PIN, context.configuration.light.isOn);
-            updateRelay(RELAY_FAN_PIN, context.configuration.fan.isOn);
-        };
-
-        context.onRun = []() {
-            scheduleTicker.attach_ms(SCHEDULE_CHECK_INTERVAL_MS, handleSchedule);
-        };
-
-        return;
-    }
-
-    Serial.println("No configuration was found. Switching to setup mode");
-
+void setupConfigurationMode(ControllerConfigurationManager &controller) {
     webServer.on("/", HTTP_GET, [&controller]() {
         String ssid = controller.getSSID();
         String password = controller.getPassword();
@@ -169,6 +107,73 @@ void setup() {
     webServer.begin();
 
     context.configuration.mode = ControllerMode::SETUP;
+}
+
+void setupProductionMode(ControllerConfigurationManager &controller) {
+    WiFi.mode(WIFI_STA);
+    WiFi.hostname(controller.getControllerId());
+    WiFi.begin(controller.getSSID(), controller.getPassword());
+
+    while (WiFi.status() != WL_CONNECTED) {
+        Serial.print(".");
+        delay(1000);
+    }
+
+    Serial.println();
+    Serial.print("Connected to " + String(WiFi.SSID()) + " with IP ");
+    Serial.println(WiFi.localIP());
+
+    ticker.attach_ms(UPDATE_INTERVAL_MS, []() {
+        dht.read();
+    });
+
+    dht.onData([](float humidity, float temperature) {
+        context.state.humidity = humidity;
+        context.state.temperature = temperature;
+
+        context.events.push_back({
+            EventType::UPDATE,
+            {
+                {"humidity", String(humidity)},
+                {"temperature", String(temperature)}
+            },
+        });
+    });
+
+    dht.onError([](uint8_t e) {
+        context.state.lastError = dht.getError();
+        context.events.push_back({
+            EventType::ERROR,
+            {{"error", context.state.lastError}}
+        });
+    });
+
+    context.onSwitch = []() {
+        digitalWrite(RELAY_LIGHT_PIN, context.configuration.light.isOn ? HIGH : LOW);
+        digitalWrite(RELAY_FAN_PIN, context.configuration.fan.isOn ? HIGH : LOW);
+    };
+
+    context.onRun = []() {
+        scheduleTicker.attach_ms(SCHEDULE_CHECK_INTERVAL_MS, handleSchedule);
+    };
+
+    context.configuration.mode = ControllerMode::RUNNING;
+
+    context.events.push_back({EventType::CONFIG});
+}
+
+
+void setup() {
+    Serial.begin(115200);
+    dht.setPin(DHT_PIN);
+    pinMode(RELAY_LIGHT_PIN, OUTPUT);
+    pinMode(RELAY_FAN_PIN, OUTPUT);
+
+    auto& controller = context.configuration.controller;
+
+    return controller.isConfigured()
+        ? setupProductionMode(controller)
+        : setupConfigurationMode(controller);
 }
 
 
