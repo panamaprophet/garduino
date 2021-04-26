@@ -1,7 +1,11 @@
 #include <Arduino.h>
 #include <EEPROM.h>
-#include <helpers.h>
 #include <ConfigurationManager.h>
+
+
+bool isEmpty(String str) {
+    return str.length() == 0;
+}
 
 
 ControllerConfigurationManager::ControllerConfigurationManager() {

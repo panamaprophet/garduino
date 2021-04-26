@@ -3,8 +3,8 @@ import type {EventType} from '../helpers/index';
 
 
 export const LOG_EVENT: Record<EventType, string> = {
+    'CONFIG': 'events/config',
     'UPDATE': 'events/update',
-    'CONNECT': 'events/connect',
     'ERROR': 'events/error',
     'SWITCH': 'events/switch',
     'RUN': 'events/run',

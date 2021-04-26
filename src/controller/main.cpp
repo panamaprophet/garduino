@@ -1,17 +1,12 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
-
-#include <WiFiClientSecure.h>
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
 #include <DHT.h>
 #include <Ticker.h>
 
-#include <config.h>
-#include <helpers.h>
 #include <ConfigurationServer.h>
-
 #include <Context.h>
 #include <Events.h>
 
@@ -71,7 +66,14 @@ void handleSchedule() {
     const bool isChanged = updateState(context.configuration.light, context.configuration.fan, SCHEDULE_CHECK_INTERVAL_MS);
 
     if (isChanged) {
-        context.events.push_back({Event::SWITCH}); // @todo: pass args
+        context.events.push_back({
+            EventType::SWITCH,
+            {
+                {"isLightOn", String(context.configuration.light.isOn)},
+                {"isFanOn", String(context.configuration.fan.isOn)},
+                {"isEmergencyOff", String(context.configuration.light.isEmergencyOff)}
+            }
+        });
     }
 }
 
@@ -106,16 +108,25 @@ void setup() {
             dht.read();
         });
 
-        dht.onData([](float h, float t) {
-            context.state.humidity = h;
-            context.state.temperature = t;
+        dht.onData([](float humidity, float temperature) {
+            context.state.humidity = humidity;
+            context.state.temperature = temperature;
 
-            context.events.push_back({Event::UPDATE}); // @todo: pass args
+            context.events.push_back({
+                EventType::UPDATE,
+                {
+                    {"humidity", String(humidity)},
+                    {"temperature", String(temperature)}
+                },
+            });
         });
 
         dht.onError([](uint8_t e) {
             context.state.lastError = dht.getError();
-            context.events.push_back({Event::ERROR}); // @todo: pass args
+            context.events.push_back({
+                EventType::ERROR,
+                {{"error", context.state.lastError}}
+            });
         });
 
         context.onUpdate = []() {
@@ -168,5 +179,5 @@ void loop() {
         return;
     }
 
-    process_next_event(context);
+    processNextEvent(context);
 }

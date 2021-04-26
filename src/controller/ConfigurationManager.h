@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 #include <EEPROM.h>
-#include <helpers.h>
 
 
 class ControllerConfigurationManager {

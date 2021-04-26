@@ -3,7 +3,7 @@ import mongodb from 'mongodb';
 import type {LogEntityRaw} from './log';
 
 
-export type EventType = 'UPDATE' | 'CONNECT' | 'ERROR' | 'SWITCH' | 'RUN';
+export type EventType = 'CONFIG' | 'UPDATE' | 'ERROR' | 'SWITCH' | 'RUN';
 
 export type EventData = {
     key: string,
