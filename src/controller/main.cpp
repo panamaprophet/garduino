@@ -1,19 +1,16 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
-#include <DNSServer.h>
-#include <DHT.h>
 #include <Ticker.h>
+#include <DHT.h>
 
+#include <ConfigurationManager.h>
 #include <ConfigurationServer.h>
 #include <Context.h>
 #include <Events.h>
 
 
 #define DAY_MS 86400000
-#define DEFAULT_DURATION_MS (DAY_MS / 2)
-#define DEFAULT_TEMPERATURE_THRESHOLD 30
 #define UPDATE_INTERVAL_MS 10 * 60 * 1000
 #define SCHEDULE_CHECK_INTERVAL_MS 1000
 
@@ -29,11 +26,9 @@ const char* CONFIGURATION_MODE_SSID = "CONFIGURATION_MODE";
 Ticker ticker;
 Ticker scheduleTicker;
 DHT11 dht;
-DNSServer dnsServer;
-ESP8266WebServer webServer(80);
-
 
 Context context;
+ConfigurationServer configServer(context.configuration.controller, CONFIGURATION_MODE_IP);
 
 
 bool updateModuleState(ModuleConfig &state, unsigned long interval) {
@@ -49,64 +44,26 @@ bool updateModuleState(ModuleConfig &state, unsigned long interval) {
     return false;
 }
 
-bool updateState(ModuleConfig &light, ModuleConfig &fan, unsigned long interval) {
-    const bool isLightStateChanged = updateModuleState(light, interval);
-    const bool isFanStateChanged = updateModuleState(fan, interval);
+bool updateState(Context &ctx, unsigned long interval) {
+    const bool isLightStateChanged = updateModuleState(ctx.configuration.light, interval);
+    const bool isFanStateChanged = updateModuleState(ctx.configuration.fan, interval);
 
     if (isLightStateChanged) {
-        light.isEmergencyOff = false;
+        ctx.configuration.light.isEmergencyOff = false;
     }
 
     return isLightStateChanged || isFanStateChanged;
 }
 
-void handleSchedule() {
-    const bool isChanged = updateState(
-        context.configuration.light,
-        context.configuration.fan,
-        SCHEDULE_CHECK_INTERVAL_MS
-    );
-
-    if (isChanged) {
-        context.events.push_back({
-            EventType::SWITCH,
-            {
-                {"isLightOn", String(context.configuration.light.isOn)},
-                {"isFanOn", String(context.configuration.fan.isOn)},
-                {"isEmergencyOff", String(context.configuration.light.isEmergencyOff)}
-            }
-        });
-    }
-}
-
 
 void setupConfigurationMode(ControllerConfigurationManager &controller) {
-    webServer.on("/", HTTP_GET, [&controller]() {
-        String ssid = controller.getSSID();
-        String password = controller.getPassword();
-        String controllerId = controller.getControllerId();
-
-        webServer.send(200, "text/html", handleRoot(ssid, password, controllerId));
-    });
-
-    webServer.on("/submit", HTTP_POST, [&controller]() {
-        String ssid = webServer.arg("ssid");
-        String password = webServer.arg("password");
-        String controllerId = webServer.arg("controllerId");
-
-        controller.set(ssid, password, controllerId);
-
-        webServer.send(200, "text/html", handleSubmit());
-    });
-
     WiFi.mode(WIFI_AP);
     WiFi.softAPConfig(CONFIGURATION_MODE_IP, CONFIGURATION_MODE_IP, IPAddress(255, 255, 255, 0));
     WiFi.softAP(CONFIGURATION_MODE_SSID);
 
-    dnsServer.start(53, "*", CONFIGURATION_MODE_IP);
-    webServer.begin();
-
     context.configuration.mode = ControllerMode::SETUP;
+
+    configServer.run();
 }
 
 void setupProductionMode(ControllerConfigurationManager &controller) {
@@ -154,7 +111,20 @@ void setupProductionMode(ControllerConfigurationManager &controller) {
     };
 
     context.onRun = []() {
-        scheduleTicker.attach_ms(SCHEDULE_CHECK_INTERVAL_MS, handleSchedule);
+        scheduleTicker.attach_ms(SCHEDULE_CHECK_INTERVAL_MS, []() {
+            const bool isChanged = updateState(context, SCHEDULE_CHECK_INTERVAL_MS);
+
+            if (isChanged) {
+                context.events.push_back({
+                    EventType::SWITCH,
+                    {
+                        {"isLightOn", String(context.configuration.light.isOn)},
+                        {"isFanOn", String(context.configuration.fan.isOn)},
+                        {"isEmergencyOff", String(context.configuration.light.isEmergencyOff)}
+                    }
+                });
+            }
+        });
     };
 
     context.configuration.mode = ControllerMode::RUNNING;
@@ -176,13 +146,8 @@ void setup() {
         : setupConfigurationMode(controller);
 }
 
-
 void loop() {
-    if (context.configuration.mode == ControllerMode::SETUP) {
-        dnsServer.processNextRequest();
-        webServer.handleClient();
-        return;
-    }
-
-    processNextEvent(context);
+    return (context.configuration.mode == ControllerMode::SETUP)
+        ? configServer.next()
+        : processNextEvent(context);
 }

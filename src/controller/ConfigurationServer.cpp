@@ -1,5 +1,42 @@
 #include <Arduino.h>
 #include <ConfigurationServer.h>
+#include <ConfigurationManager.h>
+#include <ESP8266WebServer.h>
+#include <DNSServer.h>
+
+
+ConfigurationServer::ConfigurationServer(ControllerConfigurationManager &controller, IPAddress dnsIp) {
+    ip = dnsIp;
+
+    web.on("/", HTTP_GET, [&]() {
+        String ssid = controller.getSSID();
+        String password = controller.getPassword();
+        String controllerId = controller.getControllerId();
+
+        web.send(200, "text/html", handleRoot(ssid, password, controllerId));
+    });
+
+    web.on("/submit", HTTP_POST, [&]() {
+        String ssid = web.arg("ssid");
+        String password = web.arg("password");
+        String controllerId = web.arg("controllerId");
+
+        controller.set(ssid, password, controllerId);
+
+        web.send(200, "text/html", handleSubmit());
+    });
+}
+
+void ConfigurationServer::run() {
+    dns.start(54, "*", ip);
+    web.begin();
+}
+
+void ConfigurationServer::next() {
+    dns.processNextRequest();
+    web.handleClient();
+}
+
 
 String handleRoot(String ssid, String password, String controllerId) {
     String content = "";
