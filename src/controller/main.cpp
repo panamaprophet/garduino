@@ -125,6 +125,8 @@ void setupProductionMode(ControllerConfigurationManager &controller) {
                 });
             }
         });
+
+        dht.read();
     };
 
     context.configuration.mode = ControllerMode::RUNNING;
