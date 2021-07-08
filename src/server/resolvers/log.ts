@@ -22,6 +22,10 @@ export const getLastUpdateEventLog = (db: Db, controllerId: string): Promise<Log
     return getLog(db, controllerId, {event: LOG_EVENT.UPDATE});
 };
 
+export const getLastError = (db: Db, controllerId: string): Promise<LogEntity | null> => {
+    return getLog(db, controllerId, {event: LOG_EVENT.ERROR});
+}
+
 export const getLastUpdateEventLogByControllerId = async (db: Db, controllerId: string): Promise<string | null> => {
     const eventData = await getLastUpdateEventLog(db, controllerId);
 
