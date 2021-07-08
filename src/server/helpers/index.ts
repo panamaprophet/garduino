@@ -1,5 +1,7 @@
 import express from 'express';
 import mongodb from 'mongodb';
+import type {Telegraf} from 'telegraf';
+import type {BotContext} from 'bot';
 import type {LogEntityRaw} from './log';
 
 
@@ -10,9 +12,10 @@ export type EventData = {
     value: string | number,
 };
 
-type RequestContext = {
+export type RequestContext = {
     db: mongodb.Db,
     controllerId: string,
+    bot: Telegraf<BotContext>,
     params?: Record<string, unknown>,
     body?: LogEntityRaw,
 };
@@ -39,6 +42,7 @@ export const getContext = (request: express.Request): RequestContext => ({
     params: request.params,
     body: request.body as LogEntityRaw,
     controllerId: request.params.controllerId,
+    bot: request.app.locals.bot as Telegraf<BotContext>,
 });
 
 export const getSensorDataByKey = (haystack: EventData[], needle: string): EventData[] => haystack.filter(({key}) => key === needle);

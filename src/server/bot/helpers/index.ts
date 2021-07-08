@@ -1,5 +1,7 @@
 import {Markup} from 'telegraf';
 import {ExtraReplyMessage} from 'telegraf/typings/telegram-types';
+import {getConfig} from '../../resolvers/config';
+import type {RequestContext} from '../../helpers/index';
 
 
 export const getInlineKeyboard = (options: string[]): ExtraReplyMessage => {
@@ -15,3 +17,11 @@ export const getInlineKeyboard = (options: string[]): ExtraReplyMessage => {
 
     return keyboard;
 };
+
+export const sendMessage = async ({ bot, db, controllerId }: RequestContext, message: string) => {
+    const config = await getConfig(db, controllerId);
+
+    return config?.chatId
+        ? bot.telegram.sendMessage(config.chatId, message)
+        : null;
+}

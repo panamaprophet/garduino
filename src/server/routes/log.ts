@@ -1,7 +1,9 @@
 import express from 'express';
 import {getContext} from '../helpers/index';
 import {getLogEntry} from '../helpers/log';
+import {getErrorMessage, isErrorEvent} from '../helpers/errors';
 import {getLastUpdateEventLog, saveLog, getUpdateEventLogStat} from '../resolvers/log';
+import {sendMessage} from '../bot/helpers';
 
 
 const router = express.Router();
@@ -21,17 +23,25 @@ router.get('/:controllerId/stat', async (request: express.Request, response: exp
 });
 
 router.post('/:controllerId', async (request: express.Request, response: express.Response): Promise<void> => {
-    const {db, body, controllerId} = getContext(request);
+    const context = getContext(request);
+    const {db, body, controllerId} = context;
     const data = getLogEntry(body);
 
-    if (data) {
-        const result = await saveLog(db, controllerId, data);
-        response.json(result);
+    if (!data) {
+        response.json({success: false});
 
         return;
     }
 
-    response.json({success: false});
+    if (isErrorEvent(data.event)) {
+        const errorMessage = getErrorMessage(controllerId, data);
+
+        sendMessage(context, errorMessage);
+    }
+
+    const result = await saveLog(db, controllerId, data);
+
+    response.json(result);
 });
 
 

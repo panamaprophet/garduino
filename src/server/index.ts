@@ -14,6 +14,7 @@ client.connect().then(async () => {
     const bot = await createBotInstance(db, config.bot);
 
     app.locals.db = db;
+    app.locals.bot = bot;
 
     app.use(express.json());
     app.use(bot.webhookCallback(config.bot.webHookPath));
