@@ -56,6 +56,18 @@ bool updateState(Context &ctx, unsigned long interval) {
 }
 
 
+void createSwitchEvent(Context &ctx) {
+    context.events.push_back({
+        EventType::SWITCH,
+        {
+            {"isLightOn", String(context.configuration.light.isOn)},
+            {"isFanOn", String(context.configuration.fan.isOn)},
+            {"isEmergencyOff", String(context.configuration.light.isEmergencyOff)}
+        }
+    });
+}
+
+
 void setupConfigurationMode(ControllerConfigurationManager &controller) {
     WiFi.mode(WIFI_AP);
     WiFi.softAPConfig(CONFIGURATION_MODE_IP, CONFIGURATION_MODE_IP, IPAddress(255, 255, 255, 0));
@@ -111,18 +123,15 @@ void setupProductionMode(ControllerConfigurationManager &controller) {
     };
 
     context.onRun = []() {
+        if (context.configuration.light.isOn || context.configuration.fan.isOn) {
+            createSwitchEvent(context);
+        }
+
         scheduleTicker.attach_ms(SCHEDULE_CHECK_INTERVAL_MS, []() {
             const bool isChanged = updateState(context, SCHEDULE_CHECK_INTERVAL_MS);
 
             if (isChanged) {
-                context.events.push_back({
-                    EventType::SWITCH,
-                    {
-                        {"isLightOn", String(context.configuration.light.isOn)},
-                        {"isFanOn", String(context.configuration.fan.isOn)},
-                        {"isEmergencyOff", String(context.configuration.light.isEmergencyOff)}
-                    }
-                });
+                createSwitchEvent(context);
             }
         });
 
