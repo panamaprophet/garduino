@@ -118,8 +118,8 @@ void setupProductionMode(ControllerConfigurationManager &controller) {
     });
 
     context.onSwitch = []() {
-        digitalWrite(RELAY_LIGHT_PIN, context.configuration.light.isOn ? HIGH : LOW);
-        digitalWrite(RELAY_FAN_PIN, context.configuration.fan.isOn ? HIGH : LOW);
+        digitalWrite(RELAY_LIGHT_PIN, context.configuration.light.isOn ? LOW : HIGH);
+        digitalWrite(RELAY_FAN_PIN, context.configuration.fan.isOn ? LOW : HIGH);
     };
 
     context.onRun = []() {
