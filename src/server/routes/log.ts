@@ -7,21 +7,21 @@ import {sendMessage} from '../bot/helpers';
 
 const router = new Router();
 
-router.get('/:controllerId', async (ctx, _) => {
+router.get('/:controllerId', async (ctx) => {
     const {controllerId} = ctx.params;
     const result = await getLastUpdateEventLog(ctx.db, controllerId);
 
     ctx.body = result;
 });
 
-router.get('/:controllerId/stat', async (ctx, _) => {
+router.get('/:controllerId/stat', async (ctx) => {
     const {controllerId} = ctx.params;
     const result = await getUpdateEventLogStat(ctx.db, controllerId);
 
     ctx.body = result;
 });
 
-router.post('/:controllerId', async (ctx, _) => {
+router.post('/:controllerId', async (ctx) => {
     const {controllerId} = ctx.params;
     const data = getLogEntry(ctx.request.body);
     const {db, bot} = ctx;

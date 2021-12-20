@@ -1,5 +1,5 @@
-import {Scenes} from 'telegraf';
-import {getInlineKeyboard} from '../../helpers';
+import {Scenes, Markup} from 'telegraf';
+import {getInlineKeyboard, isTextMessage} from '../../helpers';
 import {getControllerIds} from '../../../resolvers/controller';
 import type {BotContext} from '../../index';
 import {
@@ -22,8 +22,7 @@ const selectAction = async (ctx: BotContext): Promise<void> => {
 };
 
 const collectValue = async (ctx: BotContext): Promise<void> => {
-    // @ts-ignore: https://github.com/telegraf/telegraf/issues/1471
-    const selectedAction = ctx.callbackQuery?.data;
+    const selectedAction = isTextMessage(ctx?.message) ? ctx.message.text : '';
 
     if (!selectedAction || ![ACTION_CONTROLLER_ADD, ACTION_CONTROLLER_REMOVE].includes(selectedAction)) {
         ctx.wizard.selectStep(SELECT_ACTION_STEP_INDEX);
@@ -33,7 +32,7 @@ const collectValue = async (ctx: BotContext): Promise<void> => {
     ctx.session.action = selectedAction;
 
     if (selectedAction === ACTION_CONTROLLER_ADD) {
-        await ctx.reply('Provide new controller Id');
+        ctx.reply('Provide new controller Id');
     }
 
     if (selectedAction === ACTION_CONTROLLER_REMOVE) {
@@ -41,7 +40,7 @@ const collectValue = async (ctx: BotContext): Promise<void> => {
         const chatId = chat?.id;
         const controllerIds = await getControllerIds(db, {chatId});
 
-        await ctx.reply('Select controller to remove', getInlineKeyboard(controllerIds));
+        ctx.reply('Select controller to remove', getInlineKeyboard(controllerIds));
     }
 
     ctx.wizard.next();
@@ -51,9 +50,7 @@ const handleAction = async (ctx: BotContext): Promise<void> => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const {action} = ctx.session;
-    // @ts-ignore: https://github.com/telegraf/telegraf/issues/1471
-    // @ts-ignore: https://github.com/telegraf/telegraf/issues/1388
-    const controllerId = (action === ACTION_CONTROLLER_ADD) ? ctx.message?.text : ctx.callbackQuery?.data;
+    const controllerId = isTextMessage(ctx?.message) ? ctx.message.text : '';
 
     if (!controllerId) {
         ctx.wizard.selectStep(SELECT_ACTION_STEP_INDEX);
@@ -68,8 +65,7 @@ const handleAction = async (ctx: BotContext): Promise<void> => {
     const {success} = await actionHandler(action, {db, chatId, controllerId});
     const response = success ? 'Success' : 'Fail';
 
-    await ctx.reply(response);
-
+    ctx.reply(response, Markup.removeKeyboard());
     ctx.scene.leave();
 };
 

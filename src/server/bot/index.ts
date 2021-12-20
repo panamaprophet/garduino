@@ -1,5 +1,6 @@
 import stream from 'stream';
 import mongodb from 'mongodb';
+import Koa from 'koa';
 import {session, Scenes, Telegraf, Context, Middleware} from 'telegraf';
 import StatSceneController from './controllers/stat';
 import SetupSceneController from './controllers/setup';
@@ -21,10 +22,10 @@ export type ActionResult = {
 }
 
 // will be available under ctx.scene.session[.prop]
-export interface BotSceneSession extends Scenes.WizardSessionData {}
+interface WizardSessionData extends Scenes.WizardSessionData {}
 
 // will be available under ctx.session[.prop]
-export interface BotSession extends Scenes.SceneSession<BotSceneSession> {
+interface SceneSession extends Scenes.SceneSession<WizardSessionData> {
     controllerId: string,
     action: string,
 }
@@ -32,15 +33,16 @@ export interface BotSession extends Scenes.SceneSession<BotSceneSession> {
 // will be available under ctx[.prop]
 export interface BotContext extends Context {
     db: mongodb.Db,
-    session: BotSession,
-    scene: Scenes.SceneContextScene<BotContext, BotSceneSession>,
+    session: SceneSession,
+    scene: Scenes.SceneContextScene<BotContext, WizardSessionData>,
     wizard: Scenes.WizardContextWizard<BotContext>,
 }
 
 
 const getCommandByKey = (key: string, obj: { [k: string]: Middleware<BotContext> }) => obj[key];
 
-export const createBotInstance = async (db: mongodb.Db, {token, path}: Record<string, string>): Promise<Telegraf<BotContext>> => {
+
+export const getBot = async (db: mongodb.Db, {token, path}: Record<string, string>): Promise<[Telegraf<BotContext>, Koa.Middleware]> => {
     const bot = new Telegraf<BotContext>(token);
 
     const stage = new Scenes.Stage<BotContext>([
@@ -49,13 +51,25 @@ export const createBotInstance = async (db: mongodb.Db, {token, path}: Record<st
         ControllerManagerController,
     ], {ttl: 10});
 
-    await bot.telegram.setWebhook(path);
+    const url = `${path}/${bot.secretPathComponent()}`;
+
+    await bot.telegram.setWebhook(url);
 
     bot.context.db = db;
-    bot.use(session());
+    bot.use(session()); // @todo: get rid of deprecated
     bot.use(stage.middleware());
 
     Object.keys(commands).forEach(key => bot.command(key, getCommandByKey(key, commands)));
 
-    return bot;
+    const middleware: Koa.Middleware = async (ctx, next) => {
+        if (url.endsWith(ctx.url)) {
+            await bot.handleUpdate(ctx.request.body);
+            ctx.status = 200;
+            return;
+        }
+
+        return next();
+    };
+
+    return [bot, middleware];
 };

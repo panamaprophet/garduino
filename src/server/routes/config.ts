@@ -6,7 +6,7 @@ import {extractConfig, getConfigEntity, flattenConfig} from '../helpers/config';
 
 const router = new Router();
 
-router.get('/:controllerId', async (ctx, _) => {
+router.get('/:controllerId', async (ctx) => {
     const {controllerId} = ctx.params;
     const controllerConfig = await getConfig(ctx.db, controllerId);
 
@@ -23,7 +23,7 @@ router.get('/:controllerId', async (ctx, _) => {
     ctx.body = result;
 });
 
-router.post('/:controllerId', async (ctx, _) => {
+router.post('/:controllerId', async (ctx) => {
     const {controllerId} = ctx.params;
     const updatedParams = extractConfig(ctx.request.body) || {};
     const currentConfig = await getConfig(ctx.db, controllerId);

@@ -1,19 +1,19 @@
-import {Scenes} from 'telegraf';
-import {getInlineKeyboard} from '../../helpers';
+import {MiddlewareFn, Scenes} from 'telegraf';
+import {getInlineKeyboard, isTextMessage} from '../../helpers';
 import {getControllerIds} from '../../../resolvers/controller';
 import {selectController} from '../common';
 import type {BotContext} from '../../index';
 import {actionHandler, ACTION_STAT_DAY, ACTION_STAT_WEEK} from './actions';
+import {Markup} from 'telegraf';
 
 
 const SELECT_CONTROLLER_STEP_INDEX = 0;
 
 
-const selectAction = async (ctx: BotContext): Promise<void> => {
+const selectAction: MiddlewareFn<BotContext> = async (ctx: BotContext) => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
-    // @ts-ignore: https://github.com/telegraf/telegraf/issues/1471
-    const selectedControllerId = ctx.callbackQuery?.data;
+    const selectedControllerId = isTextMessage(ctx?.message) ? ctx.message.text : '';
     const controllerIds = await getControllerIds(db, {chatId});
 
     if (!selectedControllerId || !controllerIds.includes(selectedControllerId)) {
@@ -23,16 +23,14 @@ const selectAction = async (ctx: BotContext): Promise<void> => {
 
     ctx.session.controllerId = selectedControllerId;
 
-    await ctx.reply('Select an action', getInlineKeyboard([ACTION_STAT_DAY, ACTION_STAT_WEEK]));
-
+    ctx.reply('Select an action', getInlineKeyboard([ACTION_STAT_DAY, ACTION_STAT_WEEK]));
     ctx.wizard.next();
 };
 
 const handleAction = async (ctx: BotContext): Promise<void> => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
-    // @ts-ignore: https://github.com/telegraf/telegraf/issues/1471
-    const selectedAction = ctx.callbackQuery?.data;
+    const selectedAction = isTextMessage(ctx?.message) ? ctx.message.text : '';
     const {controllerId} = ctx.session;
 
     if (!controllerId) {
@@ -48,11 +46,11 @@ const handleAction = async (ctx: BotContext): Promise<void> => {
     const {text, image} = await actionHandler(selectedAction, {db, chatId, controllerId});
 
     if (image) {
-        await ctx.replyWithPhoto({source: image});
+        ctx.replyWithPhoto({source: image});
     }
 
     if (text) {
-        await ctx.reply(text);
+        ctx.reply(text, Markup.removeKeyboard());
     }
 
     ctx.scene.leave();

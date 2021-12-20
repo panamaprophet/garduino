@@ -1,5 +1,6 @@
 import {Markup} from 'telegraf';
 import {ExtraReplyMessage} from 'telegraf/typings/telegram-types';
+import {Message} from 'telegraf/typings/core/types/typegram';
 import {getConfig} from '../../resolvers/config';
 import type {RequestContext} from '../../helpers/index';
 
@@ -25,3 +26,5 @@ export const sendMessage = async ({ bot, db, controllerId }: RequestContext, mes
         ? bot.telegram.sendMessage(config.chatId, message)
         : null;
 }
+
+export const isTextMessage = (message: Message | undefined): message is Message.TextMessage => (message as Message.TextMessage).text !== undefined;
