@@ -1,13 +1,13 @@
-import express from 'express';
+import Router from '@koa/router';
 import ConfigRouter from './config';
 import LogRouter from './log';
 
 
-const router = express.Router();
+const router = new Router(); // express.Router();
 
 router.use('/log', LogRouter);
 router.use('/config', ConfigRouter);
-router.get('/', (_, response: express.Response) => response.send('OK'));
+router.get('/', ctx => ctx.body = 'OK'); //response.send('OK'));
 
 
 export default router;

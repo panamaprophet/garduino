@@ -1,18 +1,20 @@
-import express from 'express';
+// import express from 'express';
+import Router from '@koa/router';
 import {mergeDeepRight} from 'ramda';
 import {getConfig, setConfig} from '../resolvers/config';
 import {extractConfig, getConfigEntity, flattenConfig} from '../helpers/config';
 import {getContext} from '../helpers/index';
 
 
-const router = express.Router();
+const router = new Router(); //express.Router();
 
-router.get('/:controllerId', async (request: express.Request, response: express.Response): Promise<void> => {
-    const {db, controllerId} = getContext(request);
+// router.get('/:controllerId', async (request: express.Request, response: express.Response): Promise<void> => {
+router.get('/:controllerId', async (ctx, next) => {
+    const {db, controllerId} = getContext(ctx);
     const controllerConfig = await getConfig(db, controllerId);
 
     if (!controllerConfig) {
-        response.json({success: false});
+        ctx.body = { success: false };
         return;
     }
 
