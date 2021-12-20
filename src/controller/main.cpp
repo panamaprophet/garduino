@@ -18,6 +18,9 @@
 #define RELAY_FAN_PIN 12
 #define DHT_PIN 13
 
+#define PIN_OFF HIGH
+#define PIN_ON LOW
+
 
 const IPAddress CONFIGURATION_MODE_IP(192, 168, 4, 20);
 const char* CONFIGURATION_MODE_SSID = "CONFIGURATION_MODE";
@@ -118,14 +121,12 @@ void setupProductionMode(ControllerConfigurationManager &controller) {
     });
 
     context.onSwitch = []() {
-        digitalWrite(RELAY_LIGHT_PIN, context.configuration.light.isOn ? LOW : HIGH);
-        digitalWrite(RELAY_FAN_PIN, context.configuration.fan.isOn ? LOW : HIGH);
+        digitalWrite(RELAY_LIGHT_PIN, context.configuration.light.isOn ? PIN_ON : PIN_OFF);
+        digitalWrite(RELAY_FAN_PIN, context.configuration.fan.isOn ? PIN_ON : PIN_OFF);
     };
 
     context.onRun = []() {
-        if (context.configuration.light.isOn || context.configuration.fan.isOn) {
-            createSwitchEvent(context);
-        }
+        createSwitchEvent(context);
 
         scheduleTicker.attach_ms(SCHEDULE_CHECK_INTERVAL_MS, []() {
             const bool isChanged = updateState(context, SCHEDULE_CHECK_INTERVAL_MS);
@@ -146,9 +147,14 @@ void setupProductionMode(ControllerConfigurationManager &controller) {
 
 void setup() {
     Serial.begin(115200);
+
     dht.setPin(DHT_PIN);
+
     pinMode(RELAY_LIGHT_PIN, OUTPUT);
     pinMode(RELAY_FAN_PIN, OUTPUT);
+
+    digitalWrite(RELAY_LIGHT_PIN, PIN_OFF);
+    digitalWrite(RELAY_FAN_PIN, PIN_OFF);
 
     auto& controller = context.configuration.controller;
 
