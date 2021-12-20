@@ -4,6 +4,6 @@
 .vscode/launch.json
 node_modules
 dist
-src/server/config.ts
 src/controller/config.h
 tsconfig.tsbuildinfo
+.env
