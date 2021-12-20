@@ -5,17 +5,17 @@ import type {RequestContext} from '../../helpers/index';
 
 
 export const getInlineKeyboard = (options: string[]): ExtraReplyMessage => {
-    const keyboard = Markup.inlineKeyboard(options.map(option => {
+    const buttons = options.map(option => {
         const title = option;
         const action = option;
 
-        return Markup.callbackButton(title, action);
-    }))
-    .oneTime()
-    .resize()
-    .extra()
+        return Markup.button.callback(title, action);
+    });
 
-    return keyboard;
+    return Markup
+        .keyboard(buttons)
+        .oneTime()
+        .resize();
 };
 
 export const sendMessage = async ({ bot, db, controllerId }: RequestContext, message: string) => {

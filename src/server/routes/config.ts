@@ -1,20 +1,17 @@
-// import express from 'express';
 import Router from '@koa/router';
 import {mergeDeepRight} from 'ramda';
 import {getConfig, setConfig} from '../resolvers/config';
 import {extractConfig, getConfigEntity, flattenConfig} from '../helpers/config';
-import {getContext} from '../helpers/index';
 
 
-const router = new Router(); //express.Router();
+const router = new Router();
 
-// router.get('/:controllerId', async (request: express.Request, response: express.Response): Promise<void> => {
-router.get('/:controllerId', async (ctx, next) => {
-    const {db, controllerId} = getContext(ctx);
-    const controllerConfig = await getConfig(db, controllerId);
+router.get('/:controllerId', async (ctx, _) => {
+    const {controllerId} = ctx.params;
+    const controllerConfig = await getConfig(ctx.db, controllerId);
 
     if (!controllerConfig) {
-        ctx.body = { success: false };
+        ctx.body = {success: false};
         return;
     }
 
@@ -23,23 +20,23 @@ router.get('/:controllerId', async (ctx, next) => {
     const fan = getConfigEntity(config.fan);
     const result = flattenConfig({light, fan, temperatureThreshold});
 
-    response.json(result);
+    ctx.body = result;
 });
 
-router.post('/:controllerId', async (request: express.Request, response: express.Response): Promise<void> => {
-    const {db, body, controllerId} = getContext(request);
-    const updatedParams = extractConfig(body) || {};
-    const currentConfig = await getConfig(db, controllerId);
+router.post('/:controllerId', async (ctx, _) => {
+    const {controllerId} = ctx.params;
+    const updatedParams = extractConfig(ctx.request.body) || {};
+    const currentConfig = await getConfig(ctx.db, controllerId);
 
     if (!currentConfig) {
-        response.json({success: false});
+        ctx.body = {success: false};
         return;
     }
 
     const updatedConfig = mergeDeepRight(currentConfig, updatedParams);
-    const result = await setConfig(db, controllerId, updatedConfig);
+    const result = await setConfig(ctx.db, controllerId, updatedConfig);
 
-    response.json(result);
+    ctx.body = result;
 });
 
 

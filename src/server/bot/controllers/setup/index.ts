@@ -1,4 +1,4 @@
-import WizardScene from 'telegraf/scenes/wizard';
+import {Scenes} from 'telegraf';
 import {getConfig} from '../../../resolvers/config';
 import {getControllerIds} from '../../../resolvers/controller';
 import {formatConfig} from '../../../helpers/config';
@@ -19,15 +19,17 @@ const SELECT_CONTROLLER_STEP_INDEX = 0;
 
 const SELECT_ACTION_STEP_INDEX = 1;
 
-const selectAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
+const selectAction = async (ctx: BotContext): Promise<void> => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
-    const selectedControllerId = ctx.update.callback_query?.data;
+    // @ts-ignore: https://github.com/telegraf/telegraf/issues/1471
+    const selectedControllerId = ctx.callbackQuery?.data;
 
     const controllerIds = await getControllerIds(db, {chatId});
 
     if (!selectedControllerId || !controllerIds.includes(selectedControllerId)) {
-        return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
+        ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
+        return;
     }
 
     ctx.session.controllerId = selectedControllerId;
@@ -35,7 +37,8 @@ const selectAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
     const currentSettings = await getConfig(db, selectedControllerId);
 
     if (!currentSettings) {
-        return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
+        ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
+        return;
     }
 
     const text = formatConfig(currentSettings);
@@ -48,32 +51,38 @@ const selectAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
         ACTION_TEMPERATURE_THRESHOLD,
     ]));
 
-    return ctx.wizard.next();
+    ctx.wizard.next();
 };
 
-const collectValue = async (ctx: BotContext): Promise<typeof WizardScene> => {
-    ctx.session.action = ctx.update.callback_query?.data;
+const collectValue = async (ctx: BotContext): Promise<void> => {
+    // @ts-ignore: https://github.com/telegraf/telegraf/issues/1471
+    ctx.session.action = ctx.callbackQuery?.data;
+
     await ctx.reply('Provide new value');
 
-    return ctx.wizard.next();
+    ctx.wizard.next();
 };
 
-const handleAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
+const handleAction = async (ctx: BotContext): Promise<void> => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const {controllerId, action} = ctx.session;
+    // @ts-ignore: https://github.com/telegraf/telegraf/issues/1388
     const value = ctx.message?.text;
 
     if (!controllerId) {
-        return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
+        ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
+        return;
     }
 
     if (!action) {
-        return ctx.wizard.selectStep(SELECT_ACTION_STEP_INDEX);
+        ctx.wizard.selectStep(SELECT_ACTION_STEP_INDEX);
+        return;
     }
 
     if (!chatId) {
-        return ctx.scene.leave();
+        ctx.scene.leave();
+        return;
     }
 
     const {success} = await actionHandler(action, {db, chatId, controllerId, value});
@@ -81,11 +90,11 @@ const handleAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
 
     await ctx.reply(response);
 
-    return ctx.scene.leave();
+    ctx.scene.leave();
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-call
-export default new WizardScene('setup',
+
+export default new Scenes.WizardScene('setup',
     selectController,
     selectAction,
     collectValue,

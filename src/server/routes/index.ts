@@ -3,11 +3,11 @@ import ConfigRouter from './config';
 import LogRouter from './log';
 
 
-const router = new Router(); // express.Router();
+const router = new Router();
 
-router.use('/log', LogRouter);
-router.use('/config', ConfigRouter);
-router.get('/', ctx => ctx.body = 'OK'); //response.send('OK'));
+router.use('/log', LogRouter.routes(), LogRouter.allowedMethods());
+router.use('/config', ConfigRouter.routes(), ConfigRouter.allowedMethods());
+router.get('/', ctx => ctx.body = 'OK');
 
 
 export default router;

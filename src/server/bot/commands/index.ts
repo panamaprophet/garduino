@@ -1,20 +1,19 @@
-import WizardScene from 'telegraf/scenes/wizard';
-import type {Message} from 'telegraf/typings/telegram-types';
 import {getControllerIds} from '../../resolvers/controller';
 import {getLastUpdateEventLogByControllerId} from '../../resolvers/log';
 import {HELP_PLACEHOLDER} from '../../constants';
 import type {BotContext} from '..';
 
 
-export const help = async ({reply}: BotContext): Promise<Message> => reply(HELP_PLACEHOLDER);
+export const help = async (ctx: BotContext) => ctx.reply(HELP_PLACEHOLDER);
 
-export const stat = async ({scene}: BotContext): Promise<typeof WizardScene> => scene.enter('stat');
+export const stat = async ({scene}: BotContext) => scene.enter('stat');
 
-export const setup = async ({scene}: BotContext): Promise<typeof WizardScene> => scene.enter('setup');
+export const setup = async ({scene}: BotContext) => scene.enter('setup');
 
-export const manage = async ({scene}: BotContext): Promise<typeof WizardScene> => scene.enter('controllerManager');
+export const manage = async ({scene}: BotContext) => scene.enter('controllerManager');
 
-export const start = async ({db, chat, scene, reply}: BotContext): Promise<Message | typeof WizardScene> => {
+export const start = async (ctx: BotContext) => {
+    const {db, chat, scene} = ctx;
     const chatId = chat?.id;
     const controllerIds = await getControllerIds(db, {chatId});
 
@@ -22,10 +21,11 @@ export const start = async ({db, chat, scene, reply}: BotContext): Promise<Messa
         return scene.enter('controllerManager');
     }
 
-    return reply(HELP_PLACEHOLDER);
+    return ctx.reply(HELP_PLACEHOLDER);
 };
 
-export const now = async ({db, chat, reply}: BotContext): Promise<Message> => {
+export const now = async (ctx: BotContext) => {
+    const {db, chat} = ctx;
     const chatId = chat?.id;
     const controllerIds = await getControllerIds(db, {chatId});
 
@@ -33,8 +33,8 @@ export const now = async ({db, chat, reply}: BotContext): Promise<Message> => {
         const resultPromises = controllerIds.map(controllerId => getLastUpdateEventLogByControllerId(db, controllerId));
         const results = await Promise.all(resultPromises);
 
-        return reply(results.join('\n\r'));
+        return ctx.reply(results.join('\n\r'));
     }
 
-    return reply(JSON.stringify({ error: 'no controllers found' }));
+    return ctx.reply(JSON.stringify({ error: 'no controllers found' }));
 };
