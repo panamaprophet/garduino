@@ -1,8 +1,8 @@
-import WizardScene from 'telegraf/scenes/wizard';
+import {Scenes, Markup, MiddlewareFn} from 'telegraf';
 import {getConfig} from '../../../resolvers/config';
 import {getControllerIds} from '../../../resolvers/controller';
 import {formatConfig} from '../../../helpers/config';
-import {getInlineKeyboard} from '../../helpers';
+import {getInlineKeyboard, isTextMessage} from '../../helpers';
 import type {BotContext} from '../../index';
 import {selectController} from '../common';
 import {
@@ -19,11 +19,11 @@ const SELECT_CONTROLLER_STEP_INDEX = 0;
 
 const SELECT_ACTION_STEP_INDEX = 1;
 
-const selectAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
+
+const selectAction: MiddlewareFn<BotContext> = async ctx => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
-    const selectedControllerId = ctx.update.callback_query?.data;
-
+    const selectedControllerId = isTextMessage(ctx?.message) ? ctx.message.text : '';
     const controllerIds = await getControllerIds(db, {chatId});
 
     if (!selectedControllerId || !controllerIds.includes(selectedControllerId)) {
@@ -51,18 +51,19 @@ const selectAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
     return ctx.wizard.next();
 };
 
-const collectValue = async (ctx: BotContext): Promise<typeof WizardScene> => {
-    ctx.session.action = ctx.update.callback_query?.data;
+const collectValue: MiddlewareFn<BotContext> = async ctx => {
+    ctx.session.action = isTextMessage(ctx?.message) ? ctx.message.text : '';
+
     await ctx.reply('Provide new value');
 
     return ctx.wizard.next();
 };
 
-const handleAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
+const handleAction: MiddlewareFn<BotContext> = async ctx => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const {controllerId, action} = ctx.session;
-    const value = ctx.message?.text;
+    const value = isTextMessage(ctx?.message) ? ctx.message.text : '';
 
     if (!controllerId) {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
@@ -79,13 +80,13 @@ const handleAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
     const {success} = await actionHandler(action, {db, chatId, controllerId, value});
     const response = success ? 'Success' : 'Fail';
 
-    await ctx.reply(response);
+    await ctx.reply(response, Markup.removeKeyboard());
 
     return ctx.scene.leave();
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-call
-export default new WizardScene('setup',
+
+export default new Scenes.WizardScene('setup',
     selectController,
     selectAction,
     collectValue,

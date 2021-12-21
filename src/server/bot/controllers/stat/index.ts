@@ -1,22 +1,19 @@
-import WizardScene from 'telegraf/scenes/wizard';
-import {getInlineKeyboard} from '../../helpers';
+import {MiddlewareFn, Scenes} from 'telegraf';
+import {getInlineKeyboard, isTextMessage} from '../../helpers';
 import {getControllerIds} from '../../../resolvers/controller';
 import {selectController} from '../common';
-import type { BotContext } from '../../index';
-import {
-    actionHandler,
-    ACTION_STAT_DAY,
-    ACTION_STAT_WEEK,
-} from './actions';
+import type {BotContext} from '../../index';
+import {actionHandler, ACTION_STAT_DAY, ACTION_STAT_WEEK} from './actions';
+import {Markup} from 'telegraf';
 
 
 const SELECT_CONTROLLER_STEP_INDEX = 0;
 
 
-const selectAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
+const selectAction: MiddlewareFn<BotContext> = async ctx => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
-    const selectedControllerId = ctx.update.callback_query?.data;
+    const selectedControllerId = isTextMessage(ctx?.message) ? ctx.message.text : '';
     const controllerIds = await getControllerIds(db, {chatId});
 
     if (!selectedControllerId || !controllerIds.includes(selectedControllerId)) {
@@ -30,10 +27,10 @@ const selectAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
     return ctx.wizard.next();
 };
 
-const handleAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
+const handleAction: MiddlewareFn<BotContext> = async ctx => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
-    const selectedAction = ctx.update.callback_query?.data;
+    const selectedAction = isTextMessage(ctx?.message) ? ctx.message.text : '';
     const {controllerId} = ctx.session;
 
     if (!controllerId) {
@@ -51,14 +48,14 @@ const handleAction = async (ctx: BotContext): Promise<typeof WizardScene> => {
     }
 
     if (text) {
-        await ctx.reply(text);
+        await ctx.reply(text, Markup.removeKeyboard());
     }
 
     return ctx.scene.leave();
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-call
-export default new WizardScene('stat',
+
+export default new Scenes.WizardScene('stat',
     selectController,
     selectAction,
     handleAction,

@@ -1,9 +1,10 @@
+import {Middleware} from 'telegraf';
 import {getControllerIds} from '../../../resolvers/controller';
 import {getInlineKeyboard} from '../../helpers';
 import type {BotContext} from '../../index';
 
 
-export const selectController = async (ctx: BotContext): Promise<any> => {
+export const selectController: Middleware<BotContext> = async (ctx: BotContext) => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const controllerIds = await getControllerIds(db, {chatId});

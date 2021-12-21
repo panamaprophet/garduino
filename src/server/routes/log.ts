@@ -1,47 +1,49 @@
-import express from 'express';
-import {getContext} from '../helpers/index';
+import mongodb from 'mongodb';
+import {Telegraf} from 'telegraf';
+import Router from '@koa/router';
 import {getLogEntry} from '../helpers/log';
 import {getErrorMessage, isErrorEvent} from '../helpers/errors';
 import {getLastUpdateEventLog, saveLog, getUpdateEventLogStat} from '../resolvers/log';
 import {sendMessage} from '../bot/helpers';
+import {BotContext} from '../bot/index';
 
 
-const router = express.Router();
+const router = new Router();
 
-router.get('/:controllerId', async (request: express.Request, response: express.Response): Promise<void> => {
-    const {db, controllerId} = getContext(request);
-    const result = await getLastUpdateEventLog(db, controllerId);
+router.get('/:controllerId', async (ctx) => {
+    const {controllerId} = ctx.params;
+    const result = await getLastUpdateEventLog(ctx.db, controllerId);
 
-    response.json(result);
+    ctx.body = result;
 });
 
-router.get('/:controllerId/stat', async (request: express.Request, response: express.Response): Promise<void> => {
-    const {db, controllerId} = getContext(request);
-    const result = await getUpdateEventLogStat(db, controllerId);
+router.get('/:controllerId/stat', async (ctx) => {
+    const {controllerId} = ctx.params;
+    const result = await getUpdateEventLogStat(ctx.db, controllerId);
 
-    response.json(result);
+    ctx.body = result;
 });
 
-router.post('/:controllerId', async (request: express.Request, response: express.Response): Promise<void> => {
-    const context = getContext(request);
-    const {db, body, controllerId} = context;
-    const data = getLogEntry(body);
+router.post('/:controllerId', async (ctx) => {
+    const {controllerId} = ctx.params;
+    const data = getLogEntry(ctx.request.body);
+    const bot = ctx.bot as Telegraf<BotContext>;
+    const db = ctx.db as mongodb.Db;
 
     if (!data) {
-        response.json({success: false});
-
+        ctx.body = {success: false};
         return;
     }
 
     if (isErrorEvent(data.event)) {
         const errorMessage = getErrorMessage(controllerId, data);
 
-        sendMessage(context, errorMessage);
+        await sendMessage({controllerId, db, bot}, errorMessage);
     }
 
     const result = await saveLog(db, controllerId, data);
 
-    response.json(result);
+    ctx.body = result;
 });
 
 

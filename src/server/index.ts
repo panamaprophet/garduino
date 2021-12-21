@@ -1,28 +1,27 @@
-import express from 'express';
-import mongodb from 'mongodb';
-import {createBotInstance} from './bot';
-import config from './config';
+import Koa from 'koa';
+import koaBody from 'koa-body';
 import router from './routes';
+import {getBot} from './bot';
+import {getMongoClient} from './db';
+import {getConfig} from './config';
 
 
-const app = express();
-const uri = `mongodb+srv://${config.db.user}:${config.db.pass}@${config.db.host}/${config.db.database}?retryWrites=true&w=majority`;
-const client = new mongodb.MongoClient(uri, {useNewUrlParser: true, useUnifiedTopology: true});
-
-client.connect().then(async () => {
+void (async () => {
+    const config = getConfig();
+    const app = new Koa();
+    const client = await getMongoClient(config.db);
     const db = client.db();
-    const bot = await createBotInstance(db, config.bot);
+    const [bot, botMiddleware] = await getBot(db, config.bot);
 
-    app.locals.db = db;
-    app.locals.bot = bot;
+    app.context.db = db;
+    app.context.bot = bot;
 
-    app.use(express.json());
-    app.use(bot.webhookCallback(config.bot.webHookPath));
-    app.use('/api', router);
+    app.use(koaBody());
+    app.use(router.routes());
+    app.use(router.allowedMethods());
+    app.use(botMiddleware);
 
-    await bot.launch();
+    app.listen(process.env.SERVER_PORT);
 
-    app.listen(config.port, () => console.log(`server launched on :${config.port}`));
-}, () => {
-    console.log('connection error');
-});
+    console.log('started');
+})();

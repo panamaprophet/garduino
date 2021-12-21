@@ -1,29 +1,12 @@
 import stream from 'stream';
 import mongodb from 'mongodb';
-import {session, Stage, Telegraf, Context, Middleware} from 'telegraf';
-import {Scene, SceneContextMessageUpdate} from 'telegraf/typings/stage';
+import Koa from 'koa';
+import {session, Scenes, Telegraf, Context, Middleware} from 'telegraf';
 import StatSceneController from './controllers/stat';
 import SetupSceneController from './controllers/setup';
 import ControllerManagerController from './controllers/manager';
 import * as commands from './commands';
 
-
-type BotParams = {
-    token: string,
-    webHookPath: string,
-};
-
-type BaseBotContext = Context & SceneContextMessageUpdate;
-
-export interface BotContext extends BaseBotContext {
-    db: mongodb.Db,
-    chatId: number,
-    wizard: Scene<BaseBotContext> & {
-        next: () => void,
-        selectStep: (step: number) => void,
-    },
-    session: Record<string, string | undefined>,
-}
 
 export type ActionContext = {
     db: mongodb.Db,
@@ -38,23 +21,52 @@ export type ActionResult = {
     success?: boolean,
 }
 
-const getCommandByKey = (key: string, obj: Record<string, Middleware<BotContext>>) => obj[key];
+// will be available under ctx.session[.prop]
+interface SceneSession extends Scenes.SceneSession<Scenes.WizardSessionData> {
+    controllerId: string,
+    action: string,
+}
 
-export const createBotInstance = async (db: mongodb.Db, {token, webHookPath}: BotParams): Promise<Telegraf<BotContext>> => {
+// will be available under ctx[.prop]
+export interface BotContext extends Context {
+    db: mongodb.Db,
+    session: SceneSession,
+    scene: Scenes.SceneContextScene<BotContext, Scenes.WizardSessionData>,
+    wizard: Scenes.WizardContextWizard<BotContext>,
+}
+
+
+const getCommandByKey = (key: string, obj: { [k: string]: Middleware<BotContext> }) => obj[key];
+
+
+export const getBot = async (db: mongodb.Db, {token, path}: Record<string, string>): Promise<[Telegraf<BotContext>, Koa.Middleware]> => {
     const bot = new Telegraf<BotContext>(token);
-    const stage = new Stage<BotContext>([
+
+    const stage = new Scenes.Stage<BotContext>([
         StatSceneController,
         SetupSceneController,
         ControllerManagerController,
     ], {ttl: 10});
 
-    await bot.telegram.setWebhook(webHookPath);
+    const url = `${path}/${bot.secretPathComponent()}`;
+
+    await bot.telegram.setWebhook(url);
 
     bot.context.db = db;
-    bot.use(session());
+    bot.use(session()); // @todo: get rid of deprecated
     bot.use(stage.middleware());
 
     Object.keys(commands).forEach(key => bot.command(key, getCommandByKey(key, commands)));
 
-    return bot;
+    const middleware: Koa.Middleware = async (ctx, next) => {
+        if (url.endsWith(ctx.url)) {
+            await bot.handleUpdate(ctx.request.body);
+            ctx.status = 200;
+            return;
+        }
+
+        return next();
+    };
+
+    return [bot, middleware];
 };

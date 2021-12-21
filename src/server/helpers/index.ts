@@ -1,23 +1,8 @@
-import express from 'express';
-import mongodb from 'mongodb';
-import type {Telegraf} from 'telegraf';
-import type {BotContext} from 'bot';
-import type {LogEntityRaw} from './log';
-
-
 export type EventType = 'CONFIG' | 'UPDATE' | 'ERROR' | 'SWITCH' | 'RUN';
 
 export type EventData = {
     key: string,
     value: string | number,
-};
-
-export type RequestContext = {
-    db: mongodb.Db,
-    controllerId: string,
-    bot: Telegraf<BotContext>,
-    params?: Record<string, unknown>,
-    body?: LogEntityRaw,
 };
 
 export type SensorLogEntity = {
@@ -26,7 +11,7 @@ export type SensorLogEntity = {
     date: number,
 };
 
-type SensorLogEntityAggregated = {
+export type SensorLogEntityAggregated = {
     date: number[],
     temperature: number[],
     humidity: number[],
@@ -36,14 +21,6 @@ type SensorLogEntityAggregated = {
     minTemperature: SensorLogEntity,
 };
 
-
-export const getContext = (request: express.Request): RequestContext => ({
-    db: request.app.locals.db as mongodb.Db,
-    params: request.params,
-    body: request.body as LogEntityRaw,
-    controllerId: request.params.controllerId,
-    bot: request.app.locals.bot as Telegraf<BotContext>,
-});
 
 export const getSensorDataByKey = (haystack: EventData[], needle: string): EventData[] => haystack.filter(({key}) => key === needle);
 

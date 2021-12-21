@@ -53,7 +53,7 @@ export const getConfigEntity = ({duration, onTime: onTimeString}: ConfigEntityRa
 };
 
 // @todo: add validation
-export const extractConfig = <T>(data: T): T => identity(data);
+export const extractConfig = identity;
 
 /**
  * @param {ControllerConfig} controllerConfig - nested configuration
