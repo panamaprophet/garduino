@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
-#include <ConfigurationManager.h>
+#include <configurationManager/ConfigurationManager.h>
 
 
 String handleRoot(String ssid, String password, String controllerId);

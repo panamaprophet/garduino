@@ -1,8 +1,8 @@
 #include <Arduino.h>
-#include <ConfigurationServer.h>
-#include <ConfigurationManager.h>
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
+#include <configurationServer/ConfigurationServer.h>
+#include <configurationManager/ConfigurationManager.h>
 
 
 ConfigurationServer::ConfigurationServer(ControllerConfigurationManager &controller, IPAddress dnsIp) {

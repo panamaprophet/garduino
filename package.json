@@ -4,11 +4,13 @@
   "description": "home garden controller",
   "main": "dist/server/index.js",
   "scripts": {
-    "watch": "./node_modules/.bin/nodemon src/server/index.ts",
-    "build": "./node_modules/.bin/tsc --build tsconfig.json",
-    "start": "node dist/server/index.js",
-    "lint": "./node_modules/.bin/eslint -c .eslintrc.json --ext .ts src/server",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "server:watch": "./node_modules/.bin/nodemon server/index.ts",
+    "server:build": "./node_modules/.bin/tsc --build tsconfig.json",
+    "server:start": "node dist/server/index.js",
+    "controller:upload-files": "pio run --target buildfs --environment nodemcuv2 && pio run --target uploadfs --environment nodemcuv2",
+    "controller:build": "pio run",
+    "controller:upload": "pio run --target upload --target monitor --environment nodemcuv2",
+    "lint": "./node_modules/.bin/eslint -c .eslintrc.json --ext .ts server/"
   },
   "author": "panamaprophet",
   "license": "ISC",

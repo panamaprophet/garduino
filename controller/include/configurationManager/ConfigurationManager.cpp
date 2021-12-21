@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <EEPROM.h>
-#include <ConfigurationManager.h>
+#include <configurationManager/ConfigurationManager.h>
 
 
 bool isEmpty(String str) {

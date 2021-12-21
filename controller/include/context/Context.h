@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <WiFiClientSecure.h>
 #include <ESP8266HTTPClient.h>
-#include <ConfigurationManager.h>
+#include <configurationManager/ConfigurationManager.h>
 #include <config.h>
 
 

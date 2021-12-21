@@ -4,10 +4,10 @@
 #include <Ticker.h>
 #include <DHT.h>
 
-#include <ConfigurationManager.h>
-#include <ConfigurationServer.h>
-#include <Context.h>
-#include <Events.h>
+#include <configurationManager/ConfigurationManager.h>
+#include <configurationServer/ConfigurationServer.h>
+#include <context/Context.h>
+#include <events/Events.h>
 
 
 #define DAY_MS 86400000
@@ -148,7 +148,7 @@ void setupProductionMode(ControllerConfigurationManager &controller) {
 void setup() {
     Serial.begin(115200);
 
-    dht.setPin(DHT_PIN);
+    dht.setup(DHT_PIN);
 
     pinMode(RELAY_LIGHT_PIN, OUTPUT);
     pinMode(RELAY_FAN_PIN, OUTPUT);
