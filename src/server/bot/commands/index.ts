@@ -2,17 +2,18 @@ import {getControllerIds} from '../../resolvers/controller';
 import {getLastUpdateEventLogByControllerId} from '../../resolvers/log';
 import {HELP_PLACEHOLDER} from '../../constants';
 import type {BotContext} from '..';
+import { MiddlewareFn } from 'telegraf';
 
 
-export const help = async (ctx: BotContext) => ctx.reply(HELP_PLACEHOLDER);
+export const help: MiddlewareFn<BotContext> = ctx => ctx.reply(HELP_PLACEHOLDER);
 
-export const stat = async ({scene}: BotContext) => scene.enter('stat');
+export const stat: MiddlewareFn<BotContext> = ({scene}) => scene.enter('stat');
 
-export const setup = async ({scene}: BotContext) => scene.enter('setup');
+export const setup: MiddlewareFn<BotContext> = ({scene}) => scene.enter('setup');
 
-export const manage = async ({scene}: BotContext) => scene.enter('controllerManager');
+export const manage: MiddlewareFn<BotContext> = ({scene}) => scene.enter('controllerManager');
 
-export const start = async (ctx: BotContext) => {
+export const start: MiddlewareFn<BotContext> = async ctx => {
     const {db, chat, scene} = ctx;
     const chatId = chat?.id;
     const controllerIds = await getControllerIds(db, {chatId});
@@ -24,7 +25,7 @@ export const start = async (ctx: BotContext) => {
     return ctx.reply(HELP_PLACEHOLDER);
 };
 
-export const now = async (ctx: BotContext) => {
+export const now: MiddlewareFn<BotContext> = async ctx => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const controllerIds = await getControllerIds(db, {chatId});

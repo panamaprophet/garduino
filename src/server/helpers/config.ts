@@ -1,4 +1,5 @@
 import {parse, addMilliseconds, compareDesc, differenceInMilliseconds} from 'date-fns';
+import {identity} from 'ramda';
 
 
 type ConfigEntityRaw = {
@@ -52,7 +53,7 @@ export const getConfigEntity = ({duration, onTime: onTimeString}: ConfigEntityRa
 };
 
 // @todo: add validation
-export const extractConfig = <T>(data: T): T => data;
+export const extractConfig = identity;
 
 /**
  * @param {ControllerConfig} controllerConfig - nested configuration

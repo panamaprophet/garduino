@@ -3,7 +3,7 @@ import {config} from 'dotenv';
 config();
 
 
-export const getConfig = () => ({
+export const getConfig = (): Record<string, any> => ({
     db: {
         user: String(process.env.DB_USERNAME),
         pass: String(process.env.DB_PASSWORD),

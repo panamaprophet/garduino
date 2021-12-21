@@ -10,14 +10,12 @@ export const selectController: Middleware<BotContext> = async (ctx: BotContext) 
     const controllerIds = await getControllerIds(db, {chatId});
 
     if (controllerIds.length === 0) {
-        ctx.reply('No controllers presented');
-        ctx.scene.leave();
+        await ctx.reply('No controllers presented');
+
+        return ctx.scene.leave();
     }
 
-    ctx.reply(
-        'Select controller', 
-        getInlineKeyboard(controllerIds)
-    );
+    await ctx.reply('Select controller', getInlineKeyboard(controllerIds));
 
-    ctx.wizard.next();
+    return ctx.wizard.next();
 };

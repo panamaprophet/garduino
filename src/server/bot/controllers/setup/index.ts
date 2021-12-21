@@ -1,4 +1,4 @@
-import {Scenes, Markup} from 'telegraf';
+import {Scenes, Markup, MiddlewareFn} from 'telegraf';
 import {getConfig} from '../../../resolvers/config';
 import {getControllerIds} from '../../../resolvers/controller';
 import {formatConfig} from '../../../helpers/config';
@@ -20,15 +20,14 @@ const SELECT_CONTROLLER_STEP_INDEX = 0;
 const SELECT_ACTION_STEP_INDEX = 1;
 
 
-const selectAction = async (ctx: BotContext): Promise<void> => {
+const selectAction: MiddlewareFn<BotContext> = async ctx => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const selectedControllerId = isTextMessage(ctx?.message) ? ctx.message.text : '';
     const controllerIds = await getControllerIds(db, {chatId});
 
     if (!selectedControllerId || !controllerIds.includes(selectedControllerId)) {
-        ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
-        return;
+        return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
     }
 
     ctx.session.controllerId = selectedControllerId;
@@ -36,13 +35,12 @@ const selectAction = async (ctx: BotContext): Promise<void> => {
     const currentSettings = await getConfig(db, selectedControllerId);
 
     if (!currentSettings) {
-        ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
-        return;
+        return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
     }
 
     const text = formatConfig(currentSettings);
 
-    ctx.reply(text, getInlineKeyboard([
+    await ctx.reply(text, getInlineKeyboard([
         ACTION_LIGHT_ONTIME,
         ACTION_FAN_ONTIME,
         ACTION_LIGHT_DURATION,
@@ -50,42 +48,41 @@ const selectAction = async (ctx: BotContext): Promise<void> => {
         ACTION_TEMPERATURE_THRESHOLD,
     ]));
 
-    ctx.wizard.next();
+    return ctx.wizard.next();
 };
 
-const collectValue = async (ctx: BotContext): Promise<void> => {
+const collectValue: MiddlewareFn<BotContext> = async ctx => {
     ctx.session.action = isTextMessage(ctx?.message) ? ctx.message.text : '';
 
-    ctx.reply('Provide new value');
-    ctx.wizard.next();
+    await ctx.reply('Provide new value');
+
+    return ctx.wizard.next();
 };
 
-const handleAction = async (ctx: BotContext): Promise<void> => {
+const handleAction: MiddlewareFn<BotContext> = async ctx => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const {controllerId, action} = ctx.session;
     const value = isTextMessage(ctx?.message) ? ctx.message.text : '';
 
     if (!controllerId) {
-        ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
-        return;
+        return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
     }
 
     if (!action) {
-        ctx.wizard.selectStep(SELECT_ACTION_STEP_INDEX);
-        return;
+        return ctx.wizard.selectStep(SELECT_ACTION_STEP_INDEX);
     }
 
     if (!chatId) {
-        ctx.scene.leave();
-        return;
+        return ctx.scene.leave();
     }
 
     const {success} = await actionHandler(action, {db, chatId, controllerId, value});
     const response = success ? 'Success' : 'Fail';
 
-    ctx.reply(response, Markup.removeKeyboard());
-    ctx.scene.leave();
+    await ctx.reply(response, Markup.removeKeyboard());
+
+    return ctx.scene.leave();
 };
 
 

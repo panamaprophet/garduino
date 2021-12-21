@@ -21,11 +21,8 @@ export type ActionResult = {
     success?: boolean,
 }
 
-// will be available under ctx.scene.session[.prop]
-interface WizardSessionData extends Scenes.WizardSessionData {}
-
 // will be available under ctx.session[.prop]
-interface SceneSession extends Scenes.SceneSession<WizardSessionData> {
+interface SceneSession extends Scenes.SceneSession<Scenes.WizardSessionData> {
     controllerId: string,
     action: string,
 }
@@ -34,7 +31,7 @@ interface SceneSession extends Scenes.SceneSession<WizardSessionData> {
 export interface BotContext extends Context {
     db: mongodb.Db,
     session: SceneSession,
-    scene: Scenes.SceneContextScene<BotContext, WizardSessionData>,
+    scene: Scenes.SceneContextScene<BotContext, Scenes.WizardSessionData>,
     wizard: Scenes.WizardContextWizard<BotContext>,
 }
 

@@ -3,10 +3,12 @@ import ConfigRouter from './config';
 import LogRouter from './log';
 
 
-const router = new Router();
+const router = new Router({
+    prefix: '/api',
+});
 
-router.use('/log', LogRouter.routes(), LogRouter.allowedMethods());
-router.use('/config', ConfigRouter.routes(), ConfigRouter.allowedMethods());
+router.use('/log', LogRouter.routes());
+router.use('/config', ConfigRouter.routes());
 router.get('/', ctx => ctx.body = 'OK');
 
 

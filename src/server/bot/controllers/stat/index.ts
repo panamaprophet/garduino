@@ -10,50 +10,48 @@ import {Markup} from 'telegraf';
 const SELECT_CONTROLLER_STEP_INDEX = 0;
 
 
-const selectAction: MiddlewareFn<BotContext> = async (ctx: BotContext) => {
+const selectAction: MiddlewareFn<BotContext> = async ctx => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const selectedControllerId = isTextMessage(ctx?.message) ? ctx.message.text : '';
     const controllerIds = await getControllerIds(db, {chatId});
 
     if (!selectedControllerId || !controllerIds.includes(selectedControllerId)) {
-        ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
-        return;
+        return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
     }
 
     ctx.session.controllerId = selectedControllerId;
 
-    ctx.reply('Select an action', getInlineKeyboard([ACTION_STAT_DAY, ACTION_STAT_WEEK]));
-    ctx.wizard.next();
+    await ctx.reply('Select an action', getInlineKeyboard([ACTION_STAT_DAY, ACTION_STAT_WEEK]));
+
+    return ctx.wizard.next();
 };
 
-const handleAction = async (ctx: BotContext): Promise<void> => {
+const handleAction: MiddlewareFn<BotContext> = async ctx => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
     const selectedAction = isTextMessage(ctx?.message) ? ctx.message.text : '';
     const {controllerId} = ctx.session;
 
     if (!controllerId) {
-        ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
-        return;
+        return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
     }
 
     if (!chatId) {
-        ctx.scene.leave();
-        return;
+        return ctx.scene.leave();
     }
 
     const {text, image} = await actionHandler(selectedAction, {db, chatId, controllerId});
 
     if (image) {
-        ctx.replyWithPhoto({source: image});
+        await ctx.replyWithPhoto({source: image});
     }
 
     if (text) {
-        ctx.reply(text, Markup.removeKeyboard());
+        await ctx.reply(text, Markup.removeKeyboard());
     }
 
-    ctx.scene.leave();
+    return ctx.scene.leave();
 };
 
 

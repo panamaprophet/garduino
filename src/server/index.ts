@@ -6,7 +6,7 @@ import {getMongoClient} from './db';
 import {getConfig} from './config';
 
 
-(async function () {
+void (async () => {
     const config = getConfig();
     const app = new Koa();
     const client = await getMongoClient(config.db);
