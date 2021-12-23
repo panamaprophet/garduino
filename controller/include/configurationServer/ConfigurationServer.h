@@ -4,17 +4,10 @@
 #include <configurationManager/ConfigurationManager.h>
 
 
-String handleRoot(String ssid, String password, String controllerId);
-
-String handleSubmit();
-
-String createPage(String content);
-
-
 class ConfigurationServer {
     private:
-        DNSServer dns;
-        ESP8266WebServer web;
+        DNSServer dnsServer;
+        ESP8266WebServer webServer;
         IPAddress ip;
     public:
         ConfigurationServer(ControllerConfigurationManager &controller, IPAddress ip);

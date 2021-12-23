@@ -2,15 +2,16 @@
   "name": "garduino",
   "version": "1.0.0",
   "description": "home garden controller",
-  "main": "dist/server/index.js",
   "scripts": {
-    "server:watch": "./node_modules/.bin/nodemon server/index.ts",
-    "server:build": "./node_modules/.bin/tsc --build tsconfig.json",
+    "server:watch": "nodemon server/index.ts",
+    "server:build": "tsc --build server/",
     "server:start": "node dist/server/index.js",
-    "controller:upload-files": "pio run --target buildfs --environment nodemcuv2 && pio run --target uploadfs --environment nodemcuv2",
+    "server:lint": "eslint -c .eslintrc.json --ext .ts server/",
+    "ui:watch": "parcel controller-ui/index.html",
+    "ui:build": "parcel build --no-source-maps --no-content-hash --dist-dir data/ controller-ui/index.html",
+    "ui:upload": "pio run --target buildfs --environment nodemcuv2 && pio run --target uploadfs --environment nodemcuv2",
     "controller:build": "pio run",
-    "controller:upload": "pio run --target upload --target monitor --environment nodemcuv2",
-    "lint": "./node_modules/.bin/eslint -c .eslintrc.json --ext .ts server/"
+    "controller:upload": "pio run --target upload --target monitor --environment nodemcuv2"
   },
   "author": "panamaprophet",
   "license": "ISC",
@@ -22,7 +23,7 @@
     "koa": "^2.13.4",
     "koa-body": "^4.2.0",
     "mongodb": "^3.6.2",
-    "nodemon": "^2.0.15",
+    "preact": "^10.6.4",
     "ramda": "^0.27.1",
     "telegraf": "^4.5.2"
   },
@@ -38,6 +39,8 @@
     "eslint": "^7.12.1",
     "eslint-plugin-jsdoc": "^30.7.7",
     "eslint-plugin-prefer-arrow": "^1.2.2",
+    "nodemon": "^2.0.15",
+    "parcel": "^2.0.1",
     "ts-node": "^10.4.0",
     "typescript": "^4.0.5"
   }

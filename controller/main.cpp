@@ -13,25 +13,20 @@
 #define DAY_MS 86400000
 #define UPDATE_INTERVAL_MS 10 * 60 * 1000
 #define SCHEDULE_CHECK_INTERVAL_MS 1000
-
 #define RELAY_LIGHT_PIN 14
 #define RELAY_FAN_PIN 12
 #define DHT_PIN 13
-
 #define PIN_OFF HIGH
 #define PIN_ON LOW
-
-
-const IPAddress CONFIGURATION_MODE_IP(192, 168, 4, 20);
-const char* CONFIGURATION_MODE_SSID = "CONFIGURATION_MODE";
+#define CONTROLLER_AP_IP IPAddress(192, 168, 4, 20)
+#define CONTROLLER_AP_SSID "CONFIGURATION_MODE"
 
 
 Ticker ticker;
 Ticker scheduleTicker;
 DHT11 dht;
-
 Context context;
-ConfigurationServer configServer(context.configuration.controller, CONFIGURATION_MODE_IP);
+ConfigurationServer configServer(context.configuration.controller, CONTROLLER_AP_IP);
 
 
 bool updateModuleState(ModuleConfig &state, unsigned long interval) {
@@ -58,31 +53,23 @@ bool updateState(Context &ctx, unsigned long interval) {
     return isLightStateChanged || isFanStateChanged;
 }
 
-
 void createSwitchEvent(Context &ctx) {
     context.events.push_back({
         EventType::SWITCH,
         {
-            {"isLightOn", String(context.configuration.light.isOn)},
-            {"isFanOn", String(context.configuration.fan.isOn)},
-            {"isEmergencyOff", String(context.configuration.light.isEmergencyOff)}
+            { "isLightOn", String(context.configuration.light.isOn) },
+            { "isFanOn", String(context.configuration.fan.isOn) },
+            { "isEmergencyOff", String(context.configuration.light.isEmergencyOff) }
         }
     });
 }
 
+void connect(ControllerConfigurationManager &controller) {
+    WiFi.mode(WIFI_AP_STA);
 
-void setupConfigurationMode(ControllerConfigurationManager &controller) {
-    WiFi.mode(WIFI_AP);
-    WiFi.softAPConfig(CONFIGURATION_MODE_IP, CONFIGURATION_MODE_IP, IPAddress(255, 255, 255, 0));
-    WiFi.softAP(CONFIGURATION_MODE_SSID);
+    WiFi.softAPConfig(CONTROLLER_AP_IP, CONTROLLER_AP_IP, IPAddress(255, 255, 255, 0));
+    WiFi.softAP(CONTROLLER_AP_SSID, emptyString, 1, 1);
 
-    context.configuration.mode = ControllerMode::SETUP;
-
-    configServer.run();
-}
-
-void setupProductionMode(ControllerConfigurationManager &controller) {
-    WiFi.mode(WIFI_STA);
     WiFi.hostname(controller.getControllerId());
     WiFi.begin(controller.getSSID(), controller.getPassword());
 
@@ -94,6 +81,23 @@ void setupProductionMode(ControllerConfigurationManager &controller) {
     Serial.println();
     Serial.print("Connected to " + String(WiFi.SSID()) + " with IP ");
     Serial.println(WiFi.localIP());
+}
+
+
+void setup() {
+    Serial.begin(115200);
+
+    dht.setup(DHT_PIN);
+
+    pinMode(RELAY_LIGHT_PIN, OUTPUT);
+    pinMode(RELAY_FAN_PIN, OUTPUT);
+
+    digitalWrite(RELAY_LIGHT_PIN, PIN_OFF);
+    digitalWrite(RELAY_FAN_PIN, PIN_OFF);
+
+    auto& controller = context.configuration.controller;
+
+    connect(controller);
 
     ticker.attach_ms(UPDATE_INTERVAL_MS, []() {
         dht.read();
@@ -106,8 +110,8 @@ void setupProductionMode(ControllerConfigurationManager &controller) {
         context.events.push_back({
             EventType::UPDATE,
             {
-                {"humidity", String(humidity)},
-                {"temperature", String(temperature)}
+                { "humidity", String(humidity) },
+                { "temperature", String(temperature) }
             },
         });
     });
@@ -116,7 +120,7 @@ void setupProductionMode(ControllerConfigurationManager &controller) {
         context.state.lastError = dht.getError();
         context.events.push_back({
             EventType::ERROR,
-            {{"error", context.state.lastError}}
+            {{ "error", context.state.lastError }}
         });
     });
 
@@ -139,32 +143,12 @@ void setupProductionMode(ControllerConfigurationManager &controller) {
         dht.read();
     };
 
-    context.configuration.mode = ControllerMode::RUNNING;
+    context.events.push_back({ EventType::CONFIG });
 
-    context.events.push_back({EventType::CONFIG});
-}
-
-
-void setup() {
-    Serial.begin(115200);
-
-    dht.setup(DHT_PIN);
-
-    pinMode(RELAY_LIGHT_PIN, OUTPUT);
-    pinMode(RELAY_FAN_PIN, OUTPUT);
-
-    digitalWrite(RELAY_LIGHT_PIN, PIN_OFF);
-    digitalWrite(RELAY_FAN_PIN, PIN_OFF);
-
-    auto& controller = context.configuration.controller;
-
-    return controller.isConfigured()
-        ? setupProductionMode(controller)
-        : setupConfigurationMode(controller);
+    configServer.run();
 }
 
 void loop() {
-    return (context.configuration.mode == ControllerMode::SETUP)
-        ? configServer.next()
-        : processNextEvent(context);
+    configServer.next();
+    processNextEvent(context);
 }

@@ -1,0 +1,22 @@
+.root {
+    display: flex;
+    width: 100%;
+    padding: 8px 0;
+    flex-direction: column;
+}
+
+.label {
+    padding: 8px;
+    border-radius: 4px 0 0 4px;
+    color: #777;
+}
+
+.input {
+    appearance: none;
+    flex-grow: 1;
+    padding: 8px;
+    border: 2px solid rgba(0,0,0,0.1);
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 24px;
+}

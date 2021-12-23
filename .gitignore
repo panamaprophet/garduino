@@ -1,7 +1,9 @@
 .pio/
 .vscode/
+.parcel-cache/
 node_modules/
 dist/
+data/
 .env
 tsconfig.tsbuildinfo
 controller/config.h

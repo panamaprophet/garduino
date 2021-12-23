@@ -22,11 +22,6 @@ enum RequestType {
     POST,
 };
 
-enum ControllerMode {
-    RUNNING,
-    SETUP,
-};
-
 struct ModuleConfig {
     bool isOn;
     bool isEmergencyOff;
@@ -36,7 +31,6 @@ struct ModuleConfig {
 
 struct Configuration {
     ControllerConfigurationManager controller;
-    ControllerMode mode = ControllerMode::RUNNING;
 
     ModuleConfig light;
     ModuleConfig fan;
