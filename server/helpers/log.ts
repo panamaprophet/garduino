@@ -26,8 +26,8 @@ export const getLogEntry = (entity?: LogEntityRaw): LogEntity | null => {
     }
 
     return {
+        event,
         payload,
         date: new Date(),
-        event: getLogEvent(event),
     };
 };
