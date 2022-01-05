@@ -12,7 +12,7 @@ export const getConfig = (): Record<string, any> => ({
     },
     bot: {
         token: String(process.env.BOT_TOKEN),
-        path: String(process.env.BOT_PATH),
+        path: `https://${process.env.SERVER_HOSTNAME}/api/bot`,
     },
     port: Number(process.env.SERVER_PORT),
     hostname: String(process.env.SERVER_HOSTNAME),
