@@ -6,6 +6,7 @@ import StatSceneController from './controllers/stat';
 import SetupSceneController from './controllers/setup';
 import ControllerManagerController from './controllers/manager';
 import * as commands from './commands';
+import { WebSocket, WebSocketServer } from 'ws';
 
 
 export type ActionContext = {
@@ -30,6 +31,10 @@ interface SceneSession extends Scenes.SceneSession<Scenes.WizardSessionData> {
 // will be available under ctx[.prop]
 export interface BotContext extends Context {
     db: mongodb.Db,
+    ws: {
+        ws: WebSocketServer,
+        cache: Map<string, WebSocket>,
+    },
     session: SceneSession,
     scene: Scenes.SceneContextScene<BotContext, Scenes.WizardSessionData>,
     wizard: Scenes.WizardContextWizard<BotContext>,
@@ -39,7 +44,7 @@ export interface BotContext extends Context {
 const getCommandByKey = (key: string, obj: { [k: string]: Middleware<BotContext> }) => obj[key];
 
 
-export const getBot = async (db: mongodb.Db, {token, path}: Record<string, string>): Promise<[Telegraf<BotContext>, Koa.Middleware]> => {
+export const getBot = async (db: mongodb.Db, ws: { ws: any, cache: any }, {token, path}: Record<string, string>): Promise<[Telegraf<BotContext>, Koa.Middleware]> => {
     const bot = new Telegraf<BotContext>(token);
 
     const stage = new Scenes.Stage<BotContext>([
@@ -53,6 +58,7 @@ export const getBot = async (db: mongodb.Db, {token, path}: Record<string, strin
     await bot.telegram.setWebhook(url);
 
     bot.context.db = db;
+    bot.context.ws = ws;
     bot.use(session()); // @todo: get rid of deprecated
     bot.use(stage.middleware());
 

@@ -13,8 +13,8 @@ void (async () => {
     const app = new Koa();
     const server = createServer(app.callback());
     const [db] = await getMongoDb(config.db);
-    const [bot, botMiddleware] = await getBot(db, config.bot);
     const [ws, cache] = getWebSocketServer(server);
+    const [bot, botMiddleware] = await getBot(db, {ws, cache}, config.bot);
 
     app.use(koaBody());
     app.use(router.routes());

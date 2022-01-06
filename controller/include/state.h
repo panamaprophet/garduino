@@ -56,18 +56,18 @@ namespace state
     String getStatusString() {
         String result =
             "{\"temperature\": \"" + String(temperature) + "\"," +
-                "\"humidity\": \"" + String(humidity) + "\"," +
-                "\"lastError\": \"" + lastError + "\"," +
-                "\"light\": {" +
+             "\"humidity\": \"" + String(humidity) + "\"," +
+             "\"lastError\": \"" + lastError + "\"," +
+             "\"light\": {" +
                     "\"isOn\": \"" + String(light.isOn) + "\"," + 
                     "\"msBeforeSwitch\": \"" + String(light.msBeforeSwitch) + "\"," + 
                     "\"duration\": \"" + String(light.duration) + "\"" + 
-                "}," 
-                "\"fan\":{" +
+            "}," +
+             "\"fan\":{" +
                     "\"isOn\":\"" + String(fan.isOn) + "\"," +
                     "\"msBeforeSwitch\":\"" + String(fan.msBeforeSwitch) + "\"," +
                     "\"duration\":\"" + String(fan.duration) + "\"" +
-                "}}";
+            "}}";
         
         return result;
     }
