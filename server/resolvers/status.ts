@@ -7,7 +7,9 @@ const WEBSOCKET_ACTIONS = {
     STATUS: 'actions/status',
 };
 
-export const getControllerStatus = (controllerId: string, ws: WebSocket) => {
+
+
+export const getControllerStatus = (controllerId: string, ws: WebSocket): Promise<{[k: string]: any}> => {
     return new Promise((resolve) => {
         let timeoutId: NodeJS.Timeout;
 

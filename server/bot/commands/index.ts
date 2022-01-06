@@ -1,8 +1,9 @@
+import {MiddlewareFn} from 'telegraf';
+import {formatDistance} from 'date-fns';
 import {getControllerIds} from '../../resolvers/controller';
 import {getControllerStatus} from '../../resolvers/status';
 import {HELP_PLACEHOLDER} from '../../constants';
 import type {BotContext} from '..';
-import { MiddlewareFn } from 'telegraf';
 
 
 export const help: MiddlewareFn<BotContext> = ctx => ctx.reply(HELP_PLACEHOLDER);
@@ -25,6 +26,20 @@ export const start: MiddlewareFn<BotContext> = async ctx => {
     return ctx.reply(HELP_PLACEHOLDER);
 };
 
+
+const getStatusFormatted = (data: {[k: string]: any }) =>
+    `#${data.controllerId}\n\r\n\r` +
+
+    `T = ${data.temperature} °C\n\r` + 
+    `H = ${data.humidity} %\n\r\n\r` + 
+
+    `Light is ${data.light.isOn ? 'on' : 'off'} (${formatDistance(0, Number(data.light.msBeforeSwitch))} remains)\n\r\n\r` +
+
+    (data.lastError
+        ? `Last error = ${data.lastError}`
+        : '');
+
+
 export const now: MiddlewareFn<BotContext> = async ctx => {
     const {db, chat} = ctx;
     const chatId = chat?.id;
@@ -44,8 +59,9 @@ export const now: MiddlewareFn<BotContext> = async ctx => {
 
         return Promise
             .all(resultPromises)
-            .then(results => JSON.stringify(results))
-            .then(results => ctx.reply(results));
+            .then(results => results.map((result, index) => getStatusFormatted({...result, controllerId: controllerIds[index]})))
+            .then(results => results.join('\n\r'))
+            .then(result => ctx.reply(result));
     }
 
     return ctx.reply(JSON.stringify({ error: 'no controllers found' }));
