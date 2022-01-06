@@ -112,7 +112,9 @@ auto onRun = [](EventPayload payload) {
 };
 
 auto onError = [](EventPayload payload) {
-    const String payloadString = stringifyPayload(payload, "events/update");
+    const String payloadString = stringifyPayload(payload, "events/error");
+
+    lastError = payloadString;
 
     Serial.println("[events] onError - " + payloadString);
 
@@ -130,8 +132,7 @@ auto onConfig = [](EventPayload payload) {
     DeserializationError error = deserializeJson(json, response);
 
     if (error) {
-        lastError = error.c_str();
-        emit(EventType::ERROR, {{"error", lastError}});
+        emit(EventType::ERROR, {{"error", error.c_str()}});
     }
 
     if (!error) {
@@ -264,28 +265,31 @@ auto onWebSocketEvent = [](WStype_t type, uint8_t * payload, size_t length) {
             DeserializationError error = deserializeJson(json, payload);
 
             if (error) {
-                lastError = error.c_str();
-                emit(EventType::ERROR, {{"error", lastError}});
+                emit(EventType::ERROR, {{"error", error.c_str()}});
+                break;
             }
 
             const String action = json["action"].as<String>();
             const String controllerId = json["payload"]["controllerId"].as<String>();
 
-            if (action == "actions/status") {
-                if (configuration::controllerId != controllerId) {
-                    websocket::sendText("{\"error\":\"controllerId mismatch\"}");
-                    break;
-                }
-
-                String status = state::getStatusString();
-                websocket::sendText("{\"controllerId\":\"" + controllerId + "\",\"action\":\"" + action + "\",\"payload\":" + status + "}");
-            } else if (action == "actions/reboot") {
-                websocket::sendText("{\"success\": true}");
-                ESP.restart();
-            } else {
-                websocket::sendText("{\"success\": false}");
+            if (configuration::controllerId != controllerId) {
+                websocket::sendText("{\"error\":\"controllerId mismatch\"}");
+                break;
             }
 
+            if (action == "actions/status") {
+                String status = state::getStatusString();
+                websocket::sendText("{\"controllerId\":\"" + controllerId + "\",\"action\":\"" + action + "\",\"payload\":" + status + "}");
+                break;
+            }
+            
+            if (action == "actions/reboot") {
+                websocket::sendText("{\"success\": true}");
+                ESP.restart();
+                break;
+            }
+            
+            websocket::sendText("{\"success\": false}");
             break;
         }
         default: {
