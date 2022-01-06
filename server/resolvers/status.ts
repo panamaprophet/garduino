@@ -5,16 +5,7 @@ import {getWebSocketServerPayload} from '../websocket/index';
 const WEBSOCKET_RESPONSE_TIMEOUT = 5000;
 
 
-export const getControllerStatus = async (controllerId: string, ws?: WebSocket) => {
-    console.log(controllerId, ws);
-
-    if (!ws) {
-        return {
-            success: false,
-            error: { message: `no controller with id #${controllerId} is connected via ws` },
-        };
-    }
-
+export const getControllerStatus = (controllerId: string, ws: WebSocket) => {
     return new Promise((resolve) => {
         let timeoutId: NodeJS.Timeout;
 
@@ -23,9 +14,7 @@ export const getControllerStatus = async (controllerId: string, ws?: WebSocket) 
 
             ws.off('message', getWebSocketResponse);
 
-            const payload = getWebSocketServerPayload(arrayBuffer);
-
-            resolve(payload);
+            resolve(getWebSocketServerPayload(arrayBuffer));
         };
 
         timeoutId = setTimeout(() => {
@@ -41,6 +30,9 @@ export const getControllerStatus = async (controllerId: string, ws?: WebSocket) 
 
         ws.on('message', getWebSocketResponse);
 
-        ws.send('{"action": "actions/status"}');
+        ws.send(JSON.stringify({
+            action: 'actions/status',
+            payload: { controllerId },
+        }));
     });
 };

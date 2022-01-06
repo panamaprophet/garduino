@@ -26,15 +26,26 @@ export const start: MiddlewareFn<BotContext> = async ctx => {
 };
 
 export const now: MiddlewareFn<BotContext> = async ctx => {
-    const {db, ws, chat} = ctx;
+    const {db, chat} = ctx;
     const chatId = chat?.id;
     const controllerIds = await getControllerIds(db, {chatId});
 
     if (controllerIds.length > 0) {
-        const resultPromises = controllerIds.map(controllerId => getControllerStatus(controllerId, ws.cache.get(controllerId)));
-        const results = await Promise.all(resultPromises);
+        const resultPromises = controllerIds.map(controllerId => {
+            const ws = ctx.ws.cache.get(controllerId);
 
-        return ctx.reply(JSON.stringify(results));
+            return ws
+                ? getControllerStatus(controllerId, ws)
+                : {
+                    success: false,
+                    error: { message: `no controller with id #${controllerId} is connected via ws` },
+                };
+            });
+
+        return Promise
+            .all(resultPromises)
+            .then(results => JSON.stringify(results))
+            .then(results => ctx.reply(results));
     }
 
     return ctx.reply(JSON.stringify({ error: 'no controllers found' }));

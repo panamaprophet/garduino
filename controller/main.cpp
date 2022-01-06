@@ -269,10 +269,16 @@ auto onWebSocketEvent = [](WStype_t type, uint8_t * payload, size_t length) {
             }
 
             const String action = json["action"].as<String>();
+            const String controllerId = json["payload"]["controllerId"].as<String>();
 
             if (action == "actions/status") {
+                if (configuration::controllerId != controllerId) {
+                    websocket::sendText("{\"error\":\"controllerId mismatch\"}");
+                    break;
+                }
+
                 String status = state::getStatusString();
-                websocket::sendText(status);
+                websocket::sendText("{\"controllerId\":\"" + controllerId + "\",\"action\":\"" + action + "\",\"payload\":" + status + "}");
             } else if (action == "actions/reboot") {
                 websocket::sendText("{\"success\": true}");
                 ESP.restart();
