@@ -28,6 +28,10 @@ const int PIN_SENSOR                            = 13;
 const int PIN_OFF                               = HIGH;
 const int PIN_ON                                = LOW;
 
+#ifndef SERVER_HOSTNAME
+    const String SERVER_HOSTNAME = "localhost";
+#endif
+
 const String REQUEST_API_LOG                    = "https://" + String(SERVER_HOSTNAME) + "/api/log";
 const String REQUEST_API_CONFIG                 = "https://" + String(SERVER_HOSTNAME) + "/api/config";
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Arduino.h>
 #include <WebSocketsClient.h>
 #include <include/request.h>
 
@@ -20,7 +21,7 @@ namespace websocket
         ws.onEvent(onWebSocketEvent);
         ws.setReconnectInterval(WS_RECONNECT_INTERVAL);
         ws.enableHeartbeat(WS_HEARTBEAT_INTERVAL, WS_HEARTBEAT_TIMEOUT, WS_HEARTBEAT_MAX_RETRIES);
-        ws.begin(hostname, WS_PORT, "/");
+        ws.begin(hostname.c_str(), WS_PORT, "/api");
     }
 
     bool sendText(String message) {
