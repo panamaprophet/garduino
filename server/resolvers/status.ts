@@ -3,23 +3,33 @@ import {getWebSocketServerPayload} from '../websocket/index';
 
 
 const WEBSOCKET_RESPONSE_TIMEOUT = 5000;
-
+const WEBSOCKET_ACTIONS = {
+    STATUS: 'actions/status',
+};
 
 export const getControllerStatus = (controllerId: string, ws: WebSocket) => {
     return new Promise((resolve) => {
         let timeoutId: NodeJS.Timeout;
 
         const getWebSocketResponse = async (arrayBuffer: ArrayBuffer) => {
-            clearTimeout(timeoutId);
+            const response = getWebSocketServerPayload(arrayBuffer);
+
+            if (response.controllerId !== controllerId) {
+                return;
+            }
+
+            if (response.action !== WEBSOCKET_ACTIONS.STATUS) {
+                return;
+            }
 
             ws.off('message', getWebSocketResponse);
+            clearTimeout(timeoutId);
 
-            resolve(getWebSocketServerPayload(arrayBuffer));
+            resolve(response.payload);
         };
 
         timeoutId = setTimeout(() => {
             clearTimeout(timeoutId);
-
             ws.off('message', getWebSocketResponse);
 
             resolve({
@@ -31,7 +41,7 @@ export const getControllerStatus = (controllerId: string, ws: WebSocket) => {
         ws.on('message', getWebSocketResponse);
 
         ws.send(JSON.stringify({
-            action: 'actions/status',
+            action: WEBSOCKET_ACTIONS.STATUS,
             payload: { controllerId },
         }));
     });
