@@ -35,7 +35,7 @@ namespace state
         const auto day = isOn ? module.duration : (DAY_MS - module.duration);
         const auto night = DAY_MS - day;
 
-        const auto msBeforeSwitch = module.msBeforeSwitch - interval;
+        long msBeforeSwitch = module.msBeforeSwitch - interval;
         const auto isChanged = msBeforeSwitch < 0;
 
         module.msBeforeSwitch = isChanged
@@ -54,13 +54,21 @@ namespace state
     };
 
     String getStatusString() {
-        return
-            "{\"temperature\": \"" + String(temperature) +
-            "\", \"humidity\": \"" + String(humidity) +
-            "\", \"lastError\": \"" + lastError +
-            "\", \"light\": {\"isOn\": \"" + String(light.isOn) +
-            "\", \"msBeforeSwitch\": \"" + String(light.msBeforeSwitch) +
-            "\", \"duration\": \"" + String(light.duration) +
-            "\"}}";
+        String result =
+            "{\"temperature\": \"" + String(temperature) + "\"," +
+                "\"humidity\": \"" + String(humidity) + "\"," +
+                "\"lastError\": \"" + lastError + "\"," +
+                "\"light\": {" +
+                    "\"isOn\": \"" + String(light.isOn) + "\"," + 
+                    "\"msBeforeSwitch\": \"" + String(light.msBeforeSwitch) + "\"," + 
+                    "\"duration\": \"" + String(light.duration) + "\"" + 
+                "}," 
+                "\"fan\":{" +
+                    "\"isOn\":\"" + String(fan.isOn) + "\"," +
+                    "\"msBeforeSwitch\":\"" + String(fan.msBeforeSwitch) + "\"," +
+                    "\"duration\":\"" + String(fan.duration) + "\"" +
+                "}}";
+        
+        return result;
     }
 }
