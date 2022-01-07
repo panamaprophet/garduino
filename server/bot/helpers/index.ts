@@ -4,7 +4,7 @@ import {Markup, Telegraf} from 'telegraf';
 import {ExtraReplyMessage} from 'telegraf/typings/telegram-types';
 import {Message} from 'telegraf/typings/core/types/typegram';
 import {getConfig} from '../../resolvers/config';
-import {BotContext} from '../index';
+import {StatusResponse, StatusResponseError, StatusResponseSuccess, BotContext} from 'types';
 
 
 export const getInlineKeyboard = (options: string[]): ExtraReplyMessage => {
@@ -35,23 +35,23 @@ export const sendMessage = async ({ bot, db, controllerId }: {
 
 export const isTextMessage = (message: Message | undefined): message is Message.TextMessage => (message as Message.TextMessage).text !== undefined;
 
-const formatErrorResponse = (data: {[k: string]: any}) => (
+
+const isStatusResponseError = (response: StatusResponse): response is StatusResponseError => (response as StatusResponseError).error !== undefined;
+
+const formatErrorResponse = (data: StatusResponseError) => (
     `#${data.controllerId}\n\r\n\r` +
     `Error: data can't be fetched due to ${data.error.message}`
 );
 
-const formatSuccessResponse = (data: {[k: string]: any}) => (
+const formatSuccessResponse = (data: StatusResponseSuccess) => (
     `#${data.controllerId}\n\r\n\r` +
 
-    `T = ${data.temperature} °C\n\r` + 
-    `H = ${data.humidity} %\n\r\n\r` + 
+    `T = ${data.temperature} °C\n\r` +
+    `H = ${data.humidity} %\n\r\n\r` +
 
     `Light is ${data.light.isOn ? 'on' : 'off'} (${formatDistance(0, Number(data.light.msBeforeSwitch))} remains)\n\r\n\r` +
 
-    (data.lastError ? `Last error  = ${JSON.stringify(data.lastError.payload[0].value)}` : '')
+    (data.lastError ? `Last error  = ${JSON.stringify(data.lastError?.payload[0].value)}` : '')
 );
 
-export const getStatusFormatted = (data: {[k: string]: any }) => 
-    data.error
-        ? formatErrorResponse(data)
-        : formatSuccessResponse(data);
+export const getStatusFormatted = (data: StatusResponse): string => isStatusResponseError(data) ? formatErrorResponse(data) : formatSuccessResponse(data);

@@ -1,7 +1,8 @@
 import Router from '@koa/router';
 import {mergeDeepRight} from 'ramda';
 import {getConfig, setConfig} from '../resolvers/config';
-import {extractConfig, getConfigEntity, ControllerConfigRaw} from '../helpers/config';
+import {extractConfig, getConfigEntity} from '../helpers/config';
+import {ControllerConfigRaw} from 'types';
 
 
 const router = new Router();

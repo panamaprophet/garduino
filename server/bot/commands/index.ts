@@ -2,8 +2,8 @@ import {MiddlewareFn} from 'telegraf';
 import {getControllerIds} from '../../resolvers/controller';
 import {getControllerStatus} from '../../resolvers/status';
 import {HELP_PLACEHOLDER} from '../../constants';
-import type {BotContext} from '../index';
 import {getStatusFormatted} from '../helpers';
+import {BotContext} from 'types';
 
 
 export const help: MiddlewareFn<BotContext> = ctx => ctx.reply(HELP_PLACEHOLDER);
@@ -38,10 +38,10 @@ export const now: MiddlewareFn<BotContext> = async ctx => {
             return ws
                 ? getControllerStatus(controllerId, ws)
                 : {
-                    success: false,
+                    controllerId,
                     error: { message: `no controller with id #${controllerId} is connected via ws` },
                 };
-            });
+        });
 
         return Promise
             .all(resultPromises)

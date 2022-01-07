@@ -1,44 +1,13 @@
-import stream from 'stream';
 import mongodb from 'mongodb';
 import Koa from 'koa';
-import {session, Scenes, Telegraf, Context, Middleware} from 'telegraf';
+import {session, Scenes, Telegraf, Middleware} from 'telegraf';
 import StatSceneController from './controllers/stat';
 import SetupSceneController from './controllers/setup';
 import ControllerManagerController from './controllers/manager';
 import * as commands from './commands';
-import { WebSocket, WebSocketServer } from 'ws';
+import {BotContext} from 'types';
 
 
-export type ActionContext = {
-    db: mongodb.Db,
-    chatId: number,
-    controllerId: string,
-    value?: string,
-}
-
-export type ActionResult = {
-    text?: string,
-    image?: stream.Readable,
-    success?: boolean,
-}
-
-// will be available under ctx.session[.prop]
-interface SceneSession extends Scenes.SceneSession<Scenes.WizardSessionData> {
-    controllerId: string,
-    action: string,
-}
-
-// will be available under ctx[.prop]
-export interface BotContext extends Context {
-    db: mongodb.Db,
-    ws: {
-        ws: WebSocketServer,
-        cache: Map<string, WebSocket>,
-    },
-    session: SceneSession,
-    scene: Scenes.SceneContextScene<BotContext, Scenes.WizardSessionData>,
-    wizard: Scenes.WizardContextWizard<BotContext>,
-}
 
 
 const getCommandByKey = (key: string, obj: { [k: string]: Middleware<BotContext> }) => obj[key];

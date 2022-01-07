@@ -1,10 +1,5 @@
 import mongodb from 'mongodb';
-import type {ControllerConfigRaw} from '../helpers/config';
-
-
-type ControllerEntity = {
-    controllerId: string,
-}
+import {ControllerConfigRaw, ControllerEntity} from 'types';
 
 
 /**

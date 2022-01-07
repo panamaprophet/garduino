@@ -1,10 +1,9 @@
-import {MiddlewareFn, Scenes} from 'telegraf';
+import {MiddlewareFn, Scenes, Markup} from 'telegraf';
 import {getInlineKeyboard, isTextMessage} from '../../helpers';
 import {getControllerIds} from '../../../resolvers/controller';
 import {selectController} from '../common';
-import type {BotContext} from '../../index';
 import {actionHandler, ACTION_STAT_DAY, ACTION_STAT_WEEK} from './actions';
-import {Markup} from 'telegraf';
+import {BotContext} from 'types';
 
 
 const SELECT_CONTROLLER_STEP_INDEX = 0;

@@ -1,7 +1,7 @@
 import {Middleware} from 'telegraf';
 import {getControllerIds} from '../../../resolvers/controller';
 import {getInlineKeyboard} from '../../helpers';
-import type {BotContext} from '../../index';
+import {BotContext} from 'types';
 
 
 export const selectController: Middleware<BotContext> = async (ctx: BotContext) => {

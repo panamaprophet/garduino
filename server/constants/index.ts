@@ -1,5 +1,4 @@
-import type {ControllerConfigRaw} from '../helpers/config';
-import type {EventType} from '../helpers/index';
+import type {ControllerConfigRaw, EventType} from 'types';
 
 
 export const LOG_EVENT: Record<EventType, string> = {

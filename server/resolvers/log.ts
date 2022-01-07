@@ -2,8 +2,7 @@ import {subWeeks, format} from 'date-fns';
 import type {Db} from 'mongodb';
 import {LOG_EVENT} from '../constants';
 import {getSensorDataByKey} from '../helpers/index';
-import type {SensorLogEntity} from '../helpers/index';
-import type {LogEntity} from '../helpers/log';
+import {SensorLogEntity, LogEntity} from 'types';
 
 
 const getDefaultDateFrom = (): Date => subWeeks(Date.now(), 1);

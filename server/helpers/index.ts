@@ -1,25 +1,4 @@
-export type EventType = 'CONFIG' | 'UPDATE' | 'ERROR' | 'SWITCH' | 'RUN';
-
-export type EventData = {
-    key: string,
-    value: string | number,
-};
-
-export type SensorLogEntity = {
-    humidity: number,
-    temperature: number,
-    date: number,
-};
-
-export type SensorLogEntityAggregated = {
-    date: number[],
-    temperature: number[],
-    humidity: number[],
-    maxHumidity: SensorLogEntity,
-    minHumidity: SensorLogEntity,
-    maxTemperature: SensorLogEntity,
-    minTemperature: SensorLogEntity,
-};
+import {EventData, SensorLogEntity, SensorLogEntityAggregated} from 'types';
 
 
 export const getSensorDataByKey = (haystack: EventData[], needle: string): EventData[] => haystack.filter(({key}) => key === needle);

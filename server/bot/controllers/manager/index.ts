@@ -1,12 +1,8 @@
 import {Scenes, Markup, MiddlewareFn} from 'telegraf';
 import {getInlineKeyboard, isTextMessage} from '../../helpers';
 import {getControllerIds} from '../../../resolvers/controller';
-import type {BotContext} from '../../index';
-import {
-    actionHandler,
-    ACTION_CONTROLLER_ADD,
-    ACTION_CONTROLLER_REMOVE,
-} from './actions';
+import {BotContext} from 'types';
+import { actionHandler, ACTION_CONTROLLER_ADD, ACTION_CONTROLLER_REMOVE } from './actions';
 
 
 const SELECT_ACTION_STEP_INDEX = 0;

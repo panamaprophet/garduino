@@ -1,25 +1,6 @@
 import {parse, addMilliseconds, compareDesc, differenceInMilliseconds} from 'date-fns';
 import {identity} from 'ramda';
-
-
-type ConfigEntityRaw = {
-    duration: number,
-    onTime: string,
-};
-
-type ConfigEntity = {
-    isOn: boolean,
-    duration: number,
-    msBeforeSwitch: number,
-}
-
-export type ControllerConfigRaw = {
-    controllerId?: string,
-    chatId?: number,
-    light: ConfigEntityRaw,
-    fan: ConfigEntityRaw,
-    temperatureThreshold: number,
-};
+import {ConfigEntity, ConfigEntityRaw, ControllerConfigRaw} from 'types';
 
 
 export const getConfigEntity = ({duration, onTime: onTimeString}: ConfigEntityRaw): ConfigEntity => {

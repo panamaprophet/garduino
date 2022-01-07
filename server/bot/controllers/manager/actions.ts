@@ -1,6 +1,6 @@
 import {addController, removeController} from '../../../resolvers/controller';
 import {DEFAULT_CONFIG} from '../../../constants';
-import type {ActionContext, ActionResult} from '../../index';
+import type {ActionContext, ActionResult} from 'types';
 
 
 export const ACTION_CONTROLLER_ADD = 'setup/controller/add';

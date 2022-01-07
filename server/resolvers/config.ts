@@ -1,5 +1,5 @@
 import mongodb from 'mongodb';
-import type {ControllerConfigRaw} from '../helpers/config';
+import {ControllerConfigRaw} from 'types';
 
 
 export const setConfig = async (db: mongodb.Db, controllerId: string, updatedParams: ControllerConfigRaw): Promise<{success: boolean}> => {

@@ -5,16 +5,16 @@ import StatusRouter from './status';
 
 
 /**
- *      routes list:
+ * routes list:
  *
- *      /api/controllers/:controllerId/status
- *      /api/controllers/:controllerId/reboot
- *      /api/controllers/:controllerId/config
+ * /api/controllers/:controllerId/status
+ * /api/controllers/:controllerId/reboot
+ * /api/controllers/:controllerId/config
  *
- *      /api/controllers/:controllerId/log
- *      /api/controllers/:controllerId/log/stat
+ * /api/controllers/:controllerId/log
+ * /api/controllers/:controllerId/log/stat
  *
- *      /api/bot
+ * /api/bot
  */
 
 
