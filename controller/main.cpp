@@ -21,6 +21,7 @@
 const unsigned long UPDATE_INTERVAL             = 10 * 60 * 1000;
 const unsigned long SENSOR_DATA_READ_INTERVAL   = 10 * 1000;
 const unsigned long SCHEDULE_CHECK_INTERVAL     = 1000;
+const unsigned int TEMPERATURE_THRESHOLD_DELTA  = 5;
 
 const int PIN_LIGHT                             = 14;
 const int PIN_FAN                               = 12;
@@ -136,13 +137,13 @@ auto onConfig = [](EventPayload payload) {
     }
 
     if (!error) {
-        light.isOn = json["isLightOn"];
-        light.duration = json["lightCycleDurationMs"].as<long>();
-        light.msBeforeSwitch = json["msBeforeLightSwitch"].as<long>();
+        light.isOn = json["light"]["isOn"].as<bool>();
+        light.duration = json["light"]["duration"].as<long>();
+        light.msBeforeSwitch = json["light"]["msBeforeSwitch"].as<long>();
 
-        fan.isOn = json["isFanOn"];
-        fan.duration = json["fanCycleDurationMs"].as<long>();
-        fan.msBeforeSwitch = json["msBeforeFanSwitch"].as<long>();
+        fan.isOn = json["fan"]["isOn"].as<bool>();
+        fan.duration = json["fan"]["duration"].as<long>();
+        fan.msBeforeSwitch = json["fan"]["msBeforeSwitch"].as<long>();
 
         temperatureThreshold = json["temperatureThreshold"].as<float>();
 
@@ -214,7 +215,7 @@ void handleTemperatureThreshold() {
         });
     }
 
-    if ((temperature < temperatureThreshold) && isEmergencyOff) {
+    if ((temperature < temperatureThreshold - TEMPERATURE_THRESHOLD_DELTA) && isEmergencyOff) {
         isEmergencyOff = false;
 
         emit(EventType::SWITCH, {

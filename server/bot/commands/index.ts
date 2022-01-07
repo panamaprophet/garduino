@@ -1,9 +1,9 @@
 import {MiddlewareFn} from 'telegraf';
-import {formatDistance} from 'date-fns';
 import {getControllerIds} from '../../resolvers/controller';
 import {getControllerStatus} from '../../resolvers/status';
 import {HELP_PLACEHOLDER} from '../../constants';
-import type {BotContext} from '..';
+import type {BotContext} from '../index';
+import {getStatusFormatted} from '../helpers';
 
 
 export const help: MiddlewareFn<BotContext> = ctx => ctx.reply(HELP_PLACEHOLDER);
@@ -25,20 +25,6 @@ export const start: MiddlewareFn<BotContext> = async ctx => {
 
     return ctx.reply(HELP_PLACEHOLDER);
 };
-
-
-const getStatusFormatted = (data: {[k: string]: any }) =>
-    `#${data.controllerId}\n\r\n\r` +
-
-    `T = ${data.temperature} °C\n\r` + 
-    `H = ${data.humidity} %\n\r\n\r` + 
-
-    `Light is ${data.light.isOn ? 'on' : 'off'} (${formatDistance(0, Number(data.light.msBeforeSwitch))} remains)\n\r\n\r` +
-
-    (data.lastError
-        ? `Last error = ${data.lastError}`
-        : '');
-
 
 export const now: MiddlewareFn<BotContext> = async ctx => {
     const {db, chat} = ctx;

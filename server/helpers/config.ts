@@ -21,22 +21,6 @@ export type ControllerConfigRaw = {
     temperatureThreshold: number,
 };
 
-type ControllerConfig = {
-    light: ConfigEntity,
-    fan: ConfigEntity,
-    temperatureThreshold: number,
-};
-
-type ControllerConfigFlat = {
-    temperatureThreshold: number,
-    isLightOn: boolean,
-    isFanOn: boolean,
-    lightCycleDurationMs: number,
-    fanCycleDurationMs: number,
-    msBeforeLightSwitch: number,
-    msBeforeFanSwitch: number,
-};
-
 
 export const getConfigEntity = ({duration, onTime: onTimeString}: ConfigEntityRaw): ConfigEntity => {
     const currentDate = Date.now();
@@ -44,6 +28,12 @@ export const getConfigEntity = ({duration, onTime: onTimeString}: ConfigEntityRa
     const offTime = addMilliseconds(onTime, duration);
     const isOn = compareDesc(onTime, currentDate) >= 0 && compareDesc(offTime, currentDate) < 0;
     const msBeforeSwitch = differenceInMilliseconds(isOn ? offTime : onTime, currentDate);
+
+    console.log(onTime);
+    console.log(offTime);
+    console.log(isOn);
+    console.log(msBeforeSwitch);
+    console.log('===');
 
     return {
         isOn,
@@ -54,20 +44,6 @@ export const getConfigEntity = ({duration, onTime: onTimeString}: ConfigEntityRa
 
 // @todo: add validation
 export const extractConfig = identity;
-
-/**
- * @param {ControllerConfig} controllerConfig - nested configuration
- * @returns {ControllerConfigFlat} - configuration with flat structure
- */
-export const flattenConfig = ({light, fan, temperatureThreshold}: ControllerConfig): ControllerConfigFlat => ({
-    temperatureThreshold,
-    isLightOn: light.isOn,
-    lightCycleDurationMs: light.duration,
-    msBeforeLightSwitch: light.msBeforeSwitch,
-    isFanOn: fan.isOn,
-    fanCycleDurationMs: fan.duration,
-    msBeforeFanSwitch: fan.msBeforeSwitch,
-});
 
 export const formatConfig = (data: ControllerConfigRaw): string => {
     return [

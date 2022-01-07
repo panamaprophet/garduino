@@ -1,7 +1,7 @@
 import Router from '@koa/router';
 import {mergeDeepRight} from 'ramda';
 import {getConfig, setConfig} from '../resolvers/config';
-import {extractConfig, getConfigEntity, flattenConfig, ControllerConfigRaw} from '../helpers/config';
+import {extractConfig, getConfigEntity, ControllerConfigRaw} from '../helpers/config';
 
 
 const router = new Router();
@@ -18,9 +18,8 @@ router.get('/:controllerId', async (ctx) => {
     const {temperatureThreshold, ...config} = controllerConfig;
     const light = getConfigEntity(config.light);
     const fan = getConfigEntity(config.fan);
-    const result = flattenConfig({light, fan, temperatureThreshold});
 
-    ctx.body = result;
+    ctx.body = {light, fan, temperatureThreshold};
 });
 
 router.post('/:controllerId', async (ctx) => {

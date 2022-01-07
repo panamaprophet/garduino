@@ -57,7 +57,7 @@ namespace state
         String result =
             "{\"temperature\": \"" + String(temperature) + "\"," +
              "\"humidity\": \"" + String(humidity) + "\"," +
-             "\"lastError\": \"" + lastError + "\"," +
+             "\"lastError\": " + (lastError.length() > 0 ? lastError : "null") + "," +
              "\"light\": {" +
                     "\"isOn\": \"" + String(light.isOn) + "\"," + 
                     "\"msBeforeSwitch\": \"" + String(light.msBeforeSwitch) + "\"," + 
