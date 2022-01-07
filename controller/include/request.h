@@ -14,9 +14,7 @@ namespace request
     WiFiClientSecure client;
     HTTPClient http;
 
-    String send(String endpoint, Type type = Type::GET, String payload = "") {
-        String controllerId = configuration::controllerId;
-        String requestUrl = endpoint + "/" + controllerId;
+    String send(String requestUrl, Type type = Type::GET, String payload = "") {
         String response = "";
 
         client.setInsecure();

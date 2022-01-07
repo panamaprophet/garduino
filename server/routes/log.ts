@@ -10,21 +10,21 @@ import {BotContext} from '../bot/index';
 
 const router = new Router();
 
-router.get('/:controllerId', async (ctx) => {
+router.get('/', async (ctx) => {
     const {controllerId} = ctx.params;
     const result = await getLastUpdateEventLog(ctx.db, controllerId);
 
     ctx.body = result;
 });
 
-router.get('/:controllerId/stat', async (ctx) => {
+router.get('/stat', async (ctx) => {
     const {controllerId} = ctx.params;
     const result = await getUpdateEventLogStat(ctx.db, controllerId);
 
     ctx.body = result;
 });
 
-router.post('/:controllerId', async (ctx) => {
+router.post('/', async (ctx) => {
     const {controllerId} = ctx.params;
     const data = getLogEntry(ctx.request.body);
     const bot = ctx.bot as Telegraf<BotContext>;

@@ -4,7 +4,7 @@ import {getControllerStatus} from '../resolvers/status';
 
 const router = new Router();
 
-router.get('/:controllerId', async (ctx) => {
+router.get('/', async (ctx) => {
     const { controllerId } = ctx.params;
     const { cache } = ctx.ws;
 
