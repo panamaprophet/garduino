@@ -48,7 +48,7 @@ const formatSuccessResponse = (data: {[k: string]: any}) => (
 
     `Light is ${data.light.isOn ? 'on' : 'off'} (${formatDistance(0, Number(data.light.msBeforeSwitch))} remains)\n\r\n\r` +
 
-    (data.lastError ? `Last error  = ${data.lastError}` : '')
+    (data.lastError ? `Last error  = ${JSON.stringify(data.lastError.payload[0].value)}` : '')
 );
 
 export const getStatusFormatted = (data: {[k: string]: any }) => 
