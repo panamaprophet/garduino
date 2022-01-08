@@ -55,16 +55,16 @@ namespace state
 
     String getStatusString() {
         String result =
-            "{\"temperature\": \"" + String(temperature) + "\"," +
-             "\"humidity\": \"" + String(humidity) + "\"," +
+            "{\"temperature\": " + String(temperature) + "," +
+             "\"humidity\": " + String(humidity) + "," +
              "\"lastError\": " + (lastError.length() > 0 ? lastError : "null") + "," +
              "\"light\": {" +
-                    "\"isOn\": \"" + (light.isOn ? "true" : "false") + "\"," + 
+                    "\"isOn\": " + (light.isOn ? "true" : "false") + "," + 
                     "\"msBeforeSwitch\": " + String(light.msBeforeSwitch) + "," + 
                     "\"duration\": " + String(light.duration) + 
             "}," +
              "\"fan\":{" +
-                    "\"isOn\":\"" + (fan.isOn ? "true" : "false") + "\"," +
+                    "\"isOn\": " + (fan.isOn ? "true" : "false") + "," +
                     "\"msBeforeSwitch\": " + String(fan.msBeforeSwitch) + "," +
                     "\"duration\": " + String(fan.duration) +
             "}}";
