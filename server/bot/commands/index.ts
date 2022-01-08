@@ -54,7 +54,7 @@ export const now: MiddlewareFn<BotContext> = async ctx => {
             .all(resultPromises)
             .then(results => results.map((result, index) => getStatusFormatted({...result, controllerId: controllerIds[index]})))
             .then(results => results.join('\n\r'))
-            .then(result => ctx.reply(result));
+            .then(result => ctx.replyWithMarkdownV2(result));
     }
 
     return ctx.reply(JSON.stringify({ error: 'no controllers found' }));

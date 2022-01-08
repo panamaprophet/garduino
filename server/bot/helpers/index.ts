@@ -43,15 +43,32 @@ const formatErrorResponse = (data: StatusResponseError) => (
     `Error: data can't be fetched due to ${data.error.message}`
 );
 
-const formatSuccessResponse = (data: StatusResponseSuccess) => (
-    `#${data.controllerId}\n\r\n\r` +
+// const formatSuccessResponse = (data: StatusResponseSuccess) => (
+//     `#${data.controllerId}\n\r\n\r` +
 
-    `T = ${data.temperature} °C\n\r` +
-    `H = ${data.humidity} %\n\r\n\r` +
+//     `T = ${data.temperature} °C\n\r` +
+//     `H = ${data.humidity} %\n\r\n\r` +
 
-    `Light is ${data.light.isOn ? 'on' : 'off'} (${formatDistance(0, Number(data.light.msBeforeSwitch))} remains)\n\r\n\r` +
+//     `Light is ${data.light.isOn ? 'on' : 'off'} (${formatDistance(0, Number(data.light.msBeforeSwitch))} remains)\n\r\n\r` +
 
-    (data.lastError ? `Last error  = ${JSON.stringify(data.lastError?.payload[0].value)}` : '')
-);
+//     (data.lastError ? `Last error  = ${JSON.stringify(data.lastError?.payload[0].value)}` : '')
+// );
+
+const formatSuccessResponse = (data: StatusResponseSuccess) => {
+    const {temperature, humidity, controllerId, light, lastError} = data;
+    const timeBeforeSwitch = formatDistance(0, light.msBeforeSwitch);
+    const lightStatusString = `Light will be *${light.isOn ? 'on' : 'off'}* for ${timeBeforeSwitch}`;
+    const lastErrorString = lastError ? `Last error \\= *${lastError?.payload[0].value}*` : null;
+
+    return [
+        `\\#${controllerId}`,
+        `T\\=${temperature}°C`,
+        `H\\=${humidity}%`,
+        lightStatusString,
+        lastErrorString,
+    ]
+    .filter(item => !!item)
+    .join('  ·  ');
+};
 
 export const getStatusFormatted = (data: StatusResponse): string => isStatusResponseError(data) ? formatErrorResponse(data) : formatSuccessResponse(data);
