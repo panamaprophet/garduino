@@ -1,9 +1,16 @@
 import {MiddlewareFn} from 'telegraf';
 import {getControllerIds} from '../../resolvers/controller';
 import {getControllerStatus} from '../../resolvers/status';
-import {HELP_PLACEHOLDER} from '../../constants';
 import {getStatusFormatted} from '../helpers';
 import {BotContext} from 'types';
+
+
+const HELP_PLACEHOLDER = 
+    `Greetings. These are the things i can do:\n\r\n\r` +
+    `   /help — show this message\n\r` +
+    `   /now — check current state or get stat\n\r` +
+    `   /setup — edit controller configuration\n\r` +
+    `   /manage - edit controllers list`;
 
 
 export const help: MiddlewareFn<BotContext> = ctx => ctx.reply(HELP_PLACEHOLDER);

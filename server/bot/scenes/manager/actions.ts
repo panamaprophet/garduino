@@ -1,11 +1,22 @@
 import {addController, removeController} from '../../../resolvers/controller';
-import {DEFAULT_CONFIG} from '../../../constants';
-import type {ActionContext, ActionResult} from 'types';
+import type {ActionContext, ActionResult, ControllerConfigRaw} from 'types';
 
 
 export const ACTION_CONTROLLER_ADD = 'setup/controller/add';
 
 export const ACTION_CONTROLLER_REMOVE = 'setup/controller/remove';
+
+export const DEFAULT_CONFIG: ControllerConfigRaw = {
+    light: {
+        onTime: '09:00',
+        duration: 43200000,
+    },
+    fan: {
+        onTime: '09:00',
+        duration: 43200000,
+    },
+    temperatureThreshold: 35,
+};
 
 
 const add = async ({db, chatId, controllerId}: ActionContext): Promise<ActionResult> => addController(db, controllerId, chatId, DEFAULT_CONFIG);
