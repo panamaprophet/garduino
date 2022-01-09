@@ -3,7 +3,7 @@ import {format, subDays, subWeeks} from 'date-fns';
 import {processData} from '../../../helpers';
 import {getUpdateEventLogStat} from '../../../resolvers/log';
 import {createSvgChart, svg2png} from '../../../helpers/chart';
-import type {ActionContext, ActionResult} from '../../index';
+import {ActionContext, ActionResult} from 'types';
 
 
 export const ACTION_STAT_WEEK = 'main/stat/week';

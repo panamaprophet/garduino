@@ -1,6 +1,6 @@
 import {format} from 'date-fns';
 import {LOG_EVENT} from '../constants';
-import {LogEntity} from './log';
+import {LogEntity} from 'types';
 
 
 export const isErrorEvent = (event: string): boolean => event === LOG_EVENT.ERROR;

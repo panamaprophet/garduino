@@ -2,11 +2,18 @@ import {Server} from 'http';
 import {WebSocketServer, WebSocket} from 'ws';
 
 
-export const getWebSocketServerPayload = (arrayBuffer: ArrayBuffer) => {
+interface WebSocketPayload {
+    action: string,
+    controllerId: string,
+    payload: unknown,
+}
+
+
+export const getWebSocketServerPayload = (arrayBuffer: ArrayBuffer): WebSocketPayload | null => {
     let payload = null;
 
     try {
-        payload = JSON.parse(arrayBuffer.toString());
+        payload = JSON.parse(arrayBuffer.toString()) as WebSocketPayload;
     } catch (error) {
         console.log('error on parsing ws payload attempt', error);
     }
@@ -14,16 +21,16 @@ export const getWebSocketServerPayload = (arrayBuffer: ArrayBuffer) => {
     return payload;
 };
 
-export const getWebSocketServer = (server: Server) => {
+export const getWebSocketServer = (server: Server): [WebSocketServer, Map<string, WebSocket>] => {
     const ws = new WebSocketServer({ server });
-    const cache = new Map();
+    const cache = new Map<string, WebSocket>();
 
     ws.on('connection', stream => {
         console.log('[ws] new connection opened');
 
         stream.on('close', () => {
             const cacheEntries: [string, WebSocket][] = Array.from(cache.entries());
-            const cacheEntry = cacheEntries.find(([_, value]) => value === stream);
+            const cacheEntry = cacheEntries.find(item => item[1] === stream);
 
             if (cacheEntry) {
                 cache.delete(cacheEntry[0]);
@@ -32,7 +39,12 @@ export const getWebSocketServer = (server: Server) => {
 
         const cacheByControllerId = (message: ArrayBuffer) => {
             const messagePayload = getWebSocketServerPayload(message);
-            const {controllerId} = messagePayload?.payload;
+
+            if (!messagePayload) {
+                return;
+            }
+
+            const {controllerId} = messagePayload?.payload as {[k: string]: string};
 
             console.log('[ws] caching:', controllerId);
 

@@ -1,7 +1,6 @@
 import {mergeDeepRight} from 'ramda';
 import {setConfig, getConfig} from '../../../resolvers/config';
-import type {ActionContext, ActionResult} from '../../index';
-import type {ControllerConfigRaw} from '../../../helpers/config';
+import {ActionContext, ActionResult, ControllerConfigRaw} from 'types';
 
 
 export const ACTION_LIGHT_ONTIME = 'setup/light/ontime';

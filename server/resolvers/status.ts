@@ -1,46 +1,43 @@
 import {WebSocket} from 'ws';
 import {getWebSocketServerPayload} from '../websocket/index';
+import {WEBSOCKET_ACTIONS, WEBSOCKET_RESPONSE_TIMEOUT} from '../constants';
+import {StatusResponse} from 'types';
 
 
-const WEBSOCKET_RESPONSE_TIMEOUT = 5000;
-
-
-export const getControllerStatus = async (controllerId: string, ws?: WebSocket) => {
-    console.log(controllerId, ws);
-
-    if (!ws) {
-        return {
-            success: false,
-            error: { message: `no controller with id #${controllerId} is connected via ws` },
-        };
-    }
-
+export const getControllerStatus = (controllerId: string, ws: WebSocket): Promise<StatusResponse> => {
     return new Promise((resolve) => {
-        let timeoutId: NodeJS.Timeout;
+        const getWebSocketResponse = (arrayBuffer: ArrayBuffer) => {
+            const response = getWebSocketServerPayload(arrayBuffer);
 
-        const getWebSocketResponse = async (arrayBuffer: ArrayBuffer) => {
-            clearTimeout(timeoutId);
+            if (
+                response === null ||
+                response.controllerId !== controllerId ||
+                response.action !== WEBSOCKET_ACTIONS.STATUS
+            ) {
+                return;
+            }
 
             ws.off('message', getWebSocketResponse);
-
-            const payload = getWebSocketServerPayload(arrayBuffer);
-
-            resolve(payload);
-        };
-
-        timeoutId = setTimeout(() => {
             clearTimeout(timeoutId);
 
+            resolve(response.payload as StatusResponse);
+        };
+
+        const timeoutId = setTimeout(() => {
+            clearTimeout(timeoutId);
             ws.off('message', getWebSocketResponse);
 
             resolve({
-                success: false,
+                controllerId,
                 error: { message: `no response received in ${WEBSOCKET_RESPONSE_TIMEOUT}ms` },
             });
         }, WEBSOCKET_RESPONSE_TIMEOUT);
 
         ws.on('message', getWebSocketResponse);
 
-        ws.send('{"action": "actions/status"}');
+        ws.send(JSON.stringify({
+            action: WEBSOCKET_ACTIONS.STATUS,
+            payload: { controllerId },
+        }));
     });
 };

@@ -3,16 +3,9 @@ import {getConfig} from '../../../resolvers/config';
 import {getControllerIds} from '../../../resolvers/controller';
 import {formatConfig} from '../../../helpers/config';
 import {getInlineKeyboard, isTextMessage} from '../../helpers';
-import type {BotContext} from '../../index';
+import {BotContext} from 'types';
 import {selectController} from '../common';
-import {
-    actionHandler,
-    ACTION_LIGHT_ONTIME,
-    ACTION_FAN_ONTIME,
-    ACTION_LIGHT_DURATION,
-    ACTION_FAN_DURATION,
-    ACTION_TEMPERATURE_THRESHOLD,
-} from './actions';
+import {actionHandler, ACTION_LIGHT_ONTIME, ACTION_FAN_ONTIME, ACTION_LIGHT_DURATION, ACTION_FAN_DURATION, ACTION_TEMPERATURE_THRESHOLD} from './actions';
 
 
 const SELECT_CONTROLLER_STEP_INDEX = 0;

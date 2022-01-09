@@ -21,6 +21,7 @@
 const unsigned long UPDATE_INTERVAL             = 10 * 60 * 1000;
 const unsigned long SENSOR_DATA_READ_INTERVAL   = 10 * 1000;
 const unsigned long SCHEDULE_CHECK_INTERVAL     = 1000;
+const unsigned int TEMPERATURE_THRESHOLD_DELTA  = 5;
 
 const int PIN_LIGHT                             = 14;
 const int PIN_FAN                               = 12;
@@ -31,10 +32,6 @@ const int PIN_ON                                = LOW;
 #ifndef SERVER_HOSTNAME
     const String SERVER_HOSTNAME = "localhost";
 #endif
-
-const String REQUEST_API_LOG                    = "https://" + String(SERVER_HOSTNAME) + "/api/log";
-const String REQUEST_API_CONFIG                 = "https://" + String(SERVER_HOSTNAME) + "/api/config";
-
 
 using events::EventPayload;
 using events::EventType;
@@ -54,12 +51,24 @@ using state::scheduleTimer;
 using state::sensorTimer;
 
 
+auto getApiUrl = [](String hostname, String endpoint, String protocol = "https://") {
+    return (
+        protocol + 
+        hostname + 
+        "/api/controllers/" + 
+        configuration::controllerId + 
+        endpoint
+    );
+};
+
+
+
 auto onUpdate = [](EventPayload payload) {
     const String payloadString = stringifyPayload(payload, "events/update");
 
     Serial.println("[events] onUpdate - " + payloadString);
 
-    return request::sendPost(REQUEST_API_LOG, payloadString);
+    return request::sendPost(getApiUrl(SERVER_HOSTNAME, "/log"), payloadString);
 };
 
 auto onSwitch = [](EventPayload payload) {
@@ -73,7 +82,7 @@ auto onSwitch = [](EventPayload payload) {
     digitalWrite(PIN_FAN, isFanOn ? PIN_ON : PIN_OFF);
     digitalWrite(PIN_LIGHT, isLightOn ? PIN_ON : PIN_OFF);
 
-    return request::sendPost(REQUEST_API_LOG, payloadString);
+    return request::sendPost(getApiUrl(SERVER_HOSTNAME, "/log"), payloadString);
 };
 
 auto onRun = [](EventPayload payload) {
@@ -104,7 +113,7 @@ auto onRun = [](EventPayload payload) {
         sensor.read();
     });
 
-    const String response = request::sendPost(REQUEST_API_LOG, payloadString);
+    const String response = request::sendPost(getApiUrl(SERVER_HOSTNAME, "/log"), payloadString);
 
     sensor.read();
 
@@ -112,36 +121,37 @@ auto onRun = [](EventPayload payload) {
 };
 
 auto onError = [](EventPayload payload) {
-    const String payloadString = stringifyPayload(payload, "events/update");
+    const String payloadString = stringifyPayload(payload, "events/error");
+
+    lastError = payloadString;
 
     Serial.println("[events] onError - " + payloadString);
 
-    return request::sendPost(REQUEST_API_LOG, payloadString);
+    return request::sendPost(getApiUrl(SERVER_HOSTNAME, "/log"), payloadString);
 };
 
 auto onConfig = [](EventPayload payload) {
     Serial.println("[events] onConfig called");
 
-    const String response = request::sendGet(REQUEST_API_CONFIG);
+    const String response = request::sendGet(getApiUrl(SERVER_HOSTNAME, "/config"));
 
-    Serial.println(response);
+    Serial.println("configuration received = " + response);
 
     DynamicJsonDocument json(JSON_OBJECT_SIZE(20));
     DeserializationError error = deserializeJson(json, response);
 
     if (error) {
-        lastError = error.c_str();
-        emit(EventType::ERROR, {{"error", lastError}});
+        emit(EventType::ERROR, {{"error", error.c_str()}});
     }
 
     if (!error) {
-        light.isOn = json["isLightOn"];
-        light.duration = json["lightCycleDurationMs"].as<long>();
-        light.msBeforeSwitch = json["msBeforeLightSwitch"].as<long>();
+        light.isOn = json["light"]["isOn"].as<bool>();
+        light.duration = json["light"]["duration"].as<long>();
+        light.msBeforeSwitch = json["light"]["msBeforeSwitch"].as<long>();
 
-        fan.isOn = json["isFanOn"];
-        fan.duration = json["fanCycleDurationMs"].as<long>();
-        fan.msBeforeSwitch = json["msBeforeFanSwitch"].as<long>();
+        fan.isOn = json["fan"]["isOn"].as<bool>();
+        fan.duration = json["fan"]["duration"].as<long>();
+        fan.msBeforeSwitch = json["fan"]["msBeforeSwitch"].as<long>();
 
         temperatureThreshold = json["temperatureThreshold"].as<float>();
 
@@ -213,7 +223,7 @@ void handleTemperatureThreshold() {
         });
     }
 
-    if ((temperature < temperatureThreshold) && isEmergencyOff) {
+    if ((temperature < temperatureThreshold - TEMPERATURE_THRESHOLD_DELTA) && isEmergencyOff) {
         isEmergencyOff = false;
 
         emit(EventType::SWITCH, {
@@ -264,22 +274,31 @@ auto onWebSocketEvent = [](WStype_t type, uint8_t * payload, size_t length) {
             DeserializationError error = deserializeJson(json, payload);
 
             if (error) {
-                lastError = error.c_str();
-                emit(EventType::ERROR, {{"error", lastError}});
+                emit(EventType::ERROR, {{"error", error.c_str()}});
+                break;
             }
 
             const String action = json["action"].as<String>();
+            const String controllerId = json["payload"]["controllerId"].as<String>();
+
+            if (configuration::controllerId != controllerId) {
+                websocket::sendText("{\"error\":\"controllerId mismatch\"}");
+                break;
+            }
 
             if (action == "actions/status") {
                 String status = state::getStatusString();
-                websocket::sendText(status);
-            } else if (action == "actions/reboot") {
+                websocket::sendText("{\"controllerId\":\"" + controllerId + "\",\"action\":\"" + action + "\",\"payload\":" + status + "}");
+                break;
+            }
+            
+            if (action == "actions/reboot") {
                 websocket::sendText("{\"success\": true}");
                 ESP.restart();
-            } else {
-                websocket::sendText("{\"success\": false}");
+                break;
             }
-
+            
+            websocket::sendText("{\"success\": false}");
             break;
         }
         default: {

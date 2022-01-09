@@ -6,11 +6,12 @@ import {getBot} from './bot';
 import {getMongoDb} from './db';
 import {getWebSocketServer} from './websocket';
 import {getConfig} from './config';
+import { ICustomAppContext, ICustomAppState } from 'types';
 
 
 void (async () => {
     const config = getConfig();
-    const app = new Koa();
+    const app = new Koa<ICustomAppState, ICustomAppContext>();
     const server = createServer(app.callback());
     const [db] = await getMongoDb(config.db);
     const [ws, cache] = getWebSocketServer(server);

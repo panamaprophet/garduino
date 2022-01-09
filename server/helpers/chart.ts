@@ -42,7 +42,7 @@ const DEFAULT_CHART_OPTIONS = {
     height: 1000,
     legendTopOffset: 5,
     maxLabelsCount: 10,
-    textAttributes: 'font-family="Helvetica, Arial, sans-serif" font-size="0.2em"',
+    textAttributes: 'font-family="Helvetica, Arial, sans-serif" font-size="0.1em"',
     colors: ['#0dd900', '#0074d9', '#c200d9', '#d96400'],
 };
 

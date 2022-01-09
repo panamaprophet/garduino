@@ -1,5 +1,4 @@
-import type {ControllerConfigRaw} from '../helpers/config';
-import type {EventType} from '../helpers/index';
+import {EventType} from 'types';
 
 
 export const LOG_EVENT: Record<EventType, string> = {
@@ -10,23 +9,9 @@ export const LOG_EVENT: Record<EventType, string> = {
     'RUN': 'events/run',
 };
 
+export const WEBSOCKET_RESPONSE_TIMEOUT = 5000;
 
-export const HELP_PLACEHOLDER = `Greetings. These are the things i can do:
-
-/help — show this message
-/now — check current state or get stat
-/setup — edit controller configuration
-/manage - edit controllers list`;
-
-
-export const DEFAULT_CONFIG: ControllerConfigRaw = {
-    light: {
-        onTime: '09:00',
-        duration: 43200000,
-    },
-    fan: {
-        onTime: '09:00',
-        duration: 43200000,
-    },
-    temperatureThreshold: 35,
+export const WEBSOCKET_ACTIONS = {
+    STATUS: 'actions/status',
+    REBOOT: 'actions/reboot',
 };

@@ -1,11 +1,6 @@
 import mongodb from 'mongodb';
-import type {ControllerConfigRaw} from '../helpers/config';
-
-
-type ControllerEntity = {
-    controllerId: string,
-}
-
+import {ControllerConfigRaw, ControllerEntity} from 'types';
+import {WEBSOCKET_ACTIONS} from '../constants';
 
 /**
  * @returns {Promise<String[]>}
@@ -38,4 +33,14 @@ export const removeController = async (db: mongodb.Db, controllerId: string, cha
     return {
         success: Boolean(result.ok),
     };
+};
+
+export const rebootController = async (controllerId: string, ws: WebSocket): Promise<{success: boolean}> => {
+    ws.send(JSON.stringify({
+        action: WEBSOCKET_ACTIONS.REBOOT,
+        payload: { controllerId },
+    }));
+
+    // @todo: fix with actual response
+    return { success: true };
 };

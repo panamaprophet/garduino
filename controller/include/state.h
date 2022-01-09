@@ -55,18 +55,18 @@ namespace state
 
     String getStatusString() {
         String result =
-            "{\"temperature\": \"" + String(temperature) + "\"," +
-             "\"humidity\": \"" + String(humidity) + "\"," +
-             "\"lastError\": \"" + lastError + "\"," +
+            "{\"temperature\": " + String(temperature) + "," +
+             "\"humidity\": " + String(humidity) + "," +
+             "\"lastError\": " + (lastError.length() > 0 ? lastError : "null") + "," +
              "\"light\": {" +
-                    "\"isOn\": \"" + String(light.isOn) + "\"," + 
-                    "\"msBeforeSwitch\": \"" + String(light.msBeforeSwitch) + "\"," + 
-                    "\"duration\": \"" + String(light.duration) + "\"" + 
+                    "\"isOn\": " + (light.isOn ? "true" : "false") + "," + 
+                    "\"msBeforeSwitch\": " + String(light.msBeforeSwitch) + "," + 
+                    "\"duration\": " + String(light.duration) + 
             "}," +
              "\"fan\":{" +
-                    "\"isOn\":\"" + String(fan.isOn) + "\"," +
-                    "\"msBeforeSwitch\":\"" + String(fan.msBeforeSwitch) + "\"," +
-                    "\"duration\":\"" + String(fan.duration) + "\"" +
+                    "\"isOn\": " + (fan.isOn ? "true" : "false") + "," +
+                    "\"msBeforeSwitch\": " + String(fan.msBeforeSwitch) + "," +
+                    "\"duration\": " + String(fan.duration) +
             "}}";
         
         return result;
