@@ -58,7 +58,7 @@ export const now: MiddlewareFn<BotContext> = async ctx => {
             .then(result => ctx.replyWithMarkdownV2(result));
     }
 
-    return ctx.reply(JSON.stringify({ error: 'controller not found' }));
+    return ctx.reply('controller not found');
 };
 
 export const reboot: MiddlewareFn<BotContext> = async ctx => {
@@ -67,11 +67,11 @@ export const reboot: MiddlewareFn<BotContext> = async ctx => {
     const [controllerId] = await getControllerIds(db, {chatId});
 
     if (!controllerId) {
-        return ctx.reply(JSON.stringify({ error: 'controller not found' }))
+        return ctx.reply('controller not found');
     }
 
     if (!ctx.ws.cache.has(controllerId)) {
-        return ctx.reply(JSON.stringify({ error: 'controller offline' }));
+        return ctx.reply('controller offline');
     }
 
     ctx.ws.cache.get(controllerId)?.send(JSON.stringify({
