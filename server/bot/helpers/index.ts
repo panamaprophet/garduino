@@ -1,5 +1,5 @@
 import mongodb from 'mongodb';
-import {formatDistance} from 'date-fns';
+import {formatDistanceStrict} from 'date-fns';
 import {Markup, Telegraf} from 'telegraf';
 import {ExtraReplyMessage} from 'telegraf/typings/telegram-types';
 import {Message} from 'telegraf/typings/core/types/typegram';
@@ -39,31 +39,20 @@ export const isTextMessage = (message: Message | undefined): message is Message.
 const isStatusResponseError = (response: StatusResponse): response is StatusResponseError => (response as StatusResponseError).error !== undefined;
 
 const formatErrorResponse = (data: StatusResponseError) => (
-    `#${data.controllerId}\n\r\n\r` +
-    `Error: data can't be fetched due to ${data.error.message}`
+    `\\#${data.controllerId}\n\r\n\r` +
+    `Error: ${data.error.message}`
 );
-
-// const formatSuccessResponse = (data: StatusResponseSuccess) => (
-//     `#${data.controllerId}\n\r\n\r` +
-
-//     `T = ${data.temperature} °C\n\r` +
-//     `H = ${data.humidity} %\n\r\n\r` +
-
-//     `Light is ${data.light.isOn ? 'on' : 'off'} (${formatDistance(0, Number(data.light.msBeforeSwitch))} remains)\n\r\n\r` +
-
-//     (data.lastError ? `Last error  = ${JSON.stringify(data.lastError?.payload[0].value)}` : '')
-// );
 
 const formatSuccessResponse = (data: StatusResponseSuccess) => {
     const {temperature, humidity, controllerId, light, lastError} = data;
-    const timeBeforeSwitch = formatDistance(0, light.msBeforeSwitch);
-    const lightStatusString = `Light will be *${light.isOn ? 'on' : 'off'}* for ${timeBeforeSwitch}`;
+    const timeBeforeSwitch = formatDistanceStrict(0, light.msBeforeSwitch);
+    const lightStatusString = `Light will stay *${light.isOn ? 'on' : 'off'}* for ${timeBeforeSwitch}`;
     const lastErrorString = lastError ? `Last error \\= *${lastError?.payload[0].value}*` : null;
 
     return [
         `\\#${controllerId}`,
-        `T\\=${temperature}°C`,
-        `H\\=${humidity}%`,
+        `T\\=*${temperature}*°C`,
+        `H\\=*${humidity}*%`,
         lightStatusString,
         lastErrorString,
     ]
