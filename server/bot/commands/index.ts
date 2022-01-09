@@ -3,6 +3,7 @@ import {getControllerIds} from '../../resolvers/controller';
 import {getControllerStatus} from '../../resolvers/status';
 import {getStatusFormatted} from '../helpers';
 import {BotContext} from 'types';
+import {WEBSOCKET_ACTIONS} from '../../constants';
 
 
 const HELP_PLACEHOLDER = 
@@ -46,7 +47,7 @@ export const now: MiddlewareFn<BotContext> = async ctx => {
                 ? getControllerStatus(controllerId, ws)
                 : {
                     controllerId,
-                    error: { message: `no controller with id #${controllerId} is connected via ws` },
+                    error: { message: 'controller offline' },
                 };
         });
 
@@ -57,5 +58,26 @@ export const now: MiddlewareFn<BotContext> = async ctx => {
             .then(result => ctx.replyWithMarkdownV2(result));
     }
 
-    return ctx.reply(JSON.stringify({ error: 'no controllers found' }));
+    return ctx.reply(JSON.stringify({ error: 'controller not found' }));
+};
+
+export const reboot: MiddlewareFn<BotContext> = async ctx => {
+    const {chat, db} = ctx;
+    const chatId = chat?.id;
+    const [controllerId] = await getControllerIds(db, {chatId});
+
+    if (!controllerId) {
+        return ctx.reply(JSON.stringify({ error: 'controller not found' }))
+    }
+
+    if (!ctx.ws.cache.has(controllerId)) {
+        return ctx.reply(JSON.stringify({ error: 'controller offline' }));
+    }
+
+    ctx.ws.cache.get(controllerId)?.send(JSON.stringify({
+        action: WEBSOCKET_ACTIONS.REBOOT,
+        payload: {controllerId},
+    }));
+
+    return ctx.reply(`controller #${controllerId} was rebooted`);
 };
