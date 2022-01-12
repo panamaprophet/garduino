@@ -30,13 +30,14 @@ namespace state
     bool isEmergencyOff = false;
 
     bool update(Module &module, unsigned long interval) {
-        const auto isOn = module.isOn;
+        const auto isAlwaysOn = module.duration == DAY_MS;
+        const auto isOn = isAlwaysOn ? isAlwaysOn : module.isOn;
 
-        const auto day = isOn ? module.duration : (DAY_MS - module.duration);
+        const auto day = isOn ? module.duration : DAY_MS - module.duration;
         const auto night = DAY_MS - day;
 
         long msBeforeSwitch = module.msBeforeSwitch - interval;
-        const auto isChanged = msBeforeSwitch < 0;
+        const auto isChanged = isAlwaysOn == false && msBeforeSwitch < 0;
 
         module.msBeforeSwitch = isChanged
             ? module.duration
