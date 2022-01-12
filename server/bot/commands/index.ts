@@ -79,5 +79,5 @@ export const reboot: MiddlewareFn<BotContext> = async ctx => {
         payload: {controllerId},
     }));
 
-    return ctx.reply(`controller #${controllerId} was rebooted`);
+    return ctx.reply(`#${controllerId} was rebooted`);
 };

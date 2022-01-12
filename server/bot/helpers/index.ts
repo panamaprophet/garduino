@@ -29,7 +29,7 @@ export const sendMessage = async ({ bot, db, controllerId }: {
     const config = await getConfig(db, controllerId);
 
     return config?.chatId
-        ? bot.telegram.sendMessage(config.chatId, message)
+        ? bot.telegram.sendMessage(config.chatId, message, { parse_mode: "MarkdownV2" })
         : null;
 }
 
@@ -40,7 +40,7 @@ const isStatusResponseError = (response: StatusResponse): response is StatusResp
 
 const formatErrorResponse = (data: StatusResponseError) => (
     `\\#${data.controllerId}\n\r\n\r` +
-    `Error: ${data.error.message}`
+    `Error: *${data.error.message}*`
 );
 
 const formatSuccessResponse = (data: StatusResponseSuccess) => {
