@@ -17,8 +17,8 @@ router.get('/', async (ctx) => {
     }
 
     const {temperatureThreshold, ...config} = controllerConfig;
-    const light = getConfigEntity(config.light);
-    const fan = getConfigEntity(config.fan);
+    const light = getConfigEntity(config.light, new Date());
+    const fan = getConfigEntity(config.fan, new Date());
 
     ctx.body = {light, fan, temperatureThreshold};
 });

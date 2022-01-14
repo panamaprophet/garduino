@@ -1,24 +1,29 @@
-import {parse, addMilliseconds, compareDesc, differenceInMilliseconds, subDays} from 'date-fns';
-import {identity} from 'ramda';
-import {ConfigEntity, ConfigEntityRaw, ControllerConfigRaw} from 'types';
+import { addMilliseconds, compareDesc, differenceInMilliseconds, subDays } from 'date-fns';
+import { identity } from 'ramda';
+import { ConfigEntity, ConfigEntityRaw, ControllerConfigRaw } from 'types';
 
 
-const getHoursFromTimeString = (time: string) => Number(time.split(':')[0]);
+const getTimeFromString = (time: string) => time.split(':').map(item => Number(item));
 
-export const getConfigEntity = ({duration, onTime: onTimeString}: ConfigEntityRaw): ConfigEntity => {
-    const currentDate = Date.now();
-    const onHours = getHoursFromTimeString(onTimeString);
-    const durationHours = (duration / 1000 / 60 / 60);
+const pad = (n: number, symbol = '0', length = 2) => n.toString().padStart(length, symbol);
 
-    const onTime = subDays(
-        parse(onTimeString, 'HH:mm', currentDate), 
-        onHours + durationHours > 24 ? 1 : 0
-    );
+export const getConfigEntity = (config: ConfigEntityRaw, refDate: Date = new Date()): ConfigEntity => {
+    const { duration } = config;
+    const [onHours, onMinutes] = getTimeFromString(config.onTime);
+    const dateString = `${refDate.getFullYear()}-${pad(refDate.getMonth() + 1)}-${pad(refDate.getDate())}T${pad(onHours)}:${pad(onMinutes)}Z`;
 
-    const offTime = addMilliseconds(onTime, duration);
+    let onTime = new Date(dateString);
+    let offTime = addMilliseconds(onTime, duration);
 
-    const isOn = compareDesc(onTime, currentDate) >= 0 && compareDesc(offTime, currentDate) < 0;
-    const msBeforeSwitch = differenceInMilliseconds(isOn ? offTime : onTime, currentDate);
+    const offHours = offTime.getHours();
+
+    if (offHours < onHours && offHours > refDate.getHours()) {
+        onTime = subDays(onTime, 1);
+        offTime = subDays(offTime, 1);
+    }
+
+    const isOn = compareDesc(onTime, refDate) >= 0 && compareDesc(offTime, refDate) < 0;
+    const msBeforeSwitch = differenceInMilliseconds(isOn ? offTime : onTime, refDate);
 
     return {
         isOn,
