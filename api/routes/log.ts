@@ -2,7 +2,7 @@ import mongodb from 'mongodb';
 import {Telegraf} from 'telegraf';
 import Router from '@koa/router';
 import {getLogEntry} from '../helpers/log';
-import {isErrorEvent} from '../helpers/index';
+import { isCriticalError, isErrorEvent } from '../helpers/index';
 import {getLastUpdateEventLog, saveLog, getUpdateEventLogStat} from '../resolvers/log';
 import {sendMessage} from '../bot/helpers';
 import {BotContext, ICustomAppContext} from 'types';
@@ -33,7 +33,11 @@ router.post('/', async (ctx) => {
         return;
     }
 
-    if (isErrorEvent(data.event)) {
+    const { event, payload } = data;
+    const [entry] = payload || [];
+    const value = String(entry.value);
+
+    if (isErrorEvent(event) && isCriticalError(value)) {
         await sendMessage({
             controllerId,
             db,

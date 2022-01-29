@@ -1,5 +1,5 @@
 import {EventData, SensorLogEntity, SensorLogEntityAggregated} from 'types';
-import {LOG_EVENT} from '../constants';
+import { CRITICAL_ERRORS, LOG_EVENT } from '../constants';
 
 
 export const getSensorDataByKey = (haystack: EventData[], needle: string): EventData[] => haystack.filter(({key}) => key === needle);
@@ -65,6 +65,8 @@ export const processData = (data: SensorLogEntity[]): SensorLogEntityAggregated 
 };
 
 export const isErrorEvent = (event: string): boolean => event === LOG_EVENT.ERROR;
+
+export const isCriticalError = (error: string): boolean => CRITICAL_ERRORS.includes(error);
 
 
 // function distributedCopy(items, n) {

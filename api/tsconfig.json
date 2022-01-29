@@ -4,7 +4,7 @@
     "module": "commonjs",
     "allowJs": true,
     "checkJs": true,
-    "outDir": "../dist/server/",
+    "outDir": "../dist/api/",
     "baseUrl": "./",
     "rootDir": "./",
     "composite": true,
