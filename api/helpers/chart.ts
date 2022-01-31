@@ -1,9 +1,5 @@
-import _gm from 'gm';
-import stream from 'stream';
 import {format} from 'date-fns';
 import {range, reduceItemsCountBy} from './index';
-
-const gm = _gm.subClass({imageMagick: true});
 
 
 type SvgChartLabelOptions = {
@@ -149,16 +145,4 @@ export const createSvgChart = ({date, ...data}: SvgChartData, options: SvgChartO
         </svg>`;
 
     return chart;
-};
-
-/**
- * renders svg markup to png
- *
- * @param {String} svg
- * @returns {Promise<stream.Readable>}
- */
-export const svg2png = (svg: string): Promise<stream.Readable> => {
-    return new Promise((resolve, reject) => {
-        gm(Buffer.from(svg), 'image.svg').stream('png', (error: Error | null, result: stream.Readable) => error ? reject(error) : resolve(result));
-    });
 };

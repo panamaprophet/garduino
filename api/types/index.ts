@@ -30,7 +30,7 @@ export interface SensorLogEntity {
 }
 
 export interface SensorLogEntityAggregated {
-    date: number[],
+    dates: number[],
     temperature: number[],
     humidity: number[],
     maxHumidity: SensorLogEntity,

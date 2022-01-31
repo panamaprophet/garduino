@@ -1,8 +1,6 @@
-import {last} from 'ramda';
 import {format, subDays, subWeeks} from 'date-fns';
 import {processData} from '../../../helpers';
 import {getUpdateEventLogStat} from '../../../resolvers/log';
-import {createSvgChart, svg2png} from '../../../helpers/chart';
 import {ActionContext, ActionResult} from 'types';
 
 
@@ -16,24 +14,16 @@ export const ACTION_STAT_DAY = 'main/stat/day';
  */
 const getStat = async ({db, controllerId}: ActionContext, dateFrom: Date): Promise<ActionResult> => {
     const data = await getUpdateEventLogStat(db, controllerId, dateFrom);
-    const {minHumidity, maxHumidity, minTemperature, maxTemperature, ...chartData} = processData(data);
-    const svgChart = createSvgChart({...chartData});
-    const pngChart = await svg2png(svgChart);
+    const { minHumidity, maxHumidity, minTemperature, maxTemperature, dates } = processData(data);
 
     const text = [
-        `${chartData.date[0]} — ${last(chartData.date) || ''}`,
-        '',
-        `max humidity: ${maxHumidity.humidity}% on ${format(maxHumidity.date, 'dd.MM.yy HH:mm')}`,
-        `max temperature: ${maxTemperature.temperature}°C on ${format(maxTemperature.date, 'dd.MM.yy HH:mm')}`,
-        '',
-        `min humidity: ${minHumidity.humidity}% on ${format(minHumidity.date, 'dd.MM.yy HH:mm')}`,
-        `min temperature: ${minTemperature.temperature}°C on ${format(minTemperature.date, 'dd.MM.yy HH:mm')}`,
-    ].join('\n');
+        `\\#${controllerId}`,
+        `${format(dates[0], 'dd\\.MM\\.yy HH:mm')} — ${format(dates[dates.length - 1], 'dd\\.MM\\.yy HH:mm')}:`,
+        `T\\=*${minTemperature.temperature}* / *${maxTemperature.temperature}* °C`,
+        `H\\=*${minHumidity.humidity}* / *${maxHumidity.humidity}* %`,
+    ].join('  ·  ');
 
-    return {
-        text,
-        image: pngChart,
-    };
+    return { text };
 };
 
 const getDayStat = (context: ActionContext): Promise<ActionResult> => getStat(context, subDays(Date.now(), 1));

@@ -47,7 +47,7 @@ const handleAction: MiddlewareFn<BotContext> = async ctx => {
     }
 
     if (text) {
-        await ctx.reply(text, Markup.removeKeyboard());
+        await ctx.replyWithMarkdownV2(text, Markup.removeKeyboard());
     }
 
     return ctx.scene.leave();

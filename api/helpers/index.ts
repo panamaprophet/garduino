@@ -26,7 +26,7 @@ export const reduceItemsCountBy = <T>(items: T[], limit: number): T[] => {
 
 export const processData = (data: SensorLogEntity[]): SensorLogEntityAggregated => {
     const initData = {
-        date: [],
+        dates: [],
         temperature: [],
         humidity: [],
         maxHumidity: data[0],
@@ -56,7 +56,7 @@ export const processData = (data: SensorLogEntity[]): SensorLogEntityAggregated 
             return result;
         }
 
-        result.date.push(item.date);
+        result.dates.push(item.date);
         result.temperature.push(item.temperature);
         result.humidity.push(item.humidity);
 
