@@ -1,8 +1,5 @@
-import {LOG_EVENT} from '../constants';
-import {EventType, LogEntity, LogEntityRaw} from 'types';
+import { LogEntity, LogEntityRaw } from 'types';
 
-
-export const getLogEvent = (event: EventType): string => LOG_EVENT[event];
 
 export const getLogEntry = (entity?: LogEntityRaw): LogEntity | null => {
     const {

@@ -3,7 +3,7 @@ import {Telegraf} from 'telegraf';
 import Router from '@koa/router';
 import {getLogEntry} from '../helpers/log';
 import { isCriticalError, isErrorEvent } from '../helpers/index';
-import {getLastUpdateEventLog, saveLog, getUpdateEventLogStat} from '../resolvers/log';
+import {getLastUpdateEvent, saveEvent, getUpdateEvents, getErrorEvents} from '../resolvers/log';
 import {sendMessage} from '../bot/helpers';
 import {BotContext, ICustomAppContext} from 'types';
 
@@ -13,13 +13,25 @@ const router = new Router();
 router.get('/', async (ctx: ICustomAppContext) => {
     const {controllerId} = ctx.params;
 
-    ctx.body = await getLastUpdateEventLog(ctx.db, controllerId);
+    ctx.body = await getLastUpdateEvent(ctx.db, controllerId);
 });
 
 router.get('/stat', async (ctx) => {
     const {controllerId} = ctx.params;
 
-    ctx.body = await getUpdateEventLogStat(ctx.db, controllerId);
+    ctx.body = await getUpdateEvents(ctx.db, controllerId);
+});
+
+router.get('/errors', async (ctx) => {
+    const { controllerId } = ctx.params;
+    const dateFrom = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const dateTo = new Date();
+
+    ctx.body = await getErrorEvents(
+        ctx.db,
+        controllerId,
+        { dateFrom, dateTo }
+    );
 });
 
 router.post('/', async (ctx) => {
@@ -48,7 +60,7 @@ router.post('/', async (ctx) => {
         ].join('  ·  '));
     }
 
-    const result = await saveLog(db, controllerId, data);
+    const result = await saveEvent(db, controllerId, data);
 
     ctx.body = result;
 });

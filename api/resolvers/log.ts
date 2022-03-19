@@ -1,14 +1,13 @@
-import {subWeeks, format} from 'date-fns';
-import type {Db} from 'mongodb';
-import {LOG_EVENT} from '../constants';
-import {getSensorDataByKey} from '../helpers/index';
-import {SensorLogEntity, LogEntity} from 'types';
+import { subWeeks } from 'date-fns';
+import type { Db } from 'mongodb';
+import { LOG_EVENT } from '../constants';
+import { SensorLogEntity, LogEntity } from 'types';
 
 
 const getDefaultDateFrom = (): Date => subWeeks(Date.now(), 1);
 
 
-export const getLog = async (db: Db, controllerId: string, conditions = {}): Promise<LogEntity | null> => {
+export const getEvent = async (db: Db, controllerId: string, conditions = {}): Promise<LogEntity | null> => {
     const result = await db.collection('log').findOne<LogEntity>(
         {controllerId, ...conditions},
         {sort: {$natural: -1}}
@@ -17,32 +16,7 @@ export const getLog = async (db: Db, controllerId: string, conditions = {}): Pro
     return result;
 };
 
-export const getLastUpdateEventLog = (db: Db, controllerId: string): Promise<LogEntity | null> => {
-    return getLog(db, controllerId, {event: LOG_EVENT.UPDATE});
-};
-
-export const getLastError = (db: Db, controllerId: string): Promise<LogEntity | null> => {
-    return getLog(db, controllerId, {event: LOG_EVENT.ERROR});
-}
-
-export const getLastUpdateEventLogByControllerId = async (db: Db, controllerId: string): Promise<string | null> => {
-    const eventData = await getLastUpdateEventLog(db, controllerId);
-
-    if (!eventData) {
-        return null;
-    }
-
-    const {payload, date} = eventData;
-    const [humidity] = getSensorDataByKey(payload, 'humidity');
-    const [temperature] = getSensorDataByKey(payload, 'temperature');
-    const formattedDate = format(date, 'dd.MM.yy HH:mm');
-
-    const response = `#${controllerId} @ ${formattedDate}\n\r\n\rTemperature: ${temperature.value}°C\n\rHumidity: ${humidity.value}%`;
-
-    return response;
-};
-
-export const saveLog = async (db: Db, controllerId: string, data: LogEntity): Promise<{success: boolean}> => {
+export const saveEvent = async (db: Db, controllerId: string, data: LogEntity): Promise<{success: boolean}> => {
     const {result} = await db.collection('log').insertOne({controllerId, ...data});
 
     return {
@@ -50,15 +24,34 @@ export const saveLog = async (db: Db, controllerId: string, data: LogEntity): Pr
     };
 };
 
-export const getUpdateEventLogStat = async (db: Db, controllerId: string, dateFrom: Date | null = null): Promise<SensorLogEntity[]> => {
+export const getErrorEvents = async (db: Db, controllerId: string, { dateFrom, dateTo }: { [k: string]: Date }): Promise<unknown[]> => {
+    const result = await db.collection('log').aggregate<unknown>([
+        {
+            $match: {
+                controllerId,
+                event: LOG_EVENT.ERROR,
+                date: {
+                    $gte: dateFrom,
+                    $lte: dateTo,
+                },
+            },
+        },
+        { $sort: { _id: -1 } },
+        { $unwind: { path: '$payload' } },
+        { $addFields: { value: '$payload.value' } },
+        { $project: { value: 1, date: 1 } },
+    ]).toArray();
+
+    return result;
+};
+
+export const getUpdateEvents = async (db: Db, controllerId: string, dateFrom: Date | null = null): Promise<SensorLogEntity[]> => {
     const result = await db.collection('log').aggregate<SensorLogEntity>([
         {
             $match: {
                 controllerId,
                 event: LOG_EVENT.UPDATE,
-                date: {
-                    $gte: dateFrom || getDefaultDateFrom(),
-                },
+                date: { $gte: dateFrom || getDefaultDateFrom() },
             },
         }, {
             $project: {
@@ -67,38 +60,38 @@ export const getUpdateEventLogStat = async (db: Db, controllerId: string, dateFr
                     $filter: {
                         input: '$payload',
                         as: 'item',
-                        cond: {$eq: ['$$item.key', 'humidity']},
+                        cond: { $eq: ['$$item.key', 'humidity'] },
                     },
                 },
                 temperature: {
                     $filter: {
                         input: '$payload',
                         as: 'item',
-                        cond: {$eq: ['$$item.key', 'temperature']},
+                        cond: { $eq: ['$$item.key', 'temperature'] },
                     },
                 },
             },
-        }, {
-            $unwind: {path: '$humidity'},
-        }, {
-            $unwind: {path: '$temperature'},
-        }, {
+        },
+        { $unwind: { path: '$humidity' } },
+        { $unwind: { path: '$temperature' } },
+        {
             $project: {
                 _id: 0,
                 date: 1,
-                humidity: {
-                    $convert: {input: '$humidity.value', to: 'double'}
-                },
-                temperature: {
-                    $convert: {input: '$temperature.value', to: 'double'}
-                },
-            },
-        }, {
-            $sort: {
-                date: 1,
+                humidity: { $convert: { input: '$humidity.value', to: 'double' } },
+                temperature: { $convert: { input: '$temperature.value', to: 'double' } },
             },
         },
+        { $sort: { date: 1 } },
     ]).toArray();
 
     return result;
+};
+
+export const getLastUpdateEvent = (db: Db, controllerId: string): Promise<LogEntity | null> => {
+    return getEvent(db, controllerId, { event: LOG_EVENT.UPDATE });
+};
+
+export const getLastErrorEvent = (db: Db, controllerId: string): Promise<LogEntity | null> => {
+    return getEvent(db, controllerId, { event: LOG_EVENT.ERROR });
 };
