@@ -1,8 +1,8 @@
-import {EventData, SensorLogEntity, SensorLogEntityAggregated} from 'types';
+import { EventData, SensorLogEntity, SensorLogEntityAggregated } from 'types';
 import { CRITICAL_ERRORS, LOG_EVENT } from '../constants';
 
 
-export const getSensorDataByKey = (haystack: EventData[], needle: string): EventData[] => haystack.filter(({key}) => key === needle);
+export const getSensorDataByKey = (haystack: EventData[], needle: string): EventData[] => haystack.filter(({ key }) => key === needle);
 
 export const range = (from: number, to: number, step = 1): number[] => {
     const result = [];

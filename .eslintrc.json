@@ -8,7 +8,7 @@
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "project": "server/tsconfig.json",
+        "project": "api/tsconfig.json",
         "sourceType": "module"
     },
     "plugins": [
@@ -49,6 +49,7 @@
                 }
             }
         ],
+        "semi": "error",
         "@typescript-eslint/consistent-type-assertions": "error",
         "@typescript-eslint/dot-notation": "error",
         "@typescript-eslint/naming-convention": "off",
@@ -125,6 +126,7 @@
         "no-unused-labels": "error",
         "no-var": "error",
         "object-shorthand": "error",
+        "object-curly-spacing": ["error", "always"],
         "one-var": [
             "error",
             "never"

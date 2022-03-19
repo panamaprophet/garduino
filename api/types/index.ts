@@ -1,7 +1,7 @@
-import {Scenes, Context, Telegraf} from 'telegraf';
-import {Db} from 'mongodb';
-import {Readable} from 'stream';
-import {WebSocket, WebSocketServer} from 'ws';
+import { Scenes, Context, Telegraf } from 'telegraf';
+import { Db } from 'mongodb';
+import { Readable } from 'stream';
+import { WebSocket, WebSocketServer } from 'ws';
 import koa from 'koa';
 
 
@@ -125,6 +125,4 @@ export interface ICustomAppContext extends koa.Context {
     },
 }
 
-export interface ICustomAppState extends koa.DefaultState {
-    poop: string;
-}
+export type ICustomAppState = koa.DefaultState

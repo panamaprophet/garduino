@@ -1,11 +1,11 @@
-import {createServer} from 'http';
+import { createServer } from 'http';
 import Koa from 'koa';
 import koaBody from 'koa-body';
 import router from './routes';
-import {getBot} from './bot';
-import {getMongoDb} from './db';
-import {getWebSocketServer} from './websocket';
-import {getConfig} from './config';
+import { getBot } from './bot';
+import { getMongoDb } from './db';
+import { getWebSocketServer } from './websocket';
+import { getConfig } from './config';
 import { ICustomAppContext, ICustomAppState } from 'types';
 
 
@@ -15,7 +15,7 @@ void (async () => {
     const server = createServer(app.callback());
     const [db] = await getMongoDb(config.db);
     const [ws, cache] = getWebSocketServer(server);
-    const [bot, botMiddleware] = await getBot(db, {ws, cache}, config.bot);
+    const [bot, botMiddleware] = await getBot(db, { ws, cache }, config.bot);
 
     app.use(koaBody());
     app.use(router.routes());

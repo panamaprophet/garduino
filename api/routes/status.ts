@@ -1,6 +1,6 @@
 import Router from '@koa/router';
-import {getControllerStatus} from '../resolvers/status';
-import {ICustomAppContext} from 'types';
+import { getControllerStatus } from '../resolvers/status';
+import { ICustomAppContext } from 'types';
 
 
 const router = new Router();

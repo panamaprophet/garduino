@@ -1,23 +1,23 @@
 import mongodb from 'mongodb';
-import {Telegraf} from 'telegraf';
+import { Telegraf } from 'telegraf';
 import Router from '@koa/router';
-import {getLogEntry} from '../helpers/log';
+import { getLogEntry } from '../helpers/log';
 import { isCriticalError, isErrorEvent } from '../helpers/index';
-import {getLastUpdateEvent, saveEvent, getUpdateEvents, getErrorEvents} from '../resolvers/log';
-import {sendMessage} from '../bot/helpers';
-import {BotContext, ICustomAppContext} from 'types';
+import { getLastUpdateEvent, saveEvent, getUpdateEvents, getErrorEvents } from '../resolvers/log';
+import { sendMessage } from '../bot/helpers';
+import { BotContext, ICustomAppContext } from 'types';
 
 
 const router = new Router();
 
 router.get('/', async (ctx: ICustomAppContext) => {
-    const {controllerId} = ctx.params;
+    const { controllerId } = ctx.params;
 
     ctx.body = await getLastUpdateEvent(ctx.db, controllerId);
 });
 
 router.get('/stat', async (ctx) => {
-    const {controllerId} = ctx.params;
+    const { controllerId } = ctx.params;
 
     ctx.body = await getUpdateEvents(ctx.db, controllerId);
 });
@@ -35,13 +35,13 @@ router.get('/errors', async (ctx) => {
 });
 
 router.post('/', async (ctx) => {
-    const {controllerId} = ctx.params;
+    const { controllerId } = ctx.params;
     const data = getLogEntry(ctx.request.body);
     const bot = ctx.bot as Telegraf<BotContext>;
     const db = ctx.db as mongodb.Db;
 
     if (!data) {
-        ctx.body = {success: false};
+        ctx.body = { success: false };
         return;
     }
 

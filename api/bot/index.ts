@@ -1,21 +1,21 @@
 import mongodb from 'mongodb';
 import Koa from 'koa';
-import {WebSocket, WebSocketServer} from 'ws';
-import {Scenes, Telegraf, Middleware, session} from 'telegraf';
-import {Stat, Setup, ControllerManager} from './scenes';
+import { WebSocket, WebSocketServer } from 'ws';
+import { Scenes, Telegraf, Middleware, session } from 'telegraf';
+import { Stat, Setup, ControllerManager } from './scenes';
 import * as commands from './commands';
-import {BotContext} from 'types';
+import { BotContext } from 'types';
 
 
 const getCommandByKey = (key: string, obj: { [k: string]: Middleware<BotContext> }) => obj[key];
 
 export const getBot = async (
-    db: mongodb.Db, 
-    ws: { 
-        ws: WebSocketServer, 
-        cache: Map<string, WebSocket> 
+    db: mongodb.Db,
+    ws: {
+        ws: WebSocketServer,
+        cache: Map<string, WebSocket>
     }, {
-        token, 
+        token,
         path,
     }: Record<string, string>): Promise<[
         Telegraf<BotContext>,
@@ -23,7 +23,7 @@ export const getBot = async (
     ]> => {
         const bot = new Telegraf<BotContext>(token);
         const url = `${path}/${bot.secretPathComponent()}`;
-        const stage = new Scenes.Stage<BotContext>([Stat, Setup, ControllerManager], {ttl: 10});
+        const stage = new Scenes.Stage<BotContext>([Stat, Setup, ControllerManager], { ttl: 10 });
 
         await bot.telegram.setWebhook(url);
 

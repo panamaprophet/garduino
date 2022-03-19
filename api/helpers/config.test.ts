@@ -47,7 +47,7 @@ const suite = {
 
         return expected.msBeforeSwitch === result.msBeforeSwitch && expected.isOn === result.isOn;
     },
-}
+};
 
 Object
     .entries(suite)

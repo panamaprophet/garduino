@@ -1,5 +1,5 @@
-import {Server} from 'http';
-import {WebSocketServer, WebSocket} from 'ws';
+import { Server } from 'http';
+import { WebSocketServer, WebSocket } from 'ws';
 
 
 interface WebSocketPayload {
@@ -44,7 +44,7 @@ export const getWebSocketServer = (server: Server): [WebSocketServer, Map<string
                 return;
             }
 
-            const {controllerId} = messagePayload?.payload as {[k: string]: string};
+            const { controllerId } = messagePayload?.payload as {[k: string]: string};
 
             console.log('[ws] caching:', controllerId);
 

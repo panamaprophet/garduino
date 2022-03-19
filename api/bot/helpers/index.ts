@@ -1,10 +1,10 @@
 import mongodb from 'mongodb';
-import {formatDistanceStrict} from 'date-fns';
-import {Markup, Telegraf} from 'telegraf';
-import {ExtraReplyMessage} from 'telegraf/typings/telegram-types';
-import {Message} from 'telegraf/typings/core/types/typegram';
-import {getConfig} from '../../resolvers/config';
-import {StatusResponse, StatusResponseError, StatusResponseSuccess, BotContext} from 'types';
+import { formatDistanceStrict } from 'date-fns';
+import { Markup, Telegraf } from 'telegraf';
+import { ExtraReplyMessage } from 'telegraf/typings/telegram-types';
+import { Message } from 'telegraf/typings/core/types/typegram';
+import { getConfig } from '../../resolvers/config';
+import { StatusResponse, StatusResponseError, StatusResponseSuccess, BotContext } from 'types';
 
 
 export const getInlineKeyboard = (options: string[]): ExtraReplyMessage => {
@@ -31,7 +31,7 @@ export const sendMessage = async ({ bot, db, controllerId }: {
     return config?.chatId
         ? bot.telegram.sendMessage(config.chatId, message, { parse_mode: "MarkdownV2" })
         : null;
-}
+};
 
 export const isTextMessage = (message: Message | undefined): message is Message.TextMessage => (message as Message.TextMessage).text !== undefined;
 
@@ -44,7 +44,7 @@ const formatErrorResponse = (data: StatusResponseError) => (
 );
 
 const formatSuccessResponse = (data: StatusResponseSuccess) => {
-    const {temperature, humidity, controllerId, light, lastError} = data;
+    const { temperature, humidity, controllerId, light, lastError } = data;
     const timeBeforeSwitch = formatDistanceStrict(0, light.msBeforeSwitch);
     const lightStatusString = `Light will stay *${light.isOn ? 'on' : 'off'}* for ${timeBeforeSwitch}`;
     const lastErrorString = lastError ? `Last error \\= *${lastError?.payload[0].value}*` : null;

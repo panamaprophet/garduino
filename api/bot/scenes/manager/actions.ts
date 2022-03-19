@@ -1,5 +1,5 @@
-import {addController, removeController} from '../../../resolvers/controller';
-import type {ActionContext, ActionResult, ControllerConfigRaw} from 'types';
+import { addController, removeController } from '../../../resolvers/controller';
+import type { ActionContext, ActionResult, ControllerConfigRaw } from 'types';
 
 
 export const ACTION_CONTROLLER_ADD = 'setup/controller/add';
@@ -19,9 +19,9 @@ export const DEFAULT_CONFIG: ControllerConfigRaw = {
 };
 
 
-const add = async ({db, chatId, controllerId}: ActionContext): Promise<ActionResult> => addController(db, controllerId, chatId, DEFAULT_CONFIG);
+const add = async ({ db, chatId, controllerId }: ActionContext): Promise<ActionResult> => addController(db, controllerId, chatId, DEFAULT_CONFIG);
 
-const remove = async ({db, chatId, controllerId}: ActionContext): Promise<ActionResult> => removeController(db, controllerId, chatId);
+const remove = async ({ db, chatId, controllerId }: ActionContext): Promise<ActionResult> => removeController(db, controllerId, chatId);
 
 export const actionHandler = async (action: string | undefined, context: ActionContext):  Promise<ActionResult> => {
     switch (action) {

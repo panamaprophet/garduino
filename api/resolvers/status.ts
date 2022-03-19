@@ -1,7 +1,7 @@
-import {WebSocket} from 'ws';
-import {getWebSocketServerPayload} from '../websocket/index';
-import {WEBSOCKET_ACTIONS, WEBSOCKET_RESPONSE_TIMEOUT} from '../constants';
-import {StatusResponse} from 'types';
+import { WebSocket } from 'ws';
+import { getWebSocketServerPayload } from '../websocket/index';
+import { WEBSOCKET_ACTIONS, WEBSOCKET_RESPONSE_TIMEOUT } from '../constants';
+import { StatusResponse } from 'types';
 
 
 export const getControllerStatus = (controllerId: string, ws: WebSocket): Promise<StatusResponse> => {

@@ -1,11 +1,11 @@
-import {Scenes, Markup, MiddlewareFn} from 'telegraf';
-import {getConfig} from '../../../resolvers/config';
-import {getControllerIds} from '../../../resolvers/controller';
-import {formatConfig} from '../../../helpers/config';
-import {getInlineKeyboard, isTextMessage} from '../../helpers';
-import {BotContext} from 'types';
-import {selectController} from '../common';
-import {actionHandler, ACTION_LIGHT_ONTIME, ACTION_FAN_ONTIME, ACTION_LIGHT_DURATION, ACTION_FAN_DURATION, ACTION_TEMPERATURE_THRESHOLD} from './actions';
+import { Scenes, Markup, MiddlewareFn } from 'telegraf';
+import { getConfig } from '../../../resolvers/config';
+import { getControllerIds } from '../../../resolvers/controller';
+import { formatConfig } from '../../../helpers/config';
+import { getInlineKeyboard, isTextMessage } from '../../helpers';
+import { BotContext } from 'types';
+import { selectController } from '../common';
+import { actionHandler, ACTION_LIGHT_ONTIME, ACTION_FAN_ONTIME, ACTION_LIGHT_DURATION, ACTION_FAN_DURATION, ACTION_TEMPERATURE_THRESHOLD } from './actions';
 
 
 const SELECT_CONTROLLER_STEP_INDEX = 0;
@@ -14,10 +14,10 @@ const SELECT_ACTION_STEP_INDEX = 1;
 
 
 const selectAction: MiddlewareFn<BotContext> = async ctx => {
-    const {db, chat} = ctx;
+    const { db, chat } = ctx;
     const chatId = chat?.id;
     const selectedControllerId = isTextMessage(ctx?.message) ? ctx.message.text : '';
-    const controllerIds = await getControllerIds(db, {chatId});
+    const controllerIds = await getControllerIds(db, { chatId });
 
     if (!selectedControllerId || !controllerIds.includes(selectedControllerId)) {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
@@ -53,9 +53,9 @@ const collectValue: MiddlewareFn<BotContext> = async ctx => {
 };
 
 const handleAction: MiddlewareFn<BotContext> = async ctx => {
-    const {db, chat} = ctx;
+    const { db, chat } = ctx;
     const chatId = chat?.id;
-    const {controllerId, action} = ctx.session;
+    const { controllerId, action } = ctx.session;
     const value = isTextMessage(ctx?.message) ? ctx.message.text : '';
 
     if (!controllerId) {
@@ -70,7 +70,7 @@ const handleAction: MiddlewareFn<BotContext> = async ctx => {
         return ctx.scene.leave();
     }
 
-    const {success} = await actionHandler(action, {db, chatId, controllerId, value});
+    const { success } = await actionHandler(action, { db, chatId, controllerId, value });
     const response = success ? 'Success' : 'Fail';
 
     await ctx.reply(response, Markup.removeKeyboard());

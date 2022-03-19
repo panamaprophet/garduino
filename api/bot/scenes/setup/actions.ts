@@ -1,6 +1,6 @@
-import {mergeDeepRight} from 'ramda';
-import {setConfig, getConfig} from '../../../resolvers/config';
-import {ActionContext, ActionResult, ControllerConfigRaw} from 'types';
+import { mergeDeepRight } from 'ramda';
+import { setConfig, getConfig } from '../../../resolvers/config';
+import { ActionContext, ActionResult, ControllerConfigRaw } from 'types';
 
 
 export const ACTION_LIGHT_ONTIME = 'setup/light/ontime';
@@ -27,11 +27,11 @@ type PartialControllerConfig = {
 }
 
 
-const setLightOnTime = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
+const setLightOnTime = async ({ db, controllerId, value }: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
 
     if (!currentConfig) {
-        return {success: false};
+        return { success: false };
     }
 
     const updatedConfig = mergeDeepRight<ControllerConfigRaw, PartialControllerConfig>(currentConfig, {
@@ -45,11 +45,11 @@ const setLightOnTime = async ({db, controllerId, value}: ActionContext): Promise
     return result;
 };
 
-const setFanOnTime = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
+const setFanOnTime = async ({ db, controllerId, value }: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
 
     if (!currentConfig) {
-        return {success: false};
+        return { success: false };
     }
 
     const updatedConfig = mergeDeepRight<ControllerConfigRaw, PartialControllerConfig>(currentConfig, {
@@ -63,11 +63,11 @@ const setFanOnTime = async ({db, controllerId, value}: ActionContext): Promise<A
     return result;
 };
 
-const setFanDuration = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
+const setFanDuration = async ({ db, controllerId, value }: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
 
     if (!currentConfig) {
-        return {success: false};
+        return { success: false };
     }
 
     const updatedConfig = mergeDeepRight<ControllerConfigRaw, PartialControllerConfig>(currentConfig, {
@@ -81,11 +81,11 @@ const setFanDuration = async ({db, controllerId, value}: ActionContext): Promise
     return result;
 };
 
-const setLightDuration = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
+const setLightDuration = async ({ db, controllerId, value }: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
 
     if (!currentConfig) {
-        return {success: false};
+        return { success: false };
     }
 
     const updatedConfig = mergeDeepRight<ControllerConfigRaw, PartialControllerConfig>(currentConfig, {
@@ -99,11 +99,11 @@ const setLightDuration = async ({db, controllerId, value}: ActionContext): Promi
     return result;
 };
 
-const setTemperatureThreshold = async ({db, controllerId, value}: ActionContext): Promise<ActionResult> => {
+const setTemperatureThreshold = async ({ db, controllerId, value }: ActionContext): Promise<ActionResult> => {
     const currentConfig = await getConfig(db, controllerId);
 
     if (!currentConfig) {
-        return {success: false};
+        return { success: false };
     }
 
     const updatedConfig = mergeDeepRight<ControllerConfigRaw, PartialControllerConfig>(currentConfig, {

@@ -1,7 +1,7 @@
-import {format, subDays, subWeeks} from 'date-fns';
-import {processData} from '../../../helpers';
+import { format, subDays, subWeeks } from 'date-fns';
+import { processData } from '../../../helpers';
 import { getUpdateEvents } from '../../../resolvers/log';
-import {ActionContext, ActionResult} from 'types';
+import { ActionContext, ActionResult } from 'types';
 
 
 export const ACTION_STAT_WEEK = 'main/stat/week';
@@ -12,7 +12,7 @@ export const ACTION_STAT_DAY = 'main/stat/day';
 /**
  * @returns {Promise<ActionResult>}
  */
-const getStat = async ({db, controllerId}: ActionContext, dateFrom: Date): Promise<ActionResult> => {
+const getStat = async ({ db, controllerId }: ActionContext, dateFrom: Date): Promise<ActionResult> => {
     const data = await getUpdateEvents(db, controllerId, dateFrom);
     const { minHumidity, maxHumidity, minTemperature, maxTemperature, dates } = processData(data);
 

@@ -9,15 +9,15 @@ const getDefaultDateFrom = (): Date => subWeeks(Date.now(), 1);
 
 export const getEvent = async (db: Db, controllerId: string, conditions = {}): Promise<LogEntity | null> => {
     const result = await db.collection('log').findOne<LogEntity>(
-        {controllerId, ...conditions},
-        {sort: {$natural: -1}}
+        { controllerId, ...conditions },
+        { sort: { $natural: -1 } }
     );
 
     return result;
 };
 
 export const saveEvent = async (db: Db, controllerId: string, data: LogEntity): Promise<{success: boolean}> => {
-    const {result} = await db.collection('log').insertOne({controllerId, ...data});
+    const { result } = await db.collection('log').insertOne({ controllerId, ...data });
 
     return {
         success: Boolean(result.ok),

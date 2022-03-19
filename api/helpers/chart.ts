@@ -1,5 +1,5 @@
-import {format} from 'date-fns';
-import {range, reduceItemsCountBy} from './index';
+import { format } from 'date-fns';
+import { range, reduceItemsCountBy } from './index';
 
 
 type SvgChartLabelOptions = {
@@ -53,7 +53,7 @@ const valuesToPolylinePoints = (data: number[]): string => data.map((item, index
 /**
  * @returns {string[]} svg
  */
-const createSvgChartLines = (points: string[], {colors}: SvgChartLineOptions): string[] => points.map((p, index) => {
+const createSvgChartLines = (points: string[], { colors }: SvgChartLineOptions): string[] => points.map((p, index) => {
     const color = colors[index % colors.length];
 
     return `<polyline fill="none" stroke="${color}" points="${p}" />`;
@@ -102,7 +102,7 @@ const createSvgChartGrid = (ys: number[] = [], xs: number[] = []): string => {
 /**
  * @returns {string[]} svg
  */
-const createSvgChartLegend = (data: (number|string)[], {textAttributes, legendTopOffset, colors}: SvgChartLegendOptions): string[] => {
+const createSvgChartLegend = (data: (number|string)[], { textAttributes, legendTopOffset, colors }: SvgChartLegendOptions): string[] => {
     return data.map((key, index) => {
         return `<text ${textAttributes} x="80" y="${index * legendTopOffset + legendTopOffset}" fill="${colors[index % colors.length]}">${key}</text>`;
     });
@@ -113,7 +113,7 @@ const formatDates = (dates: (number|Date)[]): string[] => dates.map(date => form
 /**
  * @returns {String} svg
  */
-export const createSvgChart = ({date, ...data}: SvgChartData, options: SvgChartOptions = {}): string => {
+export const createSvgChart = ({ date, ...data }: SvgChartData, options: SvgChartOptions = {}): string => {
     const {
         width,
         height,
@@ -121,19 +121,19 @@ export const createSvgChart = ({date, ...data}: SvgChartData, options: SvgChartO
         legendTopOffset,
         maxLabelsCount,
         textAttributes,
-    } = {...DEFAULT_CHART_OPTIONS, ...options};
+    } = { ...DEFAULT_CHART_OPTIONS, ...options };
 
     const keys = Object.keys(data);
     const points = keys.map(key => valuesToPolylinePoints(data[key]));
-    const lines = createSvgChartLines(points, {colors});
+    const lines = createSvgChartLines(points, { colors });
 
     const ys = reduceItemsCountBy(range(10, 100, 10).reverse(), maxLabelsCount);
     const xs = formatDates(reduceItemsCountBy(date, maxLabelsCount));
 
     const grid = createSvgChartGrid(ys);
-    const yLabels = createSvgChartLabels(ys, {x: 5, textAttributes});
-    const xLabels = createSvgChartLabels(xs, {y: 95, isVertical: true, textAttributes});
-    const legend = createSvgChartLegend(keys, {legendTopOffset, textAttributes, colors});
+    const yLabels = createSvgChartLabels(ys, { x: 5, textAttributes });
+    const xLabels = createSvgChartLabels(xs, { y: 95, isVertical: true, textAttributes });
+    const legend = createSvgChartLegend(keys, { legendTopOffset, textAttributes, colors });
 
     const chart = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
         <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="none">

@@ -1,13 +1,13 @@
-import {Middleware} from 'telegraf';
-import {getControllerIds} from '../../../resolvers/controller';
-import {getInlineKeyboard} from '../../helpers';
-import {BotContext} from 'types';
+import { Middleware } from 'telegraf';
+import { getControllerIds } from '../../../resolvers/controller';
+import { getInlineKeyboard } from '../../helpers';
+import { BotContext } from 'types';
 
 
 export const selectController: Middleware<BotContext> = async (ctx: BotContext) => {
-    const {db, chat} = ctx;
+    const { db, chat } = ctx;
     const chatId = chat?.id;
-    const controllerIds = await getControllerIds(db, {chatId});
+    const controllerIds = await getControllerIds(db, { chatId });
 
     if (controllerIds.length === 0) {
         await ctx.reply('No controllers presented');
