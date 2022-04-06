@@ -180,7 +180,7 @@ const auto onConfigurationPost = [](ESP8266WebServer *webServer) {
     webServer -> send(
         200,
         "application/json",
-        "{success: " + String(result) + "}"
+        "{\"success\": " + String(result) + "}"
     );
 };
 

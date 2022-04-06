@@ -48,15 +48,17 @@ namespace configuration
     };
 
     auto save = [](String _ssid, String _password, String _controllerId) {
-        if (!(_ssid.isEmpty() || _password.isEmpty() || _controllerId.isEmpty())) {
+        if (_ssid.isEmpty() || _password.isEmpty() || _controllerId.isEmpty()) {
             return false;
         }
 
         reset();
 
-        writeRange(SSID_OFFSET, ssid);
-        writeRange(PASSWORD_OFFSET, password);
-        writeRange(CID_OFFSET, controllerId);
+        writeRange(SSID_OFFSET, _ssid);
+        writeRange(PASSWORD_OFFSET, _password);
+        writeRange(CID_OFFSET, _controllerId);
+
+        EEPROM.commit();
 
         return true;
     };
