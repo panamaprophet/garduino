@@ -8,7 +8,7 @@
     "api:build": "tsc --build api/",
     "api:start": "node dist/api/index.js",
     "api:lint": "eslint -c .eslintrc.json --ext .ts api/",
-    "controller:ui:watch": "parcel controller/ui/index.html",
+    "controller:ui:watch": "parcel --no-cache controller/ui/index.html",
     "controller:ui:build": "parcel build --no-source-maps --no-content-hash --dist-dir data/ controller/ui/index.html",
     "controller:ui:upload": "pio run --target buildfs --environment nodemcuv2 && pio run --target uploadfs --environment nodemcuv2",
     "controller:build": "set -a && source .env && set +a && pio run",
