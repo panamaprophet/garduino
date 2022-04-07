@@ -29,9 +29,6 @@ const int PIN_SENSOR                            = 13;
 const int PIN_OFF                               = HIGH;
 const int PIN_ON                                = LOW;
 
-#ifndef SERVER_HOSTNAME
-    const String SERVER_HOSTNAME = "localhost";
-#endif
 
 using events::EventPayload;
 using events::EventType;
@@ -68,7 +65,7 @@ auto onUpdate = [](EventPayload payload) {
 
     Serial.println("[events] onUpdate - " + payloadString);
 
-    return request::sendPost(getApiUrl(SERVER_HOSTNAME, "/log"), payloadString);
+    return request::sendPost(getApiUrl(configuration::serverUrl, "/log"), payloadString);
 };
 
 auto onSwitch = [](EventPayload payload) {
@@ -82,7 +79,7 @@ auto onSwitch = [](EventPayload payload) {
     digitalWrite(PIN_FAN, isFanOn ? PIN_ON : PIN_OFF);
     digitalWrite(PIN_LIGHT, isLightOn ? PIN_ON : PIN_OFF);
 
-    return request::sendPost(getApiUrl(SERVER_HOSTNAME, "/log"), payloadString);
+    return request::sendPost(getApiUrl(configuration::serverUrl, "/log"), payloadString);
 };
 
 auto onRun = [](EventPayload payload) {
@@ -113,7 +110,7 @@ auto onRun = [](EventPayload payload) {
         sensor.read();
     });
 
-    const String response = request::sendPost(getApiUrl(SERVER_HOSTNAME, "/log"), payloadString);
+    const String response = request::sendPost(getApiUrl(configuration::serverUrl, "/log"), payloadString);
 
     sensor.read();
 
@@ -127,13 +124,13 @@ auto onError = [](EventPayload payload) {
 
     Serial.println("[events] onError - " + payloadString);
 
-    return request::sendPost(getApiUrl(SERVER_HOSTNAME, "/log"), payloadString);
+    return request::sendPost(getApiUrl(configuration::serverUrl, "/log"), payloadString);
 };
 
 auto onConfig = [](EventPayload payload) {
     Serial.println("[events] onConfig called");
 
-    const String response = request::sendGet(getApiUrl(SERVER_HOSTNAME, "/config"));
+    const String response = request::sendGet(getApiUrl(configuration::serverUrl, "/config"));
 
     Serial.println("configuration received = " + response);
 
@@ -174,8 +171,9 @@ const auto onConfigurationPost = [](ESP8266WebServer *webServer) {
     String ssid = webServer -> arg("ssid");
     String password = webServer -> arg("password");
     String controllerId = webServer -> arg("controllerId");
+    String serverUrl = webServer -> arg("serverUrl");
 
-    const bool result = configuration::save(ssid, password, controllerId);
+    const bool result = configuration::save(ssid, password, controllerId, serverUrl);
 
     webServer -> send(
         200,
@@ -191,6 +189,7 @@ const auto onConfigurationGet = [](ESP8266WebServer *webServer) {
         "{\"ssid\": \"" + configuration::ssid +
         "\", \"password\": \"" + configuration::password +
         "\", \"controllerId\": \"" + configuration::controllerId +
+        "\", \"serverUrl\": \"" + configuration::serverUrl +
         "\"}"
     );
 };
@@ -325,7 +324,7 @@ void setup() {
     configuration::init();
 
     wifi::connect(configuration::ssid, configuration::password, configuration::controllerId);
-    websocket::connect(SERVER_HOSTNAME, onWebSocketEvent);
+    websocket::connect(configuration::serverUrl, onWebSocketEvent);
     webserver::setup(routes);
 
     listen(EventType::UPDATE, onUpdate);
