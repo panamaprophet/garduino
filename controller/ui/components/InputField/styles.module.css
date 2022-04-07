@@ -2,7 +2,7 @@
     display: flex;
     width: 100%;
     padding: 8px 0;
-    flex-direction: column;
+    flex-flow: row nowrap;
 }
 
 .label {
@@ -13,10 +13,11 @@
 
 .input {
     appearance: none;
-    flex-grow: 1;
     padding: 8px;
     border: 2px solid rgba(0,0,0,0.1);
     border-radius: 4px;
     box-sizing: border-box;
     font-size: 24px;
+    flex-grow: 1;
+    min-width: 160px;
 }

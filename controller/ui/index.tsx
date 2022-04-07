@@ -39,16 +39,14 @@ const Application = () => {
                 }
 
                 <Button label="Save" type="dark" onClick={() => saveSettings(settings)} />
+
+                <Button label="Reboot" onClick={() => reboot()} />
             </section>
 
             <section className={styles.section}>
                 {Object
                     .entries(status)
                     .map(([key, value]) => <SensorData name={key} value={value} />)}
-            </section>
-
-            <section className={styles.section}>
-                <Button label="Reboot" onClick={() => reboot()} />
             </section>
         </div>
     );
