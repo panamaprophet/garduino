@@ -5,7 +5,7 @@ export const getSettings = async (): Promise<{[k: string]: string}> => {
     return fetch('/api/configuration').then(response => response.json());
 };
 
-export const setSettings = async (data: {[k: string]: string}): Promise<{[k: string]: string}> => {
+export const saveSettings = async (data: {[k: string]: string}): Promise<{[k: string]: string}> => {
     return fetch('/api/configuration', {
         method: 'POST',
         body: getFormData(data),
