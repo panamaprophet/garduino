@@ -1,26 +1,31 @@
-import {FunctionalComponent, h} from 'preact';
-import * as styles from './styles.module.css';
+import { FunctionalComponent, h } from 'preact';
+import styles from './styles.module.css';
 
 
-interface Props { 
+interface Props {
     onChange: (value: string) => void,
-    label?: string, 
+    label?: string,
     value?: string,
-};
+}
 
 
-const InputField: FunctionalComponent<Props> = ({onChange, label = '', value = ''}) => {
+const InputField: FunctionalComponent<Props> = ({ onChange, label = '', value = '' }) => {
+    const onInputChange = (event: Event) => {
+        if (event.target instanceof HTMLInputElement) {
+            onChange(event.target.value);
+        }
+    };
+
     return (
         <label className={styles.root}>
             <div className={styles.label}>
                 {label}:
             </div>
-            <input 
-                className={styles.input}
+            <input
                 type="text"
                 value={value}
-                // @ts-ignore
-                onChange={event => onChange(event.target.value)}
+                className={styles.input}
+                onChange={onInputChange}
             />
         </label>
     );

@@ -1,20 +1,20 @@
-import {FunctionalComponent, h} from 'preact';
-import * as styles from './styles.module.css';
+import { FunctionalComponent, h } from 'preact';
+import styles from './styles.module.css';
 
 
 type ButtonColorTheme = 'default' | 'dark';
 
 interface Props {
-    onClick: () => {},
+    onClick: () => void,
     label?: string,
     type?: ButtonColorTheme,
-};
+}
 
 
-const Button: FunctionalComponent<Props> = ({onClick, label = '', type = 'default'}) => {
+const Button: FunctionalComponent<Props> = ({ onClick, label = '', type = 'default' }) => {
     const classes = [
-        styles.root, 
-        styles[`type_${type}`],
+        styles.root,
+        styles[`type_${type}`]
     ];
 
     return (

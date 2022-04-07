@@ -1,13 +1,14 @@
 import { getFormData } from '../helpers/index';
 
 
-interface Settings {
+export interface Settings {
     controllerId: string,
     ssid: string,
     password: string,
+    serverUrl: string,
 }
 
-interface Status {
+export interface Status {
     humidity: number,
     temperature: number,
     lastError: string,
@@ -21,7 +22,7 @@ export const getSettings = async (): Promise<Settings> => {
     return result;
 };
 
-export const saveSettings = async <T extends { success: boolean }>(settings: Settings): Promise<T> => {
+export const saveSettings = async <T extends { success: boolean }>(settings: Partial<Settings>): Promise<T> => {
     const options = {
         method: 'POST',
         body: getFormData({ ...settings }),
