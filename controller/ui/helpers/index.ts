@@ -1,7 +1,8 @@
-export const getFormData = (obj: {[k: string]: string}): FormData => 
-    Object
-        .keys(obj)
-        .reduce((result, key) => {
-            result.append(key, obj[key]);
-            return result;
-        }, new FormData());
+export const getFormData = (obj: { [k: string]: unknown }): FormData => {
+    const keys = Object.keys(obj);
+    const result = new FormData();
+
+    keys.forEach(key => result.append(key, String(obj[key])));
+
+    return result;
+};
