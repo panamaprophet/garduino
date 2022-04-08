@@ -48,24 +48,12 @@ using state::scheduleTimer;
 using state::sensorTimer;
 
 
-auto getApiUrl = [](String hostname, String endpoint, String protocol = "https://") {
-    return (
-        protocol + 
-        hostname + 
-        "/api/controllers/" + 
-        configuration::controllerId + 
-        endpoint
-    );
-};
-
-
-
 auto onUpdate = [](EventPayload payload) {
     const String payloadString = stringifyPayload(payload, "events/update");
 
     Serial.println("[events] onUpdate - " + payloadString);
 
-    return request::sendPost(getApiUrl(configuration::serverUrl, "/log"), payloadString);
+    return request::sendPost(configuration::getUrl("/log"), payloadString);
 };
 
 auto onSwitch = [](EventPayload payload) {
@@ -79,7 +67,7 @@ auto onSwitch = [](EventPayload payload) {
     digitalWrite(PIN_FAN, isFanOn ? PIN_ON : PIN_OFF);
     digitalWrite(PIN_LIGHT, isLightOn ? PIN_ON : PIN_OFF);
 
-    return request::sendPost(getApiUrl(configuration::serverUrl, "/log"), payloadString);
+    return request::sendPost(configuration::getUrl("/log"), payloadString);
 };
 
 auto onRun = [](EventPayload payload) {
@@ -110,7 +98,7 @@ auto onRun = [](EventPayload payload) {
         sensor.read();
     });
 
-    const String response = request::sendPost(getApiUrl(configuration::serverUrl, "/log"), payloadString);
+    const String response = request::sendPost(configuration::getUrl("/log"), payloadString);
 
     sensor.read();
 
@@ -124,13 +112,13 @@ auto onError = [](EventPayload payload) {
 
     Serial.println("[events] onError - " + payloadString);
 
-    return request::sendPost(getApiUrl(configuration::serverUrl, "/log"), payloadString);
+    return request::sendPost(configuration::getUrl("/log"), payloadString);
 };
 
 auto onConfig = [](EventPayload payload) {
     Serial.println("[events] onConfig called");
 
-    const String response = request::sendGet(getApiUrl(configuration::serverUrl, "/config"));
+    const String response = request::sendGet(configuration::getUrl("/config"));
 
     Serial.println("configuration received = " + response);
 
