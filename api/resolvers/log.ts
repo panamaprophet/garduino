@@ -17,15 +17,16 @@ export const getEvent = async (db: Db, controllerId: string, conditions = {}): P
 };
 
 export const saveEvent = async (db: Db, controllerId: string, data: LogEntity): Promise<{success: boolean}> => {
-    const { result } = await db.collection('log').insertOne({ controllerId, ...data });
-
-    return {
-        success: Boolean(result.ok),
-    };
+    try {
+        await db.collection('log').insertOne({ controllerId, ...data });
+        return { success: true };
+    } catch (error) {
+        return { success: false };
+    }
 };
 
-export const getErrorEvents = async (db: Db, controllerId: string, { dateFrom, dateTo }: { [k: string]: Date }): Promise<unknown[]> => {
-    const result = await db.collection('log').aggregate<unknown>([
+export const getErrorEvents = async (db: Db, controllerId: string, { dateFrom, dateTo }: { [k: string]: Date }): Promise<{ value: string, date: Date }[]> => {
+    const result = await db.collection('log').aggregate<{ value: string, date: Date }>([
         {
             $match: {
                 controllerId,
