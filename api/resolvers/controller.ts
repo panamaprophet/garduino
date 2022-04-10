@@ -15,32 +15,31 @@ export const getControllerIds = async (db: mongodb.Db, options = {}): Promise<st
     return result.map(({ controllerId }) => controllerId);
 };
 
-export const addController = async (db: mongodb.Db, controllerId: string, chatId: number, configuration: ControllerConfigRaw): Promise<{ success: boolean }> => {
-    try {
-        await db.collection('config').insertOne({
+export const addController = async (
+    db: mongodb.Db,
+    controllerId: string,
+    chatId: number,
+    configuration: ControllerConfigRaw
+): Promise<{
+    error?: Error,
+    success: boolean,
+}> => {
+    return db
+        .collection('config').insertOne({
             controllerId,
             chatId,
             ...configuration,
-        });
-
-        return {
-            success: true,
-        };
-    } catch (error) {
-        return { success: false };
-    }
+        })
+        .then(() => ({ success: true }))
+        .catch((error: Error) => ({ error, success: false }));
 };
 
-export const removeController = async (db: mongodb.Db, controllerId: string, chatId: number): Promise<{ success: boolean }> => {
-    try {
-        await db.collection('config').deleteOne({ controllerId, chatId });
-
-        return {
-            success: true
-        };
-    } catch (error) {
-        return { success: false };
-    }
+export const removeController = async (db: mongodb.Db, controllerId: string, chatId: number): Promise<{ error?: Error, success: boolean }> => {
+    return db
+        .collection('config')
+        .deleteOne({ controllerId, chatId })
+        .then(() => ({ success: true }))
+        .catch((error: Error) => ({ error, success: false }));
 };
 
 export const rebootController = (controllerId: string, ws: WebSocket): { success: boolean } => {

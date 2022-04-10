@@ -16,13 +16,12 @@ export const getEvent = async (db: Db, controllerId: string, conditions = {}): P
     return result;
 };
 
-export const saveEvent = async (db: Db, controllerId: string, data: LogEntity): Promise<{success: boolean}> => {
-    try {
-        await db.collection('log').insertOne({ controllerId, ...data });
-        return { success: true };
-    } catch (error) {
-        return { success: false };
-    }
+export const saveEvent = async (db: Db, controllerId: string, data: LogEntity): Promise<{ error?: Error, success: boolean }> => {
+    return db
+        .collection('log')
+        .insertOne({ controllerId, ...data })
+        .then(() => ({ success: true }))
+        .catch((error: Error) => ({ error, success: false }));
 };
 
 export const getErrorEvents = async (db: Db, controllerId: string, { dateFrom, dateTo }: { [k: string]: Date }): Promise<{ value: string, date: Date }[]> => {
