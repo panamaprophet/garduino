@@ -5,7 +5,7 @@ import { formatConfig } from '../../../helpers/config';
 import { getInlineKeyboard, isTextMessage } from '../../helpers';
 import { BotContext } from 'types';
 import { selectController } from '../common';
-import { actionHandler, ACTION_LIGHT_ONTIME, ACTION_FAN_ONTIME, ACTION_LIGHT_DURATION, ACTION_FAN_DURATION, ACTION_TEMPERATURE_THRESHOLD } from './actions';
+import { actionHandler, ACTION_LIGHT_ONTIME, ACTION_LIGHT_DURATION, ACTION_TEMPERATURE_THRESHOLD } from './actions';
 
 
 const SELECT_CONTROLLER_STEP_INDEX = 0;
@@ -35,9 +35,7 @@ const selectAction: MiddlewareFn<BotContext> = async ctx => {
 
     await ctx.reply(text, getInlineKeyboard([
         ACTION_LIGHT_ONTIME,
-        ACTION_FAN_ONTIME,
         ACTION_LIGHT_DURATION,
-        ACTION_FAN_DURATION,
         ACTION_TEMPERATURE_THRESHOLD,
     ]));
 

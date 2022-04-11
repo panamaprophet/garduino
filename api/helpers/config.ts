@@ -37,13 +37,8 @@ export const extractConfig = identity;
 
 export const formatConfig = (data: ControllerConfigRaw): string => {
     return [
-        'Light:',
-        `On time = ${data.light.onTime} UTC`,
+        `Light On = ${data.light.onTime} UTC`,
         `Duration = ${data.light.duration} ms`,
-        '',
-        'Fan:',
-        `On time = ${data.fan.onTime} UTC`,
-        `Duration = ${data.fan.duration} ms`,
         '',
         `Temperature threshold = ${data.temperatureThreshold}°C`,
     ].join('\n');

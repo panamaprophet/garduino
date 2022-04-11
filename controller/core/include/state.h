@@ -18,7 +18,6 @@ namespace state
     DHT11 sensor;
 
     Module light;
-    Module fan;
     String lastError;
 
     float humidity;
@@ -63,11 +62,6 @@ namespace state
                     "\"isOn\": " + (light.isOn ? "true" : "false") + "," + 
                     "\"msBeforeSwitch\": " + String(light.msBeforeSwitch) + "," + 
                     "\"duration\": " + String(light.duration) + 
-            "}," +
-             "\"fan\":{" +
-                    "\"isOn\": " + (fan.isOn ? "true" : "false") + "," +
-                    "\"msBeforeSwitch\": " + String(fan.msBeforeSwitch) + "," +
-                    "\"duration\": " + String(fan.duration) +
             "}}";
         
         return result;

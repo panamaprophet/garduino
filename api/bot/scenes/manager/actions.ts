@@ -11,10 +11,6 @@ export const DEFAULT_CONFIG: ControllerConfigRaw = {
         onTime: '09:00',
         duration: 43200000,
     },
-    fan: {
-        onTime: '09:00',
-        duration: 43200000,
-    },
     temperatureThreshold: 35,
 };
 

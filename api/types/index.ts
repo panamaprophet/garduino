@@ -58,7 +58,6 @@ export interface ControllerConfigRaw {
     controllerId?: string,
     chatId?: number,
     light: ConfigEntityRaw,
-    fan: ConfigEntityRaw,
     temperatureThreshold: number,
 }
 
@@ -77,7 +76,6 @@ export interface StatusResponseSuccess {
         payload: EventData[],
     },
     light: ConfigEntity,
-    fan: ConfigEntity,
 }
 
 export type StatusResponse = StatusResponseError | StatusResponseSuccess;

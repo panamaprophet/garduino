@@ -27,8 +27,8 @@ namespace configuration
     };
 
 
-    auto getUrl = [](String endpoint = "/", String path = "/api/controllers", String protocol = "https://") {
-        return protocol + serverUrl + path + controllerId + endpoint;
+    auto getUrl = [](String endpoint = "/", String path = "/api/controllers/" + controllerId + "/", String protocol = "https://") {
+        return (protocol + serverUrl + path + endpoint);
     };
 
     auto readRange = [](unsigned int startIndex, unsigned int lastIndex) {

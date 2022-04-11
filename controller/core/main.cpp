@@ -37,7 +37,6 @@ using events::emit;
 
 using state::sensor;
 using state::light;
-using state::fan;
 using state::temperature;
 using state::humidity;
 using state::lastError;
@@ -48,12 +47,69 @@ using state::scheduleTimer;
 using state::sensorTimer;
 
 
+void handleEmergencySwitch() {
+    if ((temperature >= temperatureThreshold)) {
+        isEmergencyOff = true;
+
+        emit(EventType::SWITCH, {
+            {"isLightOn", String(light.isOn)},
+            {"isEmergencySwitch", String(isEmergencyOff)}
+        });
+    }
+
+    if ((temperature < temperatureThreshold - TEMPERATURE_THRESHOLD_DELTA) && isEmergencyOff) {
+        isEmergencyOff = false;
+
+        emit(EventType::SWITCH, {
+            {"isLightOn", String(light.isOn)},
+            {"isEmergencySwitch", String(isEmergencyOff)}
+        });
+    }
+};
+
+
+float previousTemperature = 0;
+int previousSpeed = 0;
+int optimalSpeed = 100; // make it user configurable along with a flag "no fan auto control"
+int fanSpeed = optimalSpeed; // 0 - 250
+
+void handleFan() {
+    int max = 250;
+    int step = 25;
+
+    if (previousTemperature < temperature) {
+        fanSpeed = std::min(fanSpeed + step, max);
+    }
+
+    if ((previousTemperature > temperature) && (fanSpeed > optimalSpeed)) {
+        fanSpeed = std::max(fanSpeed - step, optimalSpeed);
+    }
+
+    if (previousSpeed != fanSpeed) {
+        Serial.println("fan runs at " + String(fanSpeed));
+
+        analogWrite(PIN_FAN, fanSpeed);
+
+        previousSpeed = fanSpeed;
+    }
+
+    previousTemperature = temperature;
+};
+
+
 auto onUpdate = [](EventPayload payload) {
-    const String payloadString = stringifyPayload(payload, "events/update");
+    handleEmergencySwitch();
+    handleFan();
 
-    Serial.println("[events] onUpdate - " + payloadString);
+    if (lastUpdateTimestamp == 0 || millis() - lastUpdateTimestamp > UPDATE_INTERVAL) {
+        const String payloadString = stringifyPayload(payload, "events/update");
 
-    return request::sendPost(configuration::getUrl("/log"), payloadString);
+        Serial.println("[events] onUpdate - " + payloadString);
+
+        request::sendPost(configuration::getUrl("/log"), payloadString);
+
+        lastUpdateTimestamp = millis();
+    }
 };
 
 auto onSwitch = [](EventPayload payload) {
@@ -61,10 +117,8 @@ auto onSwitch = [](EventPayload payload) {
 
     Serial.println("[events] onSwitch - " + payloadString);
 
-    const auto & isFanOn = payload["isFanOn"] != "0";
     const auto & isLightOn = payload["isLightOn"] != "0" && payload["isEmergencyOff"] == "0";
 
-    digitalWrite(PIN_FAN, isFanOn ? PIN_ON : PIN_OFF);
     digitalWrite(PIN_LIGHT, isLightOn ? PIN_ON : PIN_OFF);
 
     return request::sendPost(configuration::getUrl("/log"), payloadString);
@@ -77,18 +131,15 @@ auto onRun = [](EventPayload payload) {
 
     emit(EventType::SWITCH, {
         {"isLightOn", String(light.isOn)},
-        {"isFanOn", String(fan.isOn)},
         {"isEmergencyOff", String(isEmergencyOff)}
     });
 
     scheduleTimer.attach_ms(SCHEDULE_CHECK_INTERVAL, []() {
         const bool isLightChanged = state::update(light, SCHEDULE_CHECK_INTERVAL);
-        const bool isFanChanged = state::update(fan, SCHEDULE_CHECK_INTERVAL);
 
-        if (isLightChanged || isFanChanged) {
+        if (isLightChanged) {
             emit(EventType::SWITCH, {
                 {"isLightOn", String(light.isOn)},
-                {"isFanOn", String(fan.isOn)},
                 {"isEmergencyOff", String(isEmergencyOff)}
             });
         }
@@ -134,15 +185,10 @@ auto onConfig = [](EventPayload payload) {
         light.duration = json["light"]["duration"].as<long>();
         light.msBeforeSwitch = json["light"]["msBeforeSwitch"].as<long>();
 
-        fan.isOn = json["fan"]["isOn"].as<bool>();
-        fan.duration = json["fan"]["duration"].as<long>();
-        fan.msBeforeSwitch = json["fan"]["msBeforeSwitch"].as<long>();
-
         temperatureThreshold = json["temperatureThreshold"].as<float>();
 
         emit(EventType::RUN, {
             {"isLightOn", String(light.isOn)},
-            {"isFanOn", String(fan.isOn)}
         });
     }
 
@@ -198,43 +244,14 @@ std::vector<webserver::Route> routes = {
     {"/api/status", onStatus, HTTPMethod::HTTP_GET}
 };
 
-
-void handleTemperatureThreshold() {
-    if ((temperature >= temperatureThreshold)) {
-        isEmergencyOff = true;
-
-        emit(EventType::SWITCH, {
-            {"isLightOn", String(light.isOn)},
-            {"isFanOn", String(fan.isOn)},
-            {"isEmergencySwitch", String(isEmergencyOff)}
-        });
-    }
-
-    if ((temperature < temperatureThreshold - TEMPERATURE_THRESHOLD_DELTA) && isEmergencyOff) {
-        isEmergencyOff = false;
-
-        emit(EventType::SWITCH, {
-            {"isLightOn", String(light.isOn)},
-            {"isFanOn", String(fan.isOn)},
-            {"isEmergencySwitch", String(isEmergencyOff)}
-        });
-    }
-};
-
 auto onSensorData = [](float h, float t) {
     humidity = h;
     temperature = t;
 
-    if (lastUpdateTimestamp == 0 || millis() - lastUpdateTimestamp > UPDATE_INTERVAL) {
-        lastUpdateTimestamp = millis();
-
-        emit(EventType::UPDATE, {
-            {"humidity", String(humidity)},
-            {"temperature", String(temperature)}
-        });
-    }
-
-    handleTemperatureThreshold();
+    emit(EventType::UPDATE, {
+        {"humidity", String(humidity)},
+        {"temperature", String(temperature)}
+    });
 };
 
 auto onSensorError = [](uint8_t e) {
@@ -303,8 +320,10 @@ void setup() {
     pinMode(PIN_LIGHT, OUTPUT);
     pinMode(PIN_FAN, OUTPUT);
 
+    analogWriteFreq(25000);
+
     digitalWrite(PIN_LIGHT, PIN_OFF);
-    digitalWrite(PIN_FAN, PIN_OFF);
+    analogWrite(PIN_FAN, fanSpeed);
 
     sensor.onData(onSensorData);
     sensor.onError(onSensorError);
