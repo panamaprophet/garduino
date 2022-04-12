@@ -22,17 +22,18 @@ export const getWebSocketServerPayload = (arrayBuffer: ArrayBuffer): WebSocketPa
 };
 
 export const getWebSocketServer = (server: Server): [WebSocketServer, Map<string, WebSocket>] => {
-    const ws = new WebSocketServer({ server });
+    const wss = new WebSocketServer({ server });
     const cache = new Map<string, WebSocket>();
 
-    ws.on('connection', stream => {
-        console.log('[ws] new connection opened');
+    wss.on('connection', (ws) => {
+        console.log('[ws] new connection');
 
-        stream.on('close', () => {
-            const cacheEntries: [string, WebSocket][] = Array.from(cache.entries());
-            const cacheEntry = cacheEntries.find(item => item[1] === stream);
+        ws.on('close', () => {
+            const cacheEntries = Array.from(cache.entries());
+            const cacheEntry = cacheEntries.find(item => item[1] === ws);
 
             if (cacheEntry) {
+                console.log('[ws] removing from cache', cacheEntry[0]);
                 cache.delete(cacheEntry[0]);
             }
         });
@@ -46,18 +47,16 @@ export const getWebSocketServer = (server: Server): [WebSocketServer, Map<string
 
             const { controllerId } = messagePayload?.payload as {[k: string]: string};
 
-            console.log('[ws] caching:', controllerId);
-
             if (controllerId) {
-                cache.set(controllerId, stream);
-                stream.off('message', cacheByControllerId);
+                cache.set(controllerId, ws);
+                ws.off('message', cacheByControllerId);
 
                 console.log('[ws] cached:', controllerId);
             }
         };
 
-        stream.on('message', cacheByControllerId);
+        ws.on('message', cacheByControllerId);
     });
 
-    return [ws, cache];
+    return [wss, cache];
 };
