@@ -16,11 +16,12 @@
 #include <include/wifi.h>
 #include <include/webserver.h>
 #include <include/websocket.h>
+#include <include/fanController.h>
 
 
 const unsigned long UPDATE_INTERVAL             = 10 * 60 * 1000;
 const unsigned long SENSOR_DATA_READ_INTERVAL   = 10 * 1000;
-const unsigned long SCHEDULE_CHECK_INTERVAL     = 1000;
+const unsigned long SCHEDULE_CHECK_INTERVAL     = 5 * 1000;
 const unsigned int TEMPERATURE_THRESHOLD_DELTA  = 5;
 
 const int PIN_LIGHT                             = 14;
@@ -67,39 +68,10 @@ void handleEmergencySwitch() {
     }
 };
 
-
-float previousTemperature = 0;
-int previousSpeed = 0;
-int optimalSpeed = 100; // make it user configurable along with a flag "no fan auto control"
-int fanSpeed = optimalSpeed; // 0 - 250
-
-void handleFan() {
-    int max = 250;
-    int step = 25;
-
-    if (previousTemperature < temperature) {
-        fanSpeed = std::min(fanSpeed + step, max);
-    }
-
-    if ((previousTemperature > temperature) && (fanSpeed > optimalSpeed)) {
-        fanSpeed = std::max(fanSpeed - step, optimalSpeed);
-    }
-
-    if (previousSpeed != fanSpeed) {
-        Serial.println("fan runs at " + String(fanSpeed));
-
-        analogWrite(PIN_FAN, fanSpeed);
-
-        previousSpeed = fanSpeed;
-    }
-
-    previousTemperature = temperature;
-};
-
-
 auto onUpdate = [](EventPayload payload) {
     handleEmergencySwitch();
-    handleFan();
+
+    fanController::setSpeedByTemperature(temperature);
 
     if (lastUpdateTimestamp == 0 || millis() - lastUpdateTimestamp > UPDATE_INTERVAL) {
         const String payloadString = stringifyPayload(payload, "events/update");
@@ -320,10 +292,9 @@ void setup() {
     pinMode(PIN_LIGHT, OUTPUT);
     pinMode(PIN_FAN, OUTPUT);
 
-    analogWriteFreq(25000);
-
     digitalWrite(PIN_LIGHT, PIN_OFF);
-    analogWrite(PIN_FAN, fanSpeed);
+
+    fanController::setPin(PIN_FAN);
 
     sensor.onData(onSensorData);
     sensor.onError(onSensorError);
