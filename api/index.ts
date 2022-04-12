@@ -26,7 +26,7 @@ void (async () => {
     app.context.bot = bot;
     app.context.ws = { ws, cache };
 
-    server.listen(process.env.SERVER_PORT);
+    server.listen(config.port);
 
     console.log('started');
 })();
