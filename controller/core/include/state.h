@@ -53,8 +53,8 @@ namespace state
         return isChanged;
     };
 
-    String getStatusString() {
-        String result =
+    String toJSON() {
+        return (
             "{\"temperature\": " + String(temperature) + "," +
              "\"humidity\": " + String(humidity) + "," +
              "\"lastError\": " + (lastError.length() > 0 ? lastError : "null") + "," +
@@ -62,8 +62,7 @@ namespace state
                     "\"isOn\": " + (light.isOn ? "true" : "false") + "," + 
                     "\"msBeforeSwitch\": " + String(light.msBeforeSwitch) + "," + 
                     "\"duration\": " + String(light.duration) + 
-            "}}";
-        
-        return result;
+            "}}"
+        );
     }
 }

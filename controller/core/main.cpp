@@ -169,43 +169,27 @@ auto onConfig = [](EventPayload payload) {
 
 
 const auto onReboot = [](ESP8266WebServer *webServer) {
-    webServer -> send(200, "application/json", "{success: true}");
+    webServer -> send(200, "application/json", "{\"success\": true}");
     ESP.restart();
 };
 
 const auto onConfigurationPost = [](ESP8266WebServer *webServer) {
-    String ssid = webServer -> arg("ssid");
-    String password = webServer -> arg("password");
-    String controllerId = webServer -> arg("controllerId");
-    String serverUrl = webServer -> arg("serverUrl");
-
-    const bool result = configuration::save(ssid, password, controllerId, serverUrl);
-
-    webServer -> send(
-        200,
-        "application/json",
-        "{\"success\": " + String(result) + "}"
+    const bool result = configuration::save(
+        webServer -> arg("ssid"),
+        webServer -> arg("password"),
+        webServer -> arg("controllerId"),
+        webServer -> arg("serverUrl")
     );
+
+    webServer -> send(200, "application/json", "{\"success\": " + String(result) + "}");
 };
 
 const auto onConfigurationGet = [](ESP8266WebServer *webServer) {
-    webServer -> send(
-        200,
-        "application/json",
-        "{\"ssid\": \"" + configuration::ssid +
-        "\", \"password\": \"" + configuration::password +
-        "\", \"controllerId\": \"" + configuration::controllerId +
-        "\", \"serverUrl\": \"" + configuration::serverUrl +
-        "\"}"
-    );
+    webServer -> send(200, "application/json", configuration::toJSON());
 };
 
 const auto onStatus = [](ESP8266WebServer *webServer) {
-    webServer -> send(
-        200,
-        "application/json",
-        state::getStatusString()
-    );
+    webServer -> send(200, "application/json", state::toJSON());
 };
 
 
@@ -263,8 +247,7 @@ auto onWebSocketEvent = [](WStype_t type, uint8_t * payload, size_t length) {
             }
 
             if (action == "actions/status") {
-                String status = state::getStatusString();
-                websocket::sendText("{\"controllerId\":\"" + controllerId + "\",\"action\":\"" + action + "\",\"payload\":" + status + "}");
+                websocket::sendText("{\"controllerId\":\"" + controllerId + "\",\"action\":\"" + action + "\",\"payload\":" + state::toJSON() + "}");
                 break;
             }
             
