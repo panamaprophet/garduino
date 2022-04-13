@@ -8,10 +8,6 @@
     margin: 8px 0 0;
 }
 
-.root + .root {
-    margin-top: 16px;
-}
-
 .type_default {
     color: #999;
     background: #eee;
