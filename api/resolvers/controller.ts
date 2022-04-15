@@ -1,46 +1,45 @@
-import mongodb from 'mongodb';
+import { getDb } from '../db';
 import { ControllerConfigRaw, ControllerEntity } from 'types';
 import { WEBSOCKET_ACTIONS } from '../constants';
+
 
 /**
  * @returns {Promise<String[]>}
  */
-export const getControllerIds = async (db: mongodb.Db, options = {}): Promise<string[]> => {
-    const result = await db.collection('config').find<ControllerEntity>(options).project({ controllerId: 1 }).toArray();
+export const getControllerIds = (options = {}) =>
+    getDb()
+        .then(db => db.collection('config').find<ControllerEntity>(options).project({ controllerId: 1 }).toArray())
+        .then(result => result || [])
+        .then<string[]>(result => result.map(({ controllerId }) => controllerId))
+        .catch<string[]>(error => {
+            console.error('getControllerIds', error);
 
-    if (!result) {
-        return [];
-    }
+            return [];
+        });
 
-    return result.map(({ controllerId }) => controllerId);
-};
-
-export const addController = async (
-    db: mongodb.Db,
+export const addController = (
     controllerId: string,
     chatId: number,
     configuration: ControllerConfigRaw
-): Promise<{
-    error?: Error,
-    success: boolean,
-}> => {
-    return db
-        .collection('config').insertOne({
-            controllerId,
-            chatId,
-            ...configuration,
-        })
+) =>
+    getDb()
+        .then(db => db.collection('config').insertOne({ controllerId, chatId, ...configuration }))
         .then(() => ({ success: true }))
-        .catch((error: Error) => ({ error, success: false }));
-};
+        .catch(error => {
+            console.error('addController', error);
+            
+            return { success: false };
+        });
 
-export const removeController = async (db: mongodb.Db, controllerId: string, chatId: number): Promise<{ error?: Error, success: boolean }> => {
-    return db
-        .collection('config')
-        .deleteOne({ controllerId, chatId })
+export const removeController = (controllerId: string, chatId: number) =>
+    getDb()
+        .then(db => db.collection('config').deleteOne({ controllerId, chatId }))
         .then(() => ({ success: true }))
-        .catch((error: Error) => ({ error, success: false }));
-};
+        .catch(error => {
+            console.error('removeController', error);
+
+            return { success: false };
+        });
 
 export const rebootController = (controllerId: string, ws: WebSocket): { success: boolean } => {
     ws.send(JSON.stringify({

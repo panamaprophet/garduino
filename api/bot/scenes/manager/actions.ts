@@ -15,9 +15,9 @@ export const DEFAULT_CONFIG: ControllerConfigRaw = {
 };
 
 
-const add = async ({ db, chatId, controllerId }: ActionContext): Promise<ActionResult> => addController(db, controllerId, chatId, DEFAULT_CONFIG);
+const add = async ({ chatId, controllerId }: ActionContext): Promise<ActionResult> => addController(controllerId, chatId, DEFAULT_CONFIG);
 
-const remove = async ({ db, chatId, controllerId }: ActionContext): Promise<ActionResult> => removeController(db, controllerId, chatId);
+const remove = async ({ chatId, controllerId }: ActionContext): Promise<ActionResult> => removeController(controllerId, chatId);
 
 export const actionHandler = async (action: string | undefined, context: ActionContext):  Promise<ActionResult> => {
     switch (action) {

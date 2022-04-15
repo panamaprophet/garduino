@@ -1,14 +1,21 @@
-import { Db, MongoClient } from 'mongodb';
+import { getConfig } from '../config';
+import { MongoClient } from 'mongodb';
 
 
-export const getMongoDb = async (config: { [k: string]: string }): Promise<[Db, MongoClient]> => {
-    const uri = `mongodb+srv://${config.user}:${config.pass}@${config.host}/${config.db}?retryWrites=true&w=majority`;
-    const client = new MongoClient(uri);
+let instance: MongoClient | null = null;
 
-    await client.connect();
 
-    return [
-        client.db(),
-        client
-    ];
+const getUri = ({ user, pass, host, db }: { [k: string]: string }) => `mongodb+srv://${user}:${pass}@${host}/${db}?retryWrites=true&w=majority`;
+
+const createConnection = async (config: { [k: string]: string }) => MongoClient.connect(getUri(config));
+
+
+export const getDb = async () => {
+    if (!instance) {
+        const { db } = getConfig();
+
+        instance = await createConnection(db);
+    }
+
+    return instance.db();
 };

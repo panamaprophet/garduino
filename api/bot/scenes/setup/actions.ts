@@ -19,8 +19,8 @@ type PartialControllerConfig = {
 }
 
 
-const setLightOnTime = async ({ db, controllerId, value }: ActionContext): Promise<ActionResult> => {
-    const currentConfig = await getConfig(db, controllerId);
+const setLightOnTime = async ({ controllerId, value }: ActionContext): Promise<ActionResult> => {
+    const currentConfig = await getConfig(controllerId);
 
     if (!currentConfig) {
         return { success: false };
@@ -32,13 +32,13 @@ const setLightOnTime = async ({ db, controllerId, value }: ActionContext): Promi
         },
     });
 
-    const result = await setConfig(db, controllerId, updatedConfig);
+    const result = await setConfig(controllerId, updatedConfig);
 
     return result;
 };
 
-const setLightDuration = async ({ db, controllerId, value }: ActionContext): Promise<ActionResult> => {
-    const currentConfig = await getConfig(db, controllerId);
+const setLightDuration = async ({ controllerId, value }: ActionContext): Promise<ActionResult> => {
+    const currentConfig = await getConfig(controllerId);
 
     if (!currentConfig) {
         return { success: false };
@@ -50,13 +50,13 @@ const setLightDuration = async ({ db, controllerId, value }: ActionContext): Pro
         },
     });
 
-    const result = await setConfig(db, controllerId, updatedConfig);
+    const result = await setConfig(controllerId, updatedConfig);
 
     return result;
 };
 
-const setTemperatureThreshold = async ({ db, controllerId, value }: ActionContext): Promise<ActionResult> => {
-    const currentConfig = await getConfig(db, controllerId);
+const setTemperatureThreshold = async ({ controllerId, value }: ActionContext): Promise<ActionResult> => {
+    const currentConfig = await getConfig(controllerId);
 
     if (!currentConfig) {
         return { success: false };
@@ -66,7 +66,7 @@ const setTemperatureThreshold = async ({ db, controllerId, value }: ActionContex
         temperatureThreshold: Number(value),
     });
 
-    const result = await setConfig(db, controllerId, updatedConfig);
+    const result = await setConfig(controllerId, updatedConfig);
 
     return result;
 };

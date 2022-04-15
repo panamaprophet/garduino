@@ -9,7 +9,7 @@ const router = new Router();
 
 router.get('/', async (ctx) => {
     const { controllerId } = ctx.params;
-    const controllerConfig = await getConfig(ctx.db, controllerId);
+    const controllerConfig = await getConfig(controllerId);
 
     if (!controllerConfig) {
         ctx.body = { success: false };
@@ -25,7 +25,7 @@ router.get('/', async (ctx) => {
 router.post('/', async (ctx) => {
     const { controllerId } = ctx.params;
     const updatedParams = extractConfig<ControllerConfigRaw>(ctx.request.body) || {};
-    const currentConfig = await getConfig(ctx.db, controllerId);
+    const currentConfig = await getConfig(controllerId);
 
     if (!currentConfig) {
         ctx.body = { success: false };
@@ -33,7 +33,7 @@ router.post('/', async (ctx) => {
     }
 
     const updatedConfig = mergeDeepRight<ControllerConfigRaw, ControllerConfigRaw>(currentConfig, updatedParams);
-    const result = await setConfig(ctx.db, controllerId, updatedConfig);
+    const result = await setConfig(controllerId, updatedConfig);
 
     ctx.body = result;
 });

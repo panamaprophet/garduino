@@ -31,9 +31,9 @@ const collectValue: MiddlewareFn<BotContext> = async ctx => {
     }
 
     if (selectedAction === ACTION_CONTROLLER_REMOVE) {
-        const { db, chat } = ctx;
+        const { chat } = ctx;
         const chatId = chat?.id;
-        const controllerIds = await getControllerIds(db, { chatId });
+        const controllerIds = await getControllerIds({ chatId });
 
         await ctx.reply('Select controller to remove', getInlineKeyboard(controllerIds));
     }
@@ -42,7 +42,7 @@ const collectValue: MiddlewareFn<BotContext> = async ctx => {
 };
 
 const handleAction: MiddlewareFn<BotContext> = async ctx => {
-    const { db, chat } = ctx;
+    const { chat } = ctx;
     const chatId = chat?.id;
     const { action } = ctx.session;
     const controllerId = isTextMessage(ctx?.message) ? ctx.message.text : '';
@@ -55,7 +55,7 @@ const handleAction: MiddlewareFn<BotContext> = async ctx => {
         return ctx.scene.leave();
     }
 
-    const { success } = await actionHandler(action, { db, chatId, controllerId });
+    const { success } = await actionHandler(action, { chatId, controllerId });
     const response = success ? 'Success' : 'Fail';
 
     await ctx.reply(response, Markup.removeKeyboard());

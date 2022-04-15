@@ -10,12 +10,12 @@ const SELECT_CONTROLLER_STEP_INDEX = 0;
 
 
 const selectAction: MiddlewareFn<BotContext> = async ctx => {
-    const { db, chat } = ctx;
+    const { chat } = ctx;
     const chatId = chat?.id;
     const selectedControllerId = isTextMessage(ctx?.message) ? ctx.message.text : '';
-    const controllerIds = await getControllerIds(db, { chatId });
+    const controllerIds = await getControllerIds({ chatId });
 
-    if (!selectedControllerId || !controllerIds.includes(selectedControllerId)) {
+    if (!controllerIds || !controllerIds.includes(selectedControllerId)) {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
     }
 
@@ -27,7 +27,7 @@ const selectAction: MiddlewareFn<BotContext> = async ctx => {
 };
 
 const handleAction: MiddlewareFn<BotContext> = async ctx => {
-    const { db, chat } = ctx;
+    const { chat } = ctx;
     const chatId = chat?.id;
     const selectedAction = isTextMessage(ctx?.message) ? ctx.message.text : '';
     const { controllerId } = ctx.session;
@@ -40,7 +40,7 @@ const handleAction: MiddlewareFn<BotContext> = async ctx => {
         return ctx.scene.leave();
     }
 
-    const { text, image } = await actionHandler(selectedAction, { db, chatId, controllerId });
+    const { text, image } = await actionHandler(selectedAction, { chatId, controllerId });
 
     if (image) {
         await ctx.replyWithPhoto({ source: image });

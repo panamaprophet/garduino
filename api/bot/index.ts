@@ -1,4 +1,3 @@
-import mongodb from 'mongodb';
 import Koa from 'koa';
 import { WebSocket, WebSocketServer } from 'ws';
 import { Scenes, Telegraf, Middleware, session } from 'telegraf';
@@ -10,7 +9,6 @@ import { BotContext } from 'types';
 const getCommandByKey = (key: string, obj: { [k: string]: Middleware<BotContext> }) => obj[key];
 
 export const getBot = async (
-    db: mongodb.Db,
     ws: {
         ws: WebSocketServer,
         cache: Map<string, WebSocket>
@@ -27,7 +25,6 @@ export const getBot = async (
 
         await bot.telegram.setWebhook(url);
 
-        bot.context.db = db;
         bot.context.ws = ws;
         bot.use(session()); // @todo: get rid of deprecated
         bot.use(stage.middleware());

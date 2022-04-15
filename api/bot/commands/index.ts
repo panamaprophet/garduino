@@ -23,9 +23,9 @@ export const setup: MiddlewareFn<BotContext> = ({ scene }) => scene.enter('setup
 export const manage: MiddlewareFn<BotContext> = ({ scene }) => scene.enter('controllerManager');
 
 export const start: MiddlewareFn<BotContext> = async ctx => {
-    const { db, chat, scene } = ctx;
+    const { chat, scene } = ctx;
     const chatId = chat?.id;
-    const controllerIds = await getControllerIds(db, { chatId });
+    const controllerIds = await getControllerIds({ chatId });
 
     if (controllerIds.length > 0) {
         return scene.enter('controllerManager');
@@ -35,9 +35,9 @@ export const start: MiddlewareFn<BotContext> = async ctx => {
 };
 
 export const now: MiddlewareFn<BotContext> = async ctx => {
-    const { db, chat } = ctx;
+    const { chat } = ctx;
     const chatId = chat?.id;
-    const controllerIds = await getControllerIds(db, { chatId });
+    const controllerIds = await getControllerIds({ chatId });
 
     if (controllerIds.length > 0) {
         const resultPromises = controllerIds.map(controllerId => {
@@ -62,9 +62,9 @@ export const now: MiddlewareFn<BotContext> = async ctx => {
 };
 
 export const reboot: MiddlewareFn<BotContext> = async ctx => {
-    const { chat, db } = ctx;
+    const { chat } = ctx;
     const chatId = chat?.id;
-    const [controllerId] = await getControllerIds(db, { chatId });
+    const [controllerId] = await getControllerIds({ chatId });
 
     if (!controllerId) {
         return ctx.reply('controller not found');

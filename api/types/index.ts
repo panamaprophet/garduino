@@ -1,5 +1,4 @@
 import { Scenes, Context, Telegraf } from 'telegraf';
-import { Db } from 'mongodb';
 import { Readable } from 'stream';
 import { WebSocket, WebSocketServer } from 'ws';
 import koa from 'koa';
@@ -81,7 +80,6 @@ export interface StatusResponseSuccess {
 export type StatusResponse = StatusResponseError | StatusResponseSuccess;
 
 export type ActionContext = {
-    db: Db,
     chatId: number,
     controllerId: string,
     value?: string,
@@ -101,7 +99,6 @@ export interface SceneSession extends Scenes.SceneSession<Scenes.WizardSessionDa
 
 // will be available under ctx[.prop]
 export interface BotContext extends Context {
-    db: Db,
     ws: {
         ws: WebSocketServer,
         cache: Map<string, WebSocket>,
@@ -112,7 +109,6 @@ export interface BotContext extends Context {
 }
 
 export interface ICustomAppContext extends koa.Context {
-    db: Db,
     bot: Telegraf<BotContext>,
     ws: {
         ws: WebSocketServer,

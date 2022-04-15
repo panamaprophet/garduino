@@ -1,4 +1,3 @@
-import mongodb from 'mongodb';
 import { formatDistanceStrict } from 'date-fns';
 import { Markup, Telegraf } from 'telegraf';
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types';
@@ -21,12 +20,11 @@ export const getInlineKeyboard = (options: string[]): ExtraReplyMessage => {
         .resize();
 };
 
-export const sendMessage = async ({ bot, db, controllerId }: {
+export const sendMessage = async ({ bot, controllerId }: {
     bot: Telegraf<BotContext>,
-    db: mongodb.Db,
     controllerId: string,
 }, message: string): Promise<Message.TextMessage | null> => {
-    const config = await getConfig(db, controllerId);
+    const config = await getConfig(controllerId);
 
     return config?.chatId
         ? bot.telegram.sendMessage(config.chatId, message, { parse_mode: "MarkdownV2" })

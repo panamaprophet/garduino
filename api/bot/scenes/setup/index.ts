@@ -14,10 +14,10 @@ const SELECT_ACTION_STEP_INDEX = 1;
 
 
 const selectAction: MiddlewareFn<BotContext> = async ctx => {
-    const { db, chat } = ctx;
+    const { chat } = ctx;
     const chatId = chat?.id;
     const selectedControllerId = isTextMessage(ctx?.message) ? ctx.message.text : '';
-    const controllerIds = await getControllerIds(db, { chatId });
+    const controllerIds = await getControllerIds({ chatId });
 
     if (!selectedControllerId || !controllerIds.includes(selectedControllerId)) {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
@@ -25,7 +25,7 @@ const selectAction: MiddlewareFn<BotContext> = async ctx => {
 
     ctx.session.controllerId = selectedControllerId;
 
-    const currentSettings = await getConfig(db, selectedControllerId);
+    const currentSettings = await getConfig(selectedControllerId);
 
     if (!currentSettings) {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
@@ -51,7 +51,7 @@ const collectValue: MiddlewareFn<BotContext> = async ctx => {
 };
 
 const handleAction: MiddlewareFn<BotContext> = async ctx => {
-    const { db, chat } = ctx;
+    const { chat } = ctx;
     const chatId = chat?.id;
     const { controllerId, action } = ctx.session;
     const value = isTextMessage(ctx?.message) ? ctx.message.text : '';
@@ -68,7 +68,7 @@ const handleAction: MiddlewareFn<BotContext> = async ctx => {
         return ctx.scene.leave();
     }
 
-    const { success } = await actionHandler(action, { db, chatId, controllerId, value });
+    const { success } = await actionHandler(action, { chatId, controllerId, value });
     const response = success ? 'Success' : 'Fail';
 
     await ctx.reply(response, Markup.removeKeyboard());

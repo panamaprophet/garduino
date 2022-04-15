@@ -1,17 +1,22 @@
-import mongodb from 'mongodb';
+import { getDb } from '../db';
 import { ControllerConfigRaw } from 'types';
 
 
-export const setConfig = async (db: mongodb.Db, controllerId: string, updatedParams: ControllerConfigRaw): Promise<{success: boolean}> => {
-    const { ok } = await db.collection('config').findOneAndUpdate({ controllerId }, { $set: updatedParams });
+export const setConfig = (controllerId: string, changes: ControllerConfigRaw) =>
+    getDb()
+        .then(db => db.collection('config').findOneAndUpdate({ controllerId }, { $set: changes }))
+        .then(response => ({ success: Boolean(response.ok) }))
+        .catch(error => {
+            console.error('setConfig', error);
 
-    return {
-        success: Boolean(ok),
-    };
-};
+            return { success: false };
+        });
 
-export const getConfig = async (db: mongodb.Db, controllerId: string): Promise<ControllerConfigRaw | null> => {
-    const config = await db.collection('config').findOne<ControllerConfigRaw>({ controllerId });
+export const getConfig = (controllerId: string) =>
+    getDb()
+        .then(db => db.collection('config').findOne<ControllerConfigRaw>({ controllerId }))
+        .catch(error => { 
+            console.error('getConfig', error); 
 
-    return config;
-};
+            return null; 
+        });
