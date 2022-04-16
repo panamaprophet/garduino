@@ -10,7 +10,7 @@ export const getControllerIds = (options = {}) =>
     getDb()
         .then(db => db.collection('config').find<ControllerEntity>(options).project({ controllerId: 1 }).toArray())
         .then(result => result || [])
-        .then<string[]>(result => result.map(({ controllerId }) => controllerId))
+        .then(result => result.map<string>(({ controllerId }) => controllerId))
         .catch<string[]>(error => {
             console.error('getControllerIds', error);
 
@@ -27,7 +27,7 @@ export const addController = (
         .then(() => ({ success: true }))
         .catch(error => {
             console.error('addController', error);
-            
+
             return { success: false };
         });
 

@@ -1,6 +1,6 @@
 import { mergeDeepRight } from 'ramda';
 import { setConfig, getConfig } from '../../../resolvers/config';
-import { ActionContext, ActionResult, ControllerConfigRaw } from 'types';
+import { ActionContext, ControllerConfigRaw } from 'types';
 
 
 export const ACTION_LIGHT_ONTIME = 'setup/light/ontime';
@@ -19,7 +19,7 @@ type PartialControllerConfig = {
 }
 
 
-const setLightOnTime = async ({ controllerId, value }: ActionContext): Promise<ActionResult> => {
+const setLightOnTime = async ({ controllerId, value }: ActionContext) => {
     const currentConfig = await getConfig(controllerId);
 
     if (!currentConfig) {
@@ -32,12 +32,10 @@ const setLightOnTime = async ({ controllerId, value }: ActionContext): Promise<A
         },
     });
 
-    const result = await setConfig(controllerId, updatedConfig);
-
-    return result;
+    return setConfig(controllerId, updatedConfig);
 };
 
-const setLightDuration = async ({ controllerId, value }: ActionContext): Promise<ActionResult> => {
+const setLightDuration = async ({ controllerId, value }: ActionContext) => {
     const currentConfig = await getConfig(controllerId);
 
     if (!currentConfig) {
@@ -50,36 +48,33 @@ const setLightDuration = async ({ controllerId, value }: ActionContext): Promise
         },
     });
 
-    const result = await setConfig(controllerId, updatedConfig);
-
-    return result;
+    return setConfig(controllerId, updatedConfig);
 };
 
-const setTemperatureThreshold = async ({ controllerId, value }: ActionContext): Promise<ActionResult> => {
+const setTemperatureThreshold = async ({ controllerId, value }: ActionContext) => {
     const currentConfig = await getConfig(controllerId);
 
     if (!currentConfig) {
         return { success: false };
     }
 
-    const updatedConfig = mergeDeepRight<ControllerConfigRaw, PartialControllerConfig>(currentConfig, {
-        temperatureThreshold: Number(value),
-    });
+    const updatedConfig = mergeDeepRight<ControllerConfigRaw, PartialControllerConfig>(
+        currentConfig,
+        { temperatureThreshold: Number(value) }
+    );
 
-    const result = await setConfig(controllerId, updatedConfig);
-
-    return result;
+    return setConfig(controllerId, updatedConfig);
 };
 
 
-export const actionHandler = async (action: string | undefined, context: ActionContext): Promise<ActionResult> => {
+export const actionHandler = (action: string | undefined, context: ActionContext) => {
     switch (action) {
         case ACTION_LIGHT_ONTIME:
-            return await setLightOnTime(context);
+            return setLightOnTime(context);
         case ACTION_LIGHT_DURATION:
-            return await setLightDuration(context);
+            return setLightDuration(context);
         case ACTION_TEMPERATURE_THRESHOLD:
-            return await setTemperatureThreshold(context);
+            return setTemperatureThreshold(context);
         default:
             return {
                 text: 'action is not supported',

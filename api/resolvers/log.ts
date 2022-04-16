@@ -17,7 +17,7 @@ export const getEvent = (controllerId: string, conditions = {}) =>
             console.error('getEvent', error);
 
             return null;
-        })
+        });
 
 export const saveEvent = (controllerId: string, data: LogEntity) =>
     getDb()

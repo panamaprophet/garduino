@@ -1,5 +1,4 @@
 import { Scenes, Context, Telegraf } from 'telegraf';
-import { Readable } from 'stream';
 import { WebSocket, WebSocketServer } from 'ws';
 import koa from 'koa';
 
@@ -83,12 +82,6 @@ export type ActionContext = {
     chatId: number,
     controllerId: string,
     value?: string,
-}
-
-export type ActionResult = {
-    text?: string,
-    image?: Readable,
-    success?: boolean,
 }
 
 // will be available under ctx.session[.prop]

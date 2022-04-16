@@ -40,11 +40,7 @@ const handleAction: MiddlewareFn<BotContext> = async ctx => {
         return ctx.scene.leave();
     }
 
-    const { text, image } = await actionHandler(selectedAction, { chatId, controllerId });
-
-    if (image) {
-        await ctx.replyWithPhoto({ source: image });
-    }
+    const { text } = await actionHandler(selectedAction, { chatId, controllerId });
 
     if (text) {
         await ctx.replyWithMarkdownV2(text, Markup.removeKeyboard());

@@ -15,8 +15,8 @@ export const setConfig = (controllerId: string, changes: ControllerConfigRaw) =>
 export const getConfig = (controllerId: string) =>
     getDb()
         .then(db => db.collection('config').findOne<ControllerConfigRaw>({ controllerId }))
-        .catch(error => { 
-            console.error('getConfig', error); 
+        .catch(error => {
+            console.error('getConfig', error);
 
-            return null; 
+            return null;
         });

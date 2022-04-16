@@ -1,5 +1,5 @@
 import { addController, removeController } from '../../../resolvers/controller';
-import type { ActionContext, ActionResult, ControllerConfigRaw } from 'types';
+import type { ActionContext, ControllerConfigRaw } from 'types';
 
 
 export const ACTION_CONTROLLER_ADD = 'setup/controller/add';
@@ -15,16 +15,16 @@ export const DEFAULT_CONFIG: ControllerConfigRaw = {
 };
 
 
-const add = async ({ chatId, controllerId }: ActionContext): Promise<ActionResult> => addController(controllerId, chatId, DEFAULT_CONFIG);
+const add = ({ chatId, controllerId }: ActionContext) => addController(controllerId, chatId, DEFAULT_CONFIG);
 
-const remove = async ({ chatId, controllerId }: ActionContext): Promise<ActionResult> => removeController(controllerId, chatId);
+const remove = ({ chatId, controllerId }: ActionContext) => removeController(controllerId, chatId);
 
-export const actionHandler = async (action: string | undefined, context: ActionContext):  Promise<ActionResult> => {
+export const actionHandler = (action: string | undefined, context: ActionContext) => {
     switch (action) {
         case ACTION_CONTROLLER_ADD:
-            return await add(context);
+            return add(context);
         case ACTION_CONTROLLER_REMOVE:
-            return await remove(context);
+            return remove(context);
         default:
             return {
                 text: 'action is not supported',
