@@ -27,6 +27,7 @@ export const actionHandler = (action: string | undefined, context: ActionContext
             return remove(context);
         default:
             return {
+                success: false,
                 text: 'action is not supported',
             };
     }

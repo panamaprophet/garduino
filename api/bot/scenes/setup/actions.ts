@@ -77,6 +77,7 @@ export const actionHandler = (action: string | undefined, context: ActionContext
             return setTemperatureThreshold(context);
         default:
             return {
+                success: false,
                 text: 'action is not supported',
             };
     }

@@ -24,7 +24,7 @@ router.get('/', async (ctx) => {
 
 router.post('/', async (ctx) => {
     const { controllerId } = ctx.params;
-    const updatedParams = extractConfig<ControllerConfigRaw>(ctx.request.body) || {};
+    const updatedParams = extractConfig(ctx.request.body) || {};
     const currentConfig = await getConfig(controllerId);
 
     if (!currentConfig) {

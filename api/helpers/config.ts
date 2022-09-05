@@ -1,5 +1,4 @@
 import { addMilliseconds, compareDesc, differenceInMilliseconds, subDays } from 'date-fns';
-import { identity } from 'ramda';
 import { ConfigEntity, ConfigEntityRaw, ControllerConfigRaw } from 'types';
 
 
@@ -32,8 +31,37 @@ export const getConfigEntity = (config: ConfigEntityRaw, refDate: Date = new Dat
     };
 };
 
-// @todo: add validation
-export const extractConfig = identity;
+
+const isRawConfigEntity = (data: unknown): data is ConfigEntityRaw =>
+    (data !== null) &&
+    (typeof data === 'object') &&
+    ('onTime' in data) &&
+    ('duration' in data);
+
+
+export const extractConfig = (data: { [k: string]: unknown }): ControllerConfigRaw => {
+    const {
+        controllerId,
+        chatId,
+        light,
+        temperatureThreshold,
+    } = data;
+
+    if (!controllerId || !chatId) {
+        throw new Error('configuration extraction error: no valid controller or chat id');
+    }
+
+    if (!isRawConfigEntity(light)) {
+        throw new Error('configuration extraction error: light configuration is not an object');
+    }
+
+    return {
+        light,
+        chatId: Number(chatId),
+        controllerId: String(controllerId),
+        temperatureThreshold: Number(temperatureThreshold),
+    };
+};
 
 export const formatConfig = (data: ControllerConfigRaw): string => {
     return [
