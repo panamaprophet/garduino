@@ -1,4 +1,4 @@
-import { getConfigEntity } from "./config";
+import { mapDataToEntityConfig } from "./validation";
 
 
 const suite = {
@@ -9,7 +9,7 @@ const suite = {
             onTime: '21:00',
         };
 
-        const result = getConfigEntity(config, referenceDate);
+        const result = mapDataToEntityConfig(config, referenceDate);
         const expected = {
             msBeforeSwitch: 9 * 60 * 60 * 1000,
             isOn: true,
@@ -24,7 +24,7 @@ const suite = {
             onTime: '09:00',
         };
 
-        const result = getConfigEntity(config, referenceDate);
+        const result = mapDataToEntityConfig(config, referenceDate);
         const expected = {
             msBeforeSwitch: 9 * 60 * 60 * 1000,
             isOn: false,
@@ -39,7 +39,7 @@ const suite = {
             onTime: '00:00',
         };
 
-        const result = getConfigEntity(config, referenceDate);
+        const result = mapDataToEntityConfig(config, referenceDate);
         const expected = {
             msBeforeSwitch: 12 * 60 * 60 * 1000,
             isOn: true,

@@ -4,6 +4,7 @@ import { ExtraReplyMessage } from 'telegraf/typings/telegram-types';
 import { Message } from 'telegraf/typings/core/types/typegram';
 import { getConfig } from '../../resolvers/config';
 import { StatusResponse, StatusResponseError, StatusResponseSuccess, BotContext } from 'types';
+import { isObject } from 'helpers';
 
 
 export const getInlineKeyboard = (options: string[]): ExtraReplyMessage => {
@@ -31,10 +32,9 @@ export const sendMessage = async ({ bot, controllerId }: {
         : null;
 };
 
-export const isTextMessage = (message: Message | undefined): message is Message.TextMessage => (message as Message.TextMessage).text !== undefined;
+export const isTextMessage = (message: Message | undefined): message is Message.TextMessage => isObject(message) && message.text !== undefined;
 
-
-const isStatusResponseError = (response: StatusResponse): response is StatusResponseError => (response as StatusResponseError).error !== undefined;
+export const isStatusResponseError = (response: StatusResponse): response is StatusResponseError => isObject(response) && response.error !== undefined;
 
 const formatErrorResponse = (data: StatusResponseError) => (
     `\\#${data.controllerId}\n\r\n\r` +
@@ -45,7 +45,7 @@ const formatSuccessResponse = (data: StatusResponseSuccess) => {
     const { temperature, humidity, controllerId, light, lastError } = data;
     const timeBeforeSwitch = formatDistanceStrict(0, light.msBeforeSwitch);
     const lightStatusString = `Light will stay *${light.isOn ? 'on' : 'off'}* for ${timeBeforeSwitch}`;
-    const lastErrorString = lastError ? `Last error \\= *${lastError?.payload[0].value}*` : null;
+    const lastErrorString = lastError ? `Last error \\= *${lastError.payload.error}*` : null;
 
     return [
         `\\#${controllerId}`,

@@ -4,6 +4,7 @@ import { Scenes, Telegraf, Middleware, session } from 'telegraf';
 import { Stat, Setup, ControllerManager } from './scenes';
 import * as commands from './commands';
 import { BotContext } from 'types';
+import { Update } from 'telegraf/typings/core/types/typegram';
 
 
 const getCommandByKey = (key: string, obj: { [k: string]: Middleware<BotContext> }) => obj[key];
@@ -33,7 +34,7 @@ export const getBot = async (
 
         const middleware: Koa.Middleware = async (ctx, next) => {
             if (url.endsWith(ctx.url)) {
-                await bot.handleUpdate(ctx.request.body);
+                await bot.handleUpdate(ctx.request.body as Update);
                 ctx.status = 200;
                 return;
             }

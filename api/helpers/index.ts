@@ -1,8 +1,6 @@
-import { EventData, SensorLogEntity, SensorLogEntityAggregated } from 'types';
-import { CRITICAL_ERRORS, LOG_EVENT } from '../constants';
+import { SensorLogEntity, SensorLogEntityAggregated } from 'types';
+import { CRITICAL_ERRORS } from '../constants';
 
-
-export const getSensorDataByKey = (haystack: EventData[], needle: string): EventData[] => haystack.filter(({ key }) => key === needle);
 
 export const range = (from: number, to: number, step = 1): number[] => {
     const result = [];
@@ -64,21 +62,6 @@ export const processData = (data: SensorLogEntity[]): SensorLogEntityAggregated 
     }, initData);
 };
 
-export const isErrorEvent = (event: string): boolean => event === LOG_EVENT.ERROR;
-
 export const isCriticalError = (error: string): boolean => CRITICAL_ERRORS.includes(error);
 
-
-// function distributedCopy(items, n) {
-//     const result = [items[0]];
-//     const totalItems = items.length - 2;
-//     const interval = Math.floor(totalItems / (n - 2));
-//
-//     for (let i = 1; i < n - 1; i++) {
-//         result.push(items[i * interval]);
-//     }
-//
-//     result.push(items[items.length - 1]);
-//
-//     return result;
-// }
+export const isObject = <T extends { [k: string]: unknown }>(obj: any): obj is T => (typeof obj === 'object' || typeof obj === 'function') && (obj !== null) && !Array.isArray(obj);

@@ -1,7 +1,8 @@
 import { Telegraf } from 'telegraf';
 import Router from '@koa/router';
-import { getLogEntry } from '../helpers/log';
-import { isCriticalError, isErrorEvent } from '../helpers/index';
+import { mapDataToLogEntity } from '../helpers/validation';
+import { formatErrorMessage } from 'helpers/formatters';
+import { isCriticalError } from '../helpers/index';
 import { getLastUpdateEvent, saveEvent, getUpdateEvents, getErrorEvents } from '../resolvers/log';
 import { sendMessage } from '../bot/helpers';
 import { BotContext, ICustomAppContext } from 'types';
@@ -31,7 +32,7 @@ router.get('/errors', async (ctx) => {
 
 router.post('/', async (ctx) => {
     const { controllerId } = ctx.params;
-    const data = getLogEntry(ctx.request.body);
+    const data = mapDataToLogEntity(ctx.request.body);
     const bot = ctx.bot as Telegraf<BotContext>;
 
     if (!data) {
@@ -39,15 +40,15 @@ router.post('/', async (ctx) => {
         return;
     }
 
-    const { event, payload = [] } = data;
-    const [entry] = payload;
-    const value = String(entry.value);
+    const { payload } = data;
+    const isError = 'error' in payload;
+    const isCritical = isError && isCriticalError(payload.error);
 
-    if (isErrorEvent(event) && isCriticalError(value)) {
-        await sendMessage({ controllerId, bot }, [
-            `\\#${controllerId}`,
-            `Error \\= *${data.payload[0].value}*`,
-        ].join('  ·  '));
+    if (isCritical) {
+        await sendMessage({
+            controllerId,
+            bot,
+        }, formatErrorMessage(controllerId, payload.error));
     }
 
     ctx.body = await saveEvent(controllerId, data);

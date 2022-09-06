@@ -5,7 +5,9 @@ import { WebSocketServer, WebSocket } from 'ws';
 interface WebSocketPayload {
     action: string,
     controllerId: string,
-    payload: unknown,
+    payload: {
+        controllerId: string,
+    },
 }
 
 
@@ -45,7 +47,7 @@ export const getWebSocketServer = (server: Server): [WebSocketServer, Map<string
                 return;
             }
 
-            const { controllerId } = messagePayload?.payload as {[k: string]: string};
+            const { controllerId } = messagePayload.payload;
 
             if (controllerId) {
                 cache.set(controllerId, ws);

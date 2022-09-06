@@ -8,9 +8,9 @@ import { WEBSOCKET_ACTIONS } from '../constants';
  */
 export const getControllerIds = (options = {}) =>
     getDb()
-        .then(db => db.collection('config').find<ControllerEntity>(options).project({ controllerId: 1 }).toArray())
+        .then(db => db.collection('config').find(options).project<ControllerEntity>({ controllerId: 1 }).toArray())
         .then(result => result || [])
-        .then(result => result.map<string>(({ controllerId }) => controllerId))
+        .then(result => result.map(({ controllerId }) => controllerId))
         .catch<string[]>(error => {
             console.error('getControllerIds', error);
 

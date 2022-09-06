@@ -23,11 +23,21 @@ namespace events
     std::vector<std::pair<EventType, EventPayload>> events;
     std::vector<std::pair<EventType, EventHandler>> eventListeners;
 
+    /**
+     * Formats event data as JSON string as following:
+     *
+     * { "event": "eventID", "payload": [["key1", "value1"], ["key2", "value2"]] }
+     *
+     * @param payload {map<string, string>}
+     * @param eventId {string}
+     *
+     * @returns JSON string
+     */
     String stringifyPayload(EventPayload payload, String eventId) {
         String payloadString = "[";
 
         for (auto i = payload.begin(); i != payload.end(); ++i) {
-            payloadString += "{\"key\":\"" + i -> first + "\", \"value\": \"" + i -> second + "\"}";
+            payloadString += "[\"" + i -> first + "\", \"" + i -> second + "\"]";
 
             if (std::next(i) != payload.end()) {
                 payloadString += ",";

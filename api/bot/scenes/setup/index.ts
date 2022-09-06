@@ -1,7 +1,7 @@
 import { Scenes, Markup, MiddlewareFn } from 'telegraf';
 import { getConfig } from '../../../resolvers/config';
 import { getControllerIds } from '../../../resolvers/controller';
-import { formatConfig } from '../../../helpers/config';
+import { formatConfig } from '../../../helpers/formatters';
 import { getInlineKeyboard, isTextMessage } from '../../helpers';
 import { BotContext } from 'types';
 import { selectController } from '../common';

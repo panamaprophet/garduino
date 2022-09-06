@@ -5,20 +5,23 @@ import koa from 'koa';
 
 export type EventType = 'CONFIG' | 'UPDATE' | 'ERROR' | 'SWITCH' | 'RUN';
 
-export interface EventData {
-    key: string,
-    value: string | number,
-}
 
-export interface LogEntityRaw {
-    event: EventType,
-    payload: EventData[],
-}
+type ErrorEventPayload = { error: string };
+
+type RunEventPayload = { isLightOn: boolean };
+
+type SwitchEventPayload = { isLightOn: boolean, isEmergencySwitch: boolean };
+
+type UpdateEventPayload = { humidity: number, temperature: number };
+
+
+export type EventPayload = ErrorEventPayload | RunEventPayload | SwitchEventPayload | UpdateEventPayload;
+
 
 export interface LogEntity {
     event: string,
     date: Date,
-    payload: EventData[],
+    payload: EventPayload,
 }
 
 export interface SensorLogEntity {
@@ -71,7 +74,7 @@ export interface StatusResponseSuccess {
     temperature: number,
     humidity: number,
     lastError: {
-        payload: EventData[],
+        payload: ErrorEventPayload,
     },
     light: ConfigEntity,
 }

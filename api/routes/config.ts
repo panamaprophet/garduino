@@ -1,8 +1,9 @@
 import Router from '@koa/router';
 import { mergeDeepRight } from 'ramda';
 import { getConfig, setConfig } from '../resolvers/config';
-import { extractConfig, getConfigEntity } from '../helpers/config';
 import { ControllerConfigRaw } from 'types';
+import { Update } from 'telegraf/typings/core/types/typegram';
+import { mapDataToControllerConfig, mapDataToEntityConfig } from 'helpers/validation';
 
 
 const router = new Router();
@@ -17,14 +18,14 @@ router.get('/', async (ctx) => {
     }
 
     const { temperatureThreshold, ...config } = controllerConfig;
-    const light = getConfigEntity(config.light, new Date());
+    const light = mapDataToEntityConfig(config.light, new Date());
 
     ctx.body = { light, temperatureThreshold };
 });
 
 router.post('/', async (ctx) => {
     const { controllerId } = ctx.params;
-    const updatedParams = extractConfig(ctx.request.body) || {};
+    const updatedParams = mapDataToControllerConfig(ctx.request.body as Update) || {};
     const currentConfig = await getConfig(controllerId);
 
     if (!currentConfig) {
