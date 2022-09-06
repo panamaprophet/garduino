@@ -1,7 +1,7 @@
 import { Telegraf } from 'telegraf';
 import Router from '@koa/router';
 import { mapDataToLogEntity } from '../helpers/validation';
-import { formatErrorMessage } from 'helpers/formatters';
+import { formatErrorMessage } from '../helpers/formatters';
 import { isCriticalError } from '../helpers/index';
 import { getLastUpdateEvent, saveEvent, getUpdateEvents, getErrorEvents } from '../resolvers/log';
 import { sendMessage } from '../bot/helpers';

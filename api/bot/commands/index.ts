@@ -1,9 +1,9 @@
 import { MiddlewareFn } from 'telegraf';
 import { getControllerIds } from '../../resolvers/controller';
 import { getControllerStatus } from '../../resolvers/status';
-import { getStatusFormatted } from '../helpers';
-import { BotContext } from 'types';
+import { formatResponse } from 'helpers/formatters';
 import { WEBSOCKET_ACTIONS } from '../../constants';
+import { BotContext } from 'types';
 
 
 const HELP_PLACEHOLDER =
@@ -53,7 +53,7 @@ export const now: MiddlewareFn<BotContext> = async ctx => {
 
         return Promise
             .all(resultPromises)
-            .then(results => results.map((result, index) => getStatusFormatted({ ...result, controllerId: controllerIds[index] })))
+            .then(results => results.map((result, index) => formatResponse({ ...result, controllerId: controllerIds[index] })))
             .then(results => results.join('\n\r'))
             .then(result => ctx.replyWithMarkdownV2(result));
     }
