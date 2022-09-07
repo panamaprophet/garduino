@@ -2,7 +2,7 @@ import Router from '@koa/router';
 import { mergeDeepRight } from 'ramda';
 import { getConfig, setConfig } from '../resolvers/config';
 import { ControllerConfigRaw } from 'types';
-import { mapDataToControllerConfig, mapDataToEntityConfig } from 'helpers/validation';
+import { mapDataToControllerConfiguration, mapDataToModuleConfiguration } from 'helpers/validation';
 
 
 const router = new Router();
@@ -17,14 +17,14 @@ router.get('/', async (ctx) => {
     }
 
     const { temperatureThreshold, ...config } = controllerConfig;
-    const light = mapDataToEntityConfig(config.light, new Date());
+    const light = mapDataToModuleConfiguration(config.light, new Date());
 
     ctx.body = { light, temperatureThreshold };
 });
 
 router.post('/', async (ctx) => {
     const { controllerId } = ctx.params;
-    const updatedParams = mapDataToControllerConfig(ctx.request.body) || {};
+    const updatedParams = mapDataToControllerConfiguration(ctx.request.body) || {};
     const currentConfig = await getConfig(controllerId);
 
     if (!currentConfig) {

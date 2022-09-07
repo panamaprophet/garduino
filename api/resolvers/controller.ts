@@ -1,5 +1,5 @@
 import { getDb } from '../db';
-import { ControllerConfigRaw, ControllerEntity } from 'types';
+import { ControllerConfigRaw } from 'types';
 import { WEBSOCKET_ACTIONS } from '../constants';
 
 
@@ -8,7 +8,7 @@ import { WEBSOCKET_ACTIONS } from '../constants';
  */
 export const getControllerIds = (options = {}) =>
     getDb()
-        .then(db => db.collection('config').find(options).project<ControllerEntity>({ controllerId: 1 }).toArray())
+        .then(db => db.collection('config').find(options).project<{ controllerId: string }>({ controllerId: 1 }).toArray())
         .then(result => result || [])
         .then(result => result.map(({ controllerId }) => controllerId))
         .catch<string[]>(error => {

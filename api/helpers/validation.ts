@@ -1,5 +1,5 @@
 import { addMilliseconds, compareDesc, differenceInMilliseconds, subDays } from 'date-fns';
-import { ConfigEntity, LogEntity, ConfigEntityRaw, ControllerConfigRaw, EventPayload } from 'types';
+import { ModuleConfiguration, LogEntity, ConfigEntityRaw, ControllerConfigRaw, EventPayload } from 'types';
 import { isObject } from 'helpers';
 
 
@@ -7,15 +7,10 @@ const getTimeFromString = (time: string) => time.split(':').map(item => Number(i
 
 const pad = (n: number, symbol = '0', length = 2) => n.toString().padStart(length, symbol);
 
-
-
-
 const isRawConfigEntity = (data: unknown): data is ConfigEntityRaw => isObject(data) && ('onTime' in data) && ('duration' in data);
 
 
-
-// extractConfig
-export const mapDataToControllerConfig = (data: any): ControllerConfigRaw => {
+export const mapDataToControllerConfiguration = (data: any): ControllerConfigRaw => {
     if (!isObject(data)) {
         throw new Error('configuration extraction error: data is not an object');
     }
@@ -36,27 +31,7 @@ export const mapDataToControllerConfig = (data: any): ControllerConfigRaw => {
     };
 };
 
-// getLogEntry
-export const mapDataToLogEntity = (data: any): LogEntity => {
-    if (!isObject(data)) {
-        throw new Error('log extraction error: data is not an object');
-    }
-
-    if (!data.event) {
-        throw new Error('log extraction error: data is not an event');
-    }
-
-    const payload = Array.isArray(data.payload) ? data.payload : [];
-
-    return {
-        date: new Date(),
-        event: String(data.event),
-        payload: Object.fromEntries(payload) as EventPayload,
-    };
-};
-
-// getConfigEntity
-export const mapDataToEntityConfig = (config: ConfigEntityRaw, refDate: Date = new Date()): ConfigEntity => {
+export const mapDataToModuleConfiguration = (config: ConfigEntityRaw, refDate: Date = new Date()): ModuleConfiguration => {
     const { duration } = config;
     const [onHours, onMinutes] = getTimeFromString(config.onTime);
     const dateString = `${refDate.getFullYear()}-${pad(refDate.getMonth() + 1)}-${pad(refDate.getDate())}T${pad(onHours)}:${pad(onMinutes)}Z`;
@@ -78,5 +53,23 @@ export const mapDataToEntityConfig = (config: ConfigEntityRaw, refDate: Date = n
         isOn,
         duration,
         msBeforeSwitch,
+    };
+};
+
+export const mapDataToLogEntity = (data: any): LogEntity => {
+    if (!isObject(data)) {
+        throw new Error('log extraction error: data is not an object');
+    }
+
+    if (!data.event) {
+        throw new Error('log extraction error: data is not an event');
+    }
+
+    const payload = Array.isArray(data.payload) ? data.payload : [];
+
+    return {
+        date: new Date(),
+        event: String(data.event),
+        payload: Object.fromEntries(payload) as EventPayload,
     };
 };

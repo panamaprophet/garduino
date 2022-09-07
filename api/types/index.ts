@@ -40,16 +40,12 @@ export interface SensorLogEntityAggregated {
     minTemperature: SensorLogEntity,
 }
 
-export interface ControllerEntity {
-    controllerId: string,
-}
-
 export interface ConfigEntityRaw {
     duration: number,
     onTime: string,
 }
 
-export interface ConfigEntity {
+export interface ModuleConfiguration {
     isOn: boolean,
     duration: number,
     msBeforeSwitch: number,
@@ -76,7 +72,7 @@ export interface StatusResponseSuccess {
     lastError: {
         payload: ErrorEventPayload,
     },
-    light: ConfigEntity,
+    light: ModuleConfiguration,
 }
 
 export type StatusResponse = StatusResponseError | StatusResponseSuccess;
