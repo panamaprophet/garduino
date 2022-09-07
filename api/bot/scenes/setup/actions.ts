@@ -1,6 +1,6 @@
 import { mergeDeepRight } from 'ramda';
-import { setConfig, getConfig } from '../../../resolvers/config';
 import { ActionContext, ControllerConfigRaw } from 'types';
+import { getControllerConfiguration, updateControllerConfiguration } from 'resolvers/controller';
 
 
 export const ACTION_LIGHT_ONTIME = 'setup/light/ontime';
@@ -20,7 +20,7 @@ type PartialControllerConfig = {
 
 
 const setLightOnTime = async ({ controllerId, value }: ActionContext) => {
-    const currentConfig = await getConfig(controllerId);
+    const currentConfig = await getControllerConfiguration(controllerId);
 
     if (!currentConfig) {
         return { success: false };
@@ -32,11 +32,11 @@ const setLightOnTime = async ({ controllerId, value }: ActionContext) => {
         },
     });
 
-    return setConfig(controllerId, updatedConfig);
+    return updateControllerConfiguration(controllerId, updatedConfig);
 };
 
 const setLightDuration = async ({ controllerId, value }: ActionContext) => {
-    const currentConfig = await getConfig(controllerId);
+    const currentConfig = await getControllerConfiguration(controllerId);
 
     if (!currentConfig) {
         return { success: false };
@@ -48,11 +48,11 @@ const setLightDuration = async ({ controllerId, value }: ActionContext) => {
         },
     });
 
-    return setConfig(controllerId, updatedConfig);
+    return updateControllerConfiguration(controllerId, updatedConfig);
 };
 
 const setTemperatureThreshold = async ({ controllerId, value }: ActionContext) => {
-    const currentConfig = await getConfig(controllerId);
+    const currentConfig = await getControllerConfiguration(controllerId);
 
     if (!currentConfig) {
         return { success: false };
@@ -63,7 +63,7 @@ const setTemperatureThreshold = async ({ controllerId, value }: ActionContext) =
         { temperatureThreshold: Number(value) }
     );
 
-    return setConfig(controllerId, updatedConfig);
+    return updateControllerConfiguration(controllerId, updatedConfig);
 };
 
 

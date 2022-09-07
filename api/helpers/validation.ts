@@ -10,7 +10,7 @@ const pad = (n: number, symbol = '0', length = 2) => n.toString().padStart(lengt
 const isRawConfigEntity = (data: unknown): data is ConfigEntityRaw => isObject(data) && ('onTime' in data) && ('duration' in data);
 
 
-export const mapDataToControllerConfiguration = (data: any): ControllerConfigRaw => {
+export const mapDataToControllerConfiguration = (data: unknown): ControllerConfigRaw => {
     if (!isObject(data)) {
         throw new Error('configuration extraction error: data is not an object');
     }
@@ -31,7 +31,7 @@ export const mapDataToControllerConfiguration = (data: any): ControllerConfigRaw
     };
 };
 
-export const mapDataToModuleConfiguration = (config: ConfigEntityRaw, refDate: Date = new Date()): ModuleConfiguration => {
+export const mapDataToModuleConfiguration = (config: ConfigEntityRaw, refDate = new Date()): ModuleConfiguration => {
     const { duration } = config;
     const [onHours, onMinutes] = getTimeFromString(config.onTime);
     const dateString = `${refDate.getFullYear()}-${pad(refDate.getMonth() + 1)}-${pad(refDate.getDate())}T${pad(onHours)}:${pad(onMinutes)}Z`;
@@ -56,7 +56,7 @@ export const mapDataToModuleConfiguration = (config: ConfigEntityRaw, refDate: D
     };
 };
 
-export const mapDataToLogEntity = (data: any): LogEntity => {
+export const mapDataToLogEntity = (data: unknown): LogEntity => {
     if (!isObject(data)) {
         throw new Error('log extraction error: data is not an object');
     }

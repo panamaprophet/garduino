@@ -1,9 +1,9 @@
 import { Markup, Telegraf } from 'telegraf';
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types';
 import { Message } from 'telegraf/typings/core/types/typegram';
-import { getConfig } from '../../resolvers/config';
 import { StatusResponse, StatusResponseError, BotContext } from 'types';
 import { isObject } from 'helpers';
+import { getControllerConfiguration } from 'resolvers/controller';
 
 
 export const getInlineKeyboard = (options: string[]): ExtraReplyMessage => {
@@ -24,11 +24,13 @@ export const sendMessage = async ({ bot, controllerId }: {
     bot: Telegraf<BotContext>,
     controllerId: string,
 }, message: string): Promise<Message.TextMessage | null> => {
-    const config = await getConfig(controllerId);
+    const config = await getControllerConfiguration(controllerId);
 
-    return config?.chatId
-        ? bot.telegram.sendMessage(config.chatId, message, { parse_mode: "MarkdownV2" })
-        : null;
+    if (!config || !config.chatId) {
+        return null;
+    }
+
+    return bot.telegram.sendMessage(config.chatId, message, { parse_mode: "MarkdownV2" });
 };
 
 export const isTextMessage = (message: unknown): message is Message.TextMessage => isObject(message) && message.text !== undefined;

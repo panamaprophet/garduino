@@ -1,6 +1,5 @@
 import { Scenes, Markup, MiddlewareFn } from 'telegraf';
-import { getConfig } from '../../../resolvers/config';
-import { getControllerIds } from '../../../resolvers/controller';
+import { getControllerConfiguration, getControllerIds } from '../../../resolvers/controller';
 import { formatConfig } from '../../../helpers/formatters';
 import { getInlineKeyboard, isTextMessage } from '../../helpers';
 import { BotContext } from 'types';
@@ -25,7 +24,7 @@ const selectAction: MiddlewareFn<BotContext> = async ctx => {
 
     ctx.session.controllerId = selectedControllerId;
 
-    const currentSettings = await getConfig(selectedControllerId);
+    const currentSettings = await getControllerConfiguration(selectedControllerId);
 
     if (!currentSettings) {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);

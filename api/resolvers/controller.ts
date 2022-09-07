@@ -50,3 +50,23 @@ export const rebootController = (controllerId: string, ws: WebSocket): { success
     // @todo: fix with actual response
     return { success: true };
 };
+
+export const updateControllerConfiguration = (controllerId: string, changes: ControllerConfigRaw) =>
+    getDb()
+        .then(db => db.collection('config').findOneAndUpdate({ controllerId }, { $set: changes }))
+        .then(response => ({ success: Boolean(response.ok) }))
+        .catch(error => {
+            console.error('updateControllerConfiguration', error);
+
+            return { success: false };
+        });
+
+export const getControllerConfiguration = (controllerId: string) =>
+    getDb()
+        .then(db => db.collection('config').findOne<ControllerConfigRaw>({ controllerId }))
+        .catch(error => {
+            console.error('getConfig', error);
+
+            return null;
+        });
+

@@ -1,15 +1,15 @@
 import Router from '@koa/router';
 import { mergeDeepRight } from 'ramda';
-import { getConfig, setConfig } from '../resolvers/config';
-import { ControllerConfigRaw } from 'types';
 import { mapDataToControllerConfiguration, mapDataToModuleConfiguration } from 'helpers/validation';
+import { getControllerConfiguration, updateControllerConfiguration } from 'resolvers/controller';
+import { ControllerConfigRaw } from 'types';
 
 
 const router = new Router();
 
 router.get('/', async (ctx) => {
     const { controllerId } = ctx.params;
-    const controllerConfig = await getConfig(controllerId);
+    const controllerConfig = await getControllerConfiguration(controllerId);
 
     if (!controllerConfig) {
         ctx.body = { success: false };
@@ -25,7 +25,7 @@ router.get('/', async (ctx) => {
 router.post('/', async (ctx) => {
     const { controllerId } = ctx.params;
     const updatedParams = mapDataToControllerConfiguration(ctx.request.body) || {};
-    const currentConfig = await getConfig(controllerId);
+    const currentConfig = await getControllerConfiguration(controllerId);
 
     if (!currentConfig) {
         ctx.body = { success: false };
@@ -33,7 +33,7 @@ router.post('/', async (ctx) => {
     }
 
     const updatedConfig = mergeDeepRight<ControllerConfigRaw, ControllerConfigRaw>(currentConfig, updatedParams);
-    const result = await setConfig(controllerId, updatedConfig);
+    const result = await updateControllerConfiguration(controllerId, updatedConfig);
 
     ctx.body = result;
 });
