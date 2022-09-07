@@ -2,9 +2,9 @@ import Koa from 'koa';
 import { WebSocket, WebSocketServer } from 'ws';
 import { Scenes, Telegraf, Middleware, session } from 'telegraf';
 import { Stat, Setup, ControllerManager } from './scenes';
+import { Update } from 'telegraf/typings/core/types/typegram';
 import * as commands from './commands';
 import { BotContext } from 'types';
-import { Update } from 'telegraf/typings/core/types/typegram';
 
 
 const getCommandByKey = (key: string, obj: { [k: string]: Middleware<BotContext> }) => obj[key];

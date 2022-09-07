@@ -2,7 +2,6 @@ import Router from '@koa/router';
 import { mergeDeepRight } from 'ramda';
 import { getConfig, setConfig } from '../resolvers/config';
 import { ControllerConfigRaw } from 'types';
-import { Update } from 'telegraf/typings/core/types/typegram';
 import { mapDataToControllerConfig, mapDataToEntityConfig } from 'helpers/validation';
 
 
@@ -25,7 +24,7 @@ router.get('/', async (ctx) => {
 
 router.post('/', async (ctx) => {
     const { controllerId } = ctx.params;
-    const updatedParams = mapDataToControllerConfig(ctx.request.body as Update) || {};
+    const updatedParams = mapDataToControllerConfig(ctx.request.body) || {};
     const currentConfig = await getConfig(controllerId);
 
     if (!currentConfig) {
