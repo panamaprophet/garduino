@@ -3,7 +3,7 @@ import { isStatusResponseError } from 'bot/helpers';
 import { ControllerConfigRaw, SensorLogEntityAggregated, StatusResponse, StatusResponseError, StatusResponseSuccess } from 'types';
 
 
-export const formatConfig = (data: ControllerConfigRaw): string => {
+export const formatConfig = (data: ControllerConfigRaw) => {
     return [
         `Light On = ${data.light.onTime} UTC`,
         `Duration = ${data.light.duration} ms`,
@@ -33,7 +33,7 @@ export const formatSuccessResponse = (data: StatusResponseSuccess) => {
     .join('  ·  ');
 };
 
-export const formatResponse = (data: StatusResponse): string => isStatusResponseError(data) ? formatErrorResponse(data) : formatSuccessResponse(data);
+export const formatResponse = (data: StatusResponse) => isStatusResponseError(data) ? formatErrorResponse(data) : formatSuccessResponse(data);
 
 export const formatStatistics = (controllerId: string, data: SensorLogEntityAggregated) => {
     const {

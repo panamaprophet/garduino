@@ -9,8 +9,6 @@ import { actionHandler, ACTION_LIGHT_ONTIME, ACTION_LIGHT_DURATION, ACTION_TEMPE
 
 const SELECT_CONTROLLER_STEP_INDEX = 0;
 
-const SELECT_ACTION_STEP_INDEX = 1;
-
 
 const selectAction: MiddlewareFn<BotContext> = async ctx => {
     const { chat } = ctx;
