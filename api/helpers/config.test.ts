@@ -5,8 +5,9 @@ const suite = {
     'onTime 21:00 should return 9 hours before off for current time 00:00': () => {
         const referenceDate = new Date('2022-01-01 00:00:00Z');
         const config = {
-            duration: 12 * 60 * 60 * 1000,
             onTime: '21:00',
+            temperatureThreshold: -1,
+            duration: 12 * 60 * 60 * 1000,
         };
 
         const result = mapDataToModuleConfiguration(config, referenceDate);
@@ -20,8 +21,9 @@ const suite = {
     'onTime 09:00 should return 9 hours before on for current time 00:00': () => {
         const referenceDate = new Date('2022-01-01 00:00:00Z');
         const config = {
-            duration: 12 * 60 * 60 * 1000,
             onTime: '09:00',
+            temperatureThreshold: -1,
+            duration: 12 * 60 * 60 * 1000,
         };
 
         const result = mapDataToModuleConfiguration(config, referenceDate);
@@ -35,8 +37,9 @@ const suite = {
     'onTime 00:00 should return 12 hours before off for current time 00:00': () => {
         const referenceDate = new Date('2022-01-01 00:00:00Z');
         const config = {
-            duration: 12 * 60 * 60 * 1000,
             onTime: '00:00',
+            temperatureThreshold: -1,
+            duration: 12 * 60 * 60 * 1000,
         };
 
         const result = mapDataToModuleConfiguration(config, referenceDate);

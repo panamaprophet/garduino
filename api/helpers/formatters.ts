@@ -8,7 +8,7 @@ export const formatConfig = (data: ControllerConfigRaw): string => {
         `Light On = ${data.light.onTime} UTC`,
         `Duration = ${data.light.duration} ms`,
         '',
-        `Temperature threshold = ${data.temperatureThreshold}°C`,
+        `Temperature threshold = ${data.light.temperatureThreshold}°C`,
     ].join('\n');
 };
 

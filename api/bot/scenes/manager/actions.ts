@@ -10,8 +10,8 @@ export const DEFAULT_CONFIG: ControllerConfigRaw = {
     light: {
         onTime: '09:00',
         duration: 43200000,
+        temperatureThreshold: 35,
     },
-    temperatureThreshold: 35,
 };
 
 

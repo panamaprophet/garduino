@@ -157,7 +157,7 @@ auto onConfig = [](EventPayload payload) {
         light.duration = json["light"]["duration"].as<long>();
         light.msBeforeSwitch = json["light"]["msBeforeSwitch"].as<long>();
 
-        temperatureThreshold = json["temperatureThreshold"].as<float>();
+        temperatureThreshold = json["light"]["temperatureThreshold"].as<float>();
 
         emit(EventType::RUN, {
             {"isLightOn", String(light.isOn)},

@@ -43,6 +43,7 @@ export interface SensorLogEntityAggregated {
 export interface ConfigEntityRaw {
     duration: number,
     onTime: string,
+    temperatureThreshold: number,
 }
 
 export interface ModuleConfiguration {
@@ -55,7 +56,6 @@ export interface ControllerConfigRaw {
     controllerId?: string,
     chatId?: number,
     light: ConfigEntityRaw,
-    temperatureThreshold: number,
 }
 
 export interface StatusResponseError {

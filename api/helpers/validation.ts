@@ -27,7 +27,6 @@ export const mapDataToControllerConfiguration = (data: unknown): ControllerConfi
         light: data.light,
         chatId: Number(data.chatId),
         controllerId: String(data.controllerId),
-        temperatureThreshold: Number(data.temperatureThreshold),
     };
 };
 
