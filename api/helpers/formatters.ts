@@ -1,6 +1,6 @@
-import { formatDistanceStrict } from 'date-fns';
+import { format, formatDistanceStrict } from 'date-fns';
 import { isStatusResponseError } from 'bot/helpers';
-import { ControllerConfigRaw, StatusResponse, StatusResponseError, StatusResponseSuccess } from 'types';
+import { ControllerConfigRaw, SensorLogEntityAggregated, StatusResponse, StatusResponseError, StatusResponseSuccess } from 'types';
 
 
 export const formatConfig = (data: ControllerConfigRaw): string => {
@@ -34,3 +34,23 @@ export const formatSuccessResponse = (data: StatusResponseSuccess) => {
 };
 
 export const formatResponse = (data: StatusResponse): string => isStatusResponseError(data) ? formatErrorResponse(data) : formatSuccessResponse(data);
+
+export const formatStatistics = (controllerId: string, data: SensorLogEntityAggregated) => {
+    const {
+        dates,
+        minTemperature: { temperature: minTemperature },
+        maxTemperature: { temperature: maxTemperature },
+        maxHumidity: { humidity: maxHumidity },
+        minHumidity: { humidity: minHumidity },
+    } = data;
+
+    const startDate = format(dates[0], 'dd\\.MM\\.yy HH:mm');
+    const endDate = format(dates[dates.length - 1], 'dd\\.MM\\.yy HH:mm');
+
+    return [
+        `\\#${controllerId}`,
+        `${startDate} — ${endDate}:`,
+        `T\\=*${minTemperature}* / *${maxTemperature}* °C`,
+        `H\\=*${minHumidity}* / *${maxHumidity}* %`,
+    ].join('  ·  ');
+};

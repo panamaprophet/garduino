@@ -1,6 +1,7 @@
-import { format, subDays, subWeeks } from 'date-fns';
+import { subDays, subWeeks } from 'date-fns';
 import { processData } from '../../../helpers';
 import { getUpdateEvents } from '../../../resolvers/log';
+import { formatStatistics } from '../../../helpers/formatters';
 import { ActionContext } from 'types';
 
 
@@ -9,19 +10,11 @@ export const ACTION_STAT_WEEK = 'main/stat/week';
 export const ACTION_STAT_DAY = 'main/stat/day';
 
 
-const getStat = async ({ controllerId }: ActionContext, dateFrom: Date) => {
-    const data = await getUpdateEvents(controllerId, dateFrom);
-    const { minHumidity, maxHumidity, minTemperature, maxTemperature, dates } = processData(data);
-
-    const text = [
-        `\\#${controllerId}`,
-        `${format(dates[0], 'dd\\.MM\\.yy HH:mm')} — ${format(dates[dates.length - 1], 'dd\\.MM\\.yy HH:mm')}:`,
-        `T\\=*${minTemperature.temperature}* / *${maxTemperature.temperature}* °C`,
-        `H\\=*${minHumidity.humidity}* / *${maxHumidity.humidity}* %`,
-    ].join('  ·  ');
-
-    return { text };
-};
+const getStat = async ({ controllerId }: ActionContext, dateFrom: Date) =>
+    getUpdateEvents(controllerId, dateFrom)
+        .then(processData)
+        .then(data => formatStatistics(controllerId, data))
+        .then(text => ({ text }));
 
 const getDayStat = (context: ActionContext) => getStat(context, subDays(Date.now(), 1));
 
