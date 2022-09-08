@@ -19,16 +19,13 @@ const add = ({ chatId, controllerId }: ActionContext) => addController(controlle
 
 const remove = ({ chatId, controllerId }: ActionContext) => removeController(controllerId, chatId);
 
-export const actionHandler = (action: string | undefined, context: ActionContext) => {
+export const actionHandler = (action: string, context: ActionContext) => {
     switch (action) {
         case ACTION_CONTROLLER_ADD:
             return add(context);
         case ACTION_CONTROLLER_REMOVE:
             return remove(context);
         default:
-            return {
-                success: false,
-                text: 'action is not supported',
-            };
+            throw new Error(`action is not supported: ${String(action)}`);
     }
 };

@@ -15,7 +15,7 @@ const selectAction: MiddlewareFn<BotContext> = async ctx => {
     const selectedControllerId = isTextMessage(ctx?.message) ? ctx.message.text : '';
     const controllerIds = await getControllerIds({ chatId });
 
-    if (!controllerIds || !controllerIds.includes(selectedControllerId)) {
+    if (!controllerIds.includes(selectedControllerId)) {
         return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
     }
 
@@ -29,24 +29,16 @@ const selectAction: MiddlewareFn<BotContext> = async ctx => {
 const handleAction: MiddlewareFn<BotContext> = async ctx => {
     const { chat } = ctx;
     const chatId = chat?.id;
-    const selectedAction = isTextMessage(ctx?.message) ? ctx.message.text : '';
+    const action = isTextMessage(ctx.message) ? ctx.message.text : null;
     const { controllerId } = ctx.session;
 
-    if (!controllerId) {
-        return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
-    }
-
-    if (!chatId) {
+    if (!controllerId || !chatId || !action) {
         return ctx.scene.leave();
     }
 
-    const { text } = await actionHandler(selectedAction, { chatId, controllerId });
-
-    if (text) {
-        await ctx.replyWithMarkdownV2(text, Markup.removeKeyboard());
-    }
-
-    return ctx.scene.leave();
+    return actionHandler(action, { chatId, controllerId })
+        .then(result => ctx.replyWithMarkdownV2(result, Markup.removeKeyboard()))
+        .then(() => ctx.scene.leave());
 };
 
 

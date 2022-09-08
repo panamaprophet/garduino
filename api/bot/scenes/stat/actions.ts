@@ -13,23 +13,20 @@ export const ACTION_STAT_DAY = 'main/stat/day';
 const getStat = async ({ controllerId }: ActionContext, dateFrom: Date) =>
     getUpdateEvents(controllerId, dateFrom)
         .then(processData)
-        .then(data => formatStatistics(controllerId, data))
-        .then(text => ({ text }));
+        .then(data => formatStatistics(controllerId, data));
 
 const getDayStat = (context: ActionContext) => getStat(context, subDays(Date.now(), 1));
 
 const getWeekStat = (context: ActionContext) => getStat(context, subWeeks(Date.now(), 1));
 
 
-export const actionHandler = (action: string | undefined, context: ActionContext) => {
+export const actionHandler = (action: string, context: ActionContext) => {
     switch (action) {
         case ACTION_STAT_WEEK:
             return getWeekStat(context);
         case ACTION_STAT_DAY:
             return getDayStat(context);
         default:
-            return {
-                text: 'action is not supported',
-            };
+            throw new Error(`action is not supported: ${String(action)}`);
     }
 };

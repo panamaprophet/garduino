@@ -55,24 +55,14 @@ const handleAction: MiddlewareFn<BotContext> = async ctx => {
     const { controllerId, action } = ctx.session;
     const value = isTextMessage(ctx?.message) ? ctx.message.text : '';
 
-    if (!controllerId) {
-        return ctx.wizard.selectStep(SELECT_CONTROLLER_STEP_INDEX);
-    }
-
-    if (!action) {
-        return ctx.wizard.selectStep(SELECT_ACTION_STEP_INDEX);
-    }
-
-    if (!chatId) {
+    if (!controllerId || !action || !chatId) {
         return ctx.scene.leave();
     }
 
-    const { success } = await actionHandler(action, { chatId, controllerId, value });
-    const response = success ? 'Success' : 'Fail';
-
-    await ctx.reply(response, Markup.removeKeyboard());
-
-    return ctx.scene.leave();
+    return actionHandler(action, { chatId, controllerId, value })
+        .then(({ success }) => success ? 'Success' : 'Fail')
+        .then(response => ctx.replyWithMarkdownV2(response, Markup.removeKeyboard()))
+        .then(() => ctx.scene.leave());
 };
 
 

@@ -19,7 +19,7 @@ const setTemperatureThreshold = ({ controllerId, value }: ActionContext) =>
     updateControllerConfiguration(controllerId, { light: { temperatureThreshold: Number(value) } });
 
 
-export const actionHandler = (action: string | undefined, context: ActionContext) => {
+export const actionHandler = (action: string, context: ActionContext) => {
     switch (action) {
         case ACTION_LIGHT_ONTIME:
             return setLightOnTime(context);
@@ -28,9 +28,6 @@ export const actionHandler = (action: string | undefined, context: ActionContext
         case ACTION_TEMPERATURE_THRESHOLD:
             return setTemperatureThreshold(context);
         default:
-            return {
-                success: false,
-                text: 'action is not supported',
-            };
+            throw new Error(`action is not supported: ${String(action)}`);
     }
 };
