@@ -1,6 +1,8 @@
 import { getDb } from '../db';
 import { ControllerConfigRaw } from 'types';
 import { WEBSOCKET_ACTIONS } from '../constants';
+import { mapDataToControllerConfiguration } from 'helpers/validation';
+import { flattenObject } from 'helpers';
 
 
 /**
@@ -17,11 +19,7 @@ export const getControllerIds = (options = {}) =>
             return [];
         });
 
-export const addController = (
-    controllerId: string,
-    chatId: number,
-    configuration: ControllerConfigRaw
-) =>
+export const addController = (controllerId: string, chatId: number, configuration: ControllerConfigRaw) =>
     getDb()
         .then(db => db.collection('config').insertOne({ controllerId, chatId, ...configuration }))
         .then(() => ({ success: true }))
@@ -51,9 +49,9 @@ export const rebootController = (controllerId: string, ws: WebSocket): { success
     return { success: true };
 };
 
-export const updateControllerConfiguration = (controllerId: string, changes: ControllerConfigRaw) =>
+export const updateControllerConfiguration = (controllerId: string, changes: { [k: string]: unknown }) =>
     getDb()
-        .then(db => db.collection('config').findOneAndUpdate({ controllerId }, { $set: changes }))
+        .then(db => db.collection('config').findOneAndUpdate({ controllerId }, { $set: flattenObject(changes) }))
         .then(response => ({ success: Boolean(response.ok) }))
         .catch(error => {
             console.error('updateControllerConfiguration', error);
@@ -63,10 +61,10 @@ export const updateControllerConfiguration = (controllerId: string, changes: Con
 
 export const getControllerConfiguration = (controllerId: string) =>
     getDb()
-        .then(db => db.collection('config').findOne<ControllerConfigRaw>({ controllerId }))
+        .then(db => db.collection('config').findOne({ controllerId }))
+        .then(mapDataToControllerConfiguration)
         .catch(error => {
             console.error('getConfig', error);
 
             return null;
         });
-

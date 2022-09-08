@@ -65,3 +65,24 @@ export const processData = (data: SensorLogEntity[]): SensorLogEntityAggregated 
 export const isCriticalError = (error: string): boolean => CRITICAL_ERRORS.includes(error);
 
 export const isObject = <T extends { [k: string]: unknown }>(obj: any): obj is T => (typeof obj === 'object' || typeof obj === 'function') && (obj !== null) && !Array.isArray(obj);
+
+export const flattenObject = <T extends { [k: string]: unknown }>(obj: T) => {
+    const keys = Object.keys(obj);
+    const result: { [k: string]: unknown } = {};
+
+    for (const key of keys) {
+        if (!isObject(obj[key])) {
+            result[key] = obj[key];
+
+            continue;
+        }
+
+        const flatObject = flattenObject(obj[key] as T);
+        const pairs = Object.entries(flatObject);
+        const prefixedPairs = pairs.map(([k, v]) => [key + '.' + k, v]);
+
+        Object.assign(result, Object.fromEntries(prefixedPairs));
+    }
+
+    return result;
+};
