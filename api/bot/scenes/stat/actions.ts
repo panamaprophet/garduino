@@ -1,5 +1,5 @@
 import { subDays, subWeeks } from 'date-fns';
-import { processData } from '../../../helpers';
+import { getRangeBy } from '../../../helpers';
 import { getUpdateEvents } from '../../../resolvers/log';
 import { formatStatistics } from '../../../helpers/formatters';
 import { ActionContext } from 'types';
@@ -12,8 +12,15 @@ export const ACTION_STAT_DAY = 'main/stat/day';
 
 const getStat = async ({ controllerId }: ActionContext, dateFrom: Date) =>
     getUpdateEvents(controllerId, dateFrom)
-        .then(processData)
-        .then(data => formatStatistics(controllerId, data));
+        .then((data) => {
+            const [minHumidity, maxHumidity] = getRangeBy('humidity', data);
+            const [minTemperature, maxTemperature] = getRangeBy('temperature', data);
+
+            const startDate = data[0].date;
+            const endDate = data[data.length - 1].date;
+
+            return formatStatistics(controllerId, { minHumidity, maxHumidity, minTemperature, maxTemperature, startDate, endDate });
+        });
 
 const getDayStat = (context: ActionContext) => getStat(context, subDays(Date.now(), 1));
 

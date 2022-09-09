@@ -1,4 +1,3 @@
-import { SensorLogEntity, SensorLogEntityAggregated } from 'types';
 import { CRITICAL_ERRORS } from '../constants';
 
 
@@ -22,44 +21,19 @@ export const reduceItemsCountBy = <T>(items: T[], limit: number): T[] => {
     return result;
 };
 
-export const processData = (data: SensorLogEntity[]): SensorLogEntityAggregated => {
-    const initData = {
-        dates: [],
-        temperature: [],
-        humidity: [],
-        maxHumidity: data[0],
-        minHumidity: data[0],
-        minTemperature: data[0],
-        maxTemperature: data[0],
-    };
 
-    return data.reduce((result: SensorLogEntityAggregated, item: SensorLogEntity, index: number) => {
-        if (result.maxHumidity.humidity < item.humidity) {
-            result.maxHumidity = item;
-        }
+export const getMaximumBy = <T>(data: T[], k: keyof T): T => data.reduce((result, item) => item[k] > result[k] ? item : result, data[0]);
 
-        if (result.minHumidity.humidity > item.humidity) {
-            result.minHumidity = item;
-        }
+export const getMinimumBy = <T>(data: T[], k: keyof T): T => data.reduce((result, item) => item[k] < result[k] ? item : result, data[0]);
 
-        if (result.maxTemperature.temperature < item.temperature) {
-            result.maxTemperature = item;
-        }
+export const getRangeBy = <T>(key: keyof T, data: T[]) => {
+    const max = getMaximumBy(data, key);
+    const min = getMinimumBy(data, key);
 
-        if (result.minTemperature.temperature > item.temperature) {
-            result.minTemperature = item;
-        }
-
-        if (index % 2 === 0) {
-            return result;
-        }
-
-        result.dates.push(item.date);
-        result.temperature.push(item.temperature);
-        result.humidity.push(item.humidity);
-
-        return result;
-    }, initData);
+    return [
+        min[key],
+        max[key]
+    ];
 };
 
 export const isCriticalError = (error: string): boolean => CRITICAL_ERRORS.includes(error);
