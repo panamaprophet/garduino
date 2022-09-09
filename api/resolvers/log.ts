@@ -2,32 +2,27 @@ import { subWeeks } from 'date-fns';
 import { LOG_EVENT } from '../constants';
 import { SensorLogEntity, LogEntity } from 'types';
 import { getDb } from '../db';
+import { returnDefault } from 'helpers';
 
 
 const getDefaultDateFrom = (): Date => subWeeks(Date.now(), 1);
 
 
-export const getEvent = (controllerId: string, conditions = {}) =>
-    getDb()
+export const getEvent = (controllerId: string, conditions = {}) => {
+    return getDb()
         .then(db => db.collection('log').findOne<LogEntity>(
             { controllerId, ...conditions },
             { sort: { $natural: -1 } }
         ))
-        .catch(error => {
-            console.error('getEvent', error);
+        .catch(returnDefault(null));
+};
 
-            return null;
-        });
-
-export const saveEvent = (controllerId: string, data: LogEntity) =>
-    getDb()
+export const saveEvent = (controllerId: string, data: LogEntity) => {
+    return getDb()
         .then(db => db.collection('log').insertOne({ controllerId, ...data }))
         .then(() => ({ success: true }))
-        .catch(error => {
-            console.error('saveEvent', error);
-
-            return { success: false };
-        });
+        .catch(returnDefault({ success: false }));
+};
 
 export const getErrorEvents = (controllerId: string, { dateFrom, dateTo }: { [k: string]: Date }) => {
     return getDb()

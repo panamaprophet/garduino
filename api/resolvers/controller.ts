@@ -2,42 +2,30 @@ import { getDb } from '../db';
 import { ControllerConfigRaw } from 'types';
 import { WEBSOCKET_ACTIONS } from '../constants';
 import { mapDataToControllerConfiguration } from 'helpers/validation';
-import { flattenObject } from 'helpers';
+import { flattenObject, returnDefault } from 'helpers';
 
 
-/**
- * @returns {Promise<String[]>}
- */
-export const getControllerIds = (options = {}) =>
-    getDb()
+export const getControllerIds = (options = {}) => {
+    return getDb()
         .then(db => db.collection('config').find(options).project<{ controllerId: string }>({ controllerId: 1 }).toArray())
         .then(result => result || [])
         .then(result => result.map(({ controllerId }) => controllerId))
-        .catch<string[]>(error => {
-            console.error('getControllerIds', error);
+        .catch(returnDefault([]));
+};
 
-            return [];
-        });
-
-export const addController = (controllerId: string, chatId: number, configuration: ControllerConfigRaw) =>
-    getDb()
+export const addController = (controllerId: string, chatId: number, configuration: ControllerConfigRaw) => {
+    return getDb()
         .then(db => db.collection('config').insertOne({ controllerId, chatId, ...configuration }))
         .then(() => ({ success: true }))
-        .catch(error => {
-            console.error('addController', error);
+        .catch(returnDefault({ success: false }));
+};
 
-            return { success: false };
-        });
-
-export const removeController = (controllerId: string, chatId: number) =>
-    getDb()
+export const removeController = (controllerId: string, chatId: number) => {
+    return getDb()
         .then(db => db.collection('config').deleteOne({ controllerId, chatId }))
         .then(() => ({ success: true }))
-        .catch(error => {
-            console.error('removeController', error);
-
-            return { success: false };
-        });
+        .catch(returnDefault({ success: false }));
+};
 
 export const rebootController = (controllerId: string, ws: WebSocket): { success: boolean } => {
     ws.send(JSON.stringify({
@@ -49,22 +37,16 @@ export const rebootController = (controllerId: string, ws: WebSocket): { success
     return { success: true };
 };
 
-export const updateControllerConfiguration = (controllerId: string, changes: { [k: string]: unknown }) =>
-    getDb()
+export const updateControllerConfiguration = (controllerId: string, changes: { [k: string]: unknown }) => {
+    return getDb()
         .then(db => db.collection('config').findOneAndUpdate({ controllerId }, { $set: flattenObject(changes) }))
         .then(response => ({ success: Boolean(response.ok) }))
-        .catch(error => {
-            console.error('updateControllerConfiguration', error);
+        .catch(returnDefault({ success: false }));
+};
 
-            return { success: false };
-        });
-
-export const getControllerConfiguration = (controllerId: string) =>
-    getDb()
+export const getControllerConfiguration = (controllerId: string) => {
+    return getDb()
         .then(db => db.collection('config').findOne({ controllerId }))
         .then(mapDataToControllerConfiguration)
-        .catch(error => {
-            console.error('getConfig', error);
-
-            return null;
-        });
+        .catch(returnDefault(null));
+};
