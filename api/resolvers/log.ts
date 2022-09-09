@@ -1,6 +1,6 @@
 import { subWeeks } from 'date-fns';
 import { LOG_EVENT } from '../constants';
-import { SensorLogEntity, LogEntity } from 'types';
+import { ControllerEvent } from 'types';
 import { getDb } from '../db';
 import { returnDefault } from 'helpers';
 
@@ -10,16 +10,16 @@ const getDefaultDateFrom = (): Date => subWeeks(Date.now(), 1);
 
 export const getEvent = (controllerId: string, conditions = {}) => {
     return getDb()
-        .then(db => db.collection('log').findOne<LogEntity>(
+        .then(db => db.collection('log').findOne<ControllerEvent>(
             { controllerId, ...conditions },
             { sort: { $natural: -1 } }
         ))
         .catch(returnDefault(null));
 };
 
-export const saveEvent = (controllerId: string, data: LogEntity) => {
+export const saveEvent = (controllerId: string, data: ControllerEvent) => {
     return getDb()
-        .then(db => db.collection('log').insertOne({ controllerId, ...data }))
+        .then(db => db.collection<ControllerEvent & { controllerId: string }>('log').insertOne({ controllerId, ...data }))
         .then(() => ({ success: true }))
         .catch(returnDefault({ success: false }));
 };
@@ -44,9 +44,9 @@ export const getErrorEvents = (controllerId: string, { dateFrom, dateTo }: { [k:
         ]).toArray());
 };
 
-export const getUpdateEvents = (controllerId: string, dateFrom: Date | null = null) => {
+export const getUpdateEvents = (controllerId: string, dateFrom?: Date) => {
     return getDb()
-        .then(db => db.collection('log').aggregate<SensorLogEntity>([
+        .then(db => db.collection('log').aggregate<{ [k: string]: number }>([
             {
                 $match: {
                     controllerId,

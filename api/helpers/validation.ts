@@ -1,6 +1,13 @@
 import { addMilliseconds, compareDesc, differenceInMilliseconds, subDays } from 'date-fns';
-import { ModuleConfiguration, LogEntity, ModuleConfigurationSerialized, ControllerConfigurationSerialized, EventPayload, ControllerStatus } from 'types';
-import { isObject } from 'helpers';
+import { isObject } from '../helpers';
+import {
+    ControllerStatus,
+    ControllerConfigurationSerialized,
+    ControllerEvent,
+    ControllerEventPayload,
+    ModuleConfiguration,
+    ModuleConfigurationSerialized,
+} from '../types';
 
 
 const getTimeFromString = (time: string) => time.split(':').map(item => Number(item));
@@ -67,7 +74,7 @@ export const mapDataToModuleConfiguration = (config: ModuleConfigurationSerializ
     };
 };
 
-export const mapDataToLogEntity = (data: unknown): LogEntity => {
+export const mapDataToLogEntity = (data: unknown): ControllerEvent => {
     if (!isObject(data)) {
         throw new Error('log extraction error: data is not an object');
     }
@@ -81,7 +88,7 @@ export const mapDataToLogEntity = (data: unknown): LogEntity => {
     return {
         date: new Date(),
         event: String(data.event),
-        payload: Object.fromEntries(payload) as EventPayload,
+        payload: Object.fromEntries(payload) as ControllerEventPayload,
     };
 };
 

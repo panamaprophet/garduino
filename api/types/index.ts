@@ -15,21 +15,14 @@ type SwitchEventPayload = { isLightOn: boolean, isEmergencySwitch: boolean };
 type UpdateEventPayload = { humidity: number, temperature: number };
 
 
-export type EventPayload = ErrorEventPayload | RunEventPayload | SwitchEventPayload | UpdateEventPayload;
+export type ControllerEventPayload = ErrorEventPayload | RunEventPayload | SwitchEventPayload | UpdateEventPayload;
 
 
-export interface LogEntity {
-    event: string,
+export interface ControllerEvent {
     date: Date,
-    payload: EventPayload,
+    event: string,
+    payload: ControllerEventPayload,
 }
-
-export interface SensorLogEntity {
-    humidity: number,
-    temperature: number,
-    date: number,
-}
-
 
 export interface ModuleConfiguration {
     isOn: boolean,
