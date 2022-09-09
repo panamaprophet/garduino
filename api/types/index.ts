@@ -3,9 +3,6 @@ import { WebSocket, WebSocketServer } from 'ws';
 import koa from 'koa';
 
 
-export type EventType = 'CONFIG' | 'UPDATE' | 'ERROR' | 'SWITCH' | 'RUN';
-
-
 type ErrorEventPayload = { error: string };
 
 type RunEventPayload = { isLightOn: boolean };

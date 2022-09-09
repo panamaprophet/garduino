@@ -1,12 +1,9 @@
-import { EventType } from 'types';
-
-
-export const LOG_EVENT: Record<EventType, string> = {
-    'CONFIG': 'events/config',
-    'UPDATE': 'events/update',
-    'ERROR': 'events/error',
-    'SWITCH': 'events/switch',
-    'RUN': 'events/run',
+export const LOG_EVENT: Record<string, string> = {
+    CONFIG: 'events/config',
+    UPDATE: 'events/update',
+    ERROR: 'events/error',
+    SWITCH: 'events/switch',
+    RUN: 'events/run',
 };
 
 export const SENSOR_READ_ERRORS = {
