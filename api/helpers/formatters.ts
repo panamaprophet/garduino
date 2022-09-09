@@ -1,9 +1,8 @@
 import { format, formatDistanceStrict } from 'date-fns';
-import { isStatusResponseError } from 'bot/helpers';
-import { ControllerConfigRaw, StatusResponse, StatusResponseError, StatusResponseSuccess } from 'types';
+import { ControllerConfigurationSerialized, ControllerStatus } from 'types';
 
 
-export const formatConfig = (data: ControllerConfigRaw) => {
+export const formatConfig = (data: ControllerConfigurationSerialized) => {
     return [
         `Light On = ${data.light.onTime} UTC`,
         `Duration = ${data.light.duration} ms`,
@@ -14,26 +13,26 @@ export const formatConfig = (data: ControllerConfigRaw) => {
 
 export const formatErrorMessage = (controllerId: string, message: string) => `\\#${controllerId}  ·  Error \\= *${message}*`;
 
-export const formatErrorResponse = (data: StatusResponseError) => `\\#${data.controllerId}\n\r\n\rError \\= *${data.error.message}*`;
-
-export const formatSuccessResponse = (data: StatusResponseSuccess) => {
-    const { temperature, humidity, controllerId, light, lastError } = data;
+export const formatControllerStatus = (
+    controllerId: string,
+    status: ControllerStatus,
+) => {
+    const { light, temperature, humidity, lastError } = status;
     const timeBeforeSwitch = formatDistanceStrict(0, light.msBeforeSwitch);
-    const lightStatusString = `Light will stay *${light.isOn ? 'on' : 'off'}* for ${timeBeforeSwitch}`;
-    const lastErrorString = lastError ? `Last error \\= *${lastError.payload.error}*` : null;
 
-    return [
-        `\\#${controllerId}`,
-        `T\\=*${temperature}*°C`,
-        `H\\=*${humidity}*%`,
-        lightStatusString,
-        lastErrorString,
-    ]
-        .filter(item => !!item)
-        .join('  ·  ');
+    return (
+        `\\#${controllerId}  ·  T\\=*${temperature}*°C  ·  H\\=*${humidity}*%  ·  ` +
+        `Light will stay *${light.isOn ? 'on' : 'off'}* for ${timeBeforeSwitch}  ·  ` +
+        (lastError ? `Last error \\= *${lastError}*` : 'No errors')
+    );
 };
 
-export const formatResponse = (data: StatusResponse) => isStatusResponseError(data) ? formatErrorResponse(data) : formatSuccessResponse(data);
+export const formatControllerStatusError = (
+    controllerId: string,
+    reason: string
+) => {
+    return `\\#${controllerId}\n\r\n\rError \\= *${reason}*`;
+};
 
 export const formatStatistics = (controllerId: string, params: { [k: string]: number }) => {
     const { minTemperature, maxTemperature, maxHumidity, minHumidity } = params;

@@ -30,21 +30,6 @@ export interface SensorLogEntity {
     date: number,
 }
 
-export interface SensorLogEntityAggregated {
-    dates: number[],
-    temperature: number[],
-    humidity: number[],
-    maxHumidity: SensorLogEntity,
-    minHumidity: SensorLogEntity,
-    maxTemperature: SensorLogEntity,
-    minTemperature: SensorLogEntity,
-}
-
-export interface ConfigEntityRaw {
-    duration: number,
-    onTime: string,
-    temperatureThreshold: number,
-}
 
 export interface ModuleConfiguration {
     isOn: boolean,
@@ -52,30 +37,25 @@ export interface ModuleConfiguration {
     msBeforeSwitch: number,
 }
 
-export interface ControllerConfigRaw {
-    controllerId?: string,
-    chatId?: number,
-    light: ConfigEntityRaw,
+export interface ModuleConfigurationSerialized {
+    onTime: string,
+    duration: number,
+    temperatureThreshold: number,
 }
 
-export interface StatusResponseError {
-    controllerId: string,
-    error: {
-        message: string,
-    },
-}
-
-export interface StatusResponseSuccess {
-    controllerId: string,
+export interface ControllerStatus {
     temperature: number,
     humidity: number,
-    lastError: {
-        payload: ErrorEventPayload,
-    },
+    lastError: string,
     light: ModuleConfiguration,
 }
 
-export type StatusResponse = StatusResponseError | StatusResponseSuccess;
+export interface ControllerConfigurationSerialized {
+    controllerId: string,
+    chatId: number,
+    light: ModuleConfigurationSerialized,
+}
+
 
 export type ActionContext = {
     chatId: number,

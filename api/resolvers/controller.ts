@@ -1,5 +1,5 @@
 import { getDb } from '../db';
-import { ControllerConfigRaw } from 'types';
+import { ControllerConfigurationSerialized } from 'types';
 import { WEBSOCKET_ACTIONS } from '../constants';
 import { mapDataToControllerConfiguration } from 'helpers/validation';
 import { flattenObject, returnDefault } from 'helpers';
@@ -10,10 +10,10 @@ export const getControllerIds = (options = {}) => {
         .then(db => db.collection('config').find(options).project<{ controllerId: string }>({ controllerId: 1 }).toArray())
         .then(result => result || [])
         .then(result => result.map(({ controllerId }) => controllerId))
-        .catch(returnDefault([]));
+        .catch<string[]>(returnDefault([]));
 };
 
-export const addController = (controllerId: string, chatId: number, configuration: ControllerConfigRaw) => {
+export const addController = (controllerId: string, chatId: number, configuration: Partial<ControllerConfigurationSerialized>) => {
     return getDb()
         .then(db => db.collection('config').insertOne({ controllerId, chatId, ...configuration }))
         .then(() => ({ success: true }))

@@ -1,7 +1,7 @@
 import { Markup, Telegraf } from 'telegraf';
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types';
 import { Message } from 'telegraf/typings/core/types/typegram';
-import { StatusResponse, StatusResponseError, BotContext } from 'types';
+import { BotContext } from 'types';
 import { isObject } from 'helpers';
 import { getControllerConfiguration } from 'resolvers/controller';
 
@@ -34,9 +34,3 @@ export const sendMessage = async ({ bot, controllerId }: {
 };
 
 export const isTextMessage = (message: unknown): message is Message.TextMessage => isObject(message) && message.text !== undefined;
-
-export const isStatusResponseError = (response: StatusResponse): response is StatusResponseError => isObject(response) && response.error !== undefined;
-
-
-
-

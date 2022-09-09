@@ -1,5 +1,5 @@
 import { addMilliseconds, compareDesc, differenceInMilliseconds, subDays } from 'date-fns';
-import { ModuleConfiguration, LogEntity, ConfigEntityRaw, ControllerConfigRaw, EventPayload } from 'types';
+import { ModuleConfiguration, LogEntity, ModuleConfigurationSerialized, ControllerConfigurationSerialized, EventPayload, ControllerStatus } from 'types';
 import { isObject } from 'helpers';
 
 
@@ -7,10 +7,22 @@ const getTimeFromString = (time: string) => time.split(':').map(item => Number(i
 
 const pad = (n: number, symbol = '0', length = 2) => n.toString().padStart(length, symbol);
 
-const isRawConfigEntity = (data: unknown): data is ConfigEntityRaw => isObject(data) && ('onTime' in data) && ('duration' in data);
+const isRawConfigEntity = (data: unknown): data is ModuleConfigurationSerialized => (
+    isObject(data) &&
+    'onTime' in data &&
+    'duration' in data
+);
+
+const isControllerStatus = (data: unknown): data is ControllerStatus => (
+    isObject(data) &&
+    isObject(data.light) &&
+    'humidity' in data &&
+    'temperature' in data &&
+    'lastError' in data
+);
 
 
-export const mapDataToControllerConfiguration = (data: unknown): ControllerConfigRaw => {
+export const mapDataToControllerConfiguration = (data: unknown): ControllerConfigurationSerialized => {
     if (!isObject(data)) {
         throw new Error('configuration extraction error: data is not an object');
     }
@@ -30,7 +42,7 @@ export const mapDataToControllerConfiguration = (data: unknown): ControllerConfi
     };
 };
 
-export const mapDataToModuleConfiguration = (config: ConfigEntityRaw, refDate = new Date()): ModuleConfiguration => {
+export const mapDataToModuleConfiguration = (config: ModuleConfigurationSerialized, refDate = new Date()): ModuleConfiguration => {
     const { duration } = config;
     const [onHours, onMinutes] = getTimeFromString(config.onTime);
     const dateString = `${refDate.getFullYear()}-${pad(refDate.getMonth() + 1)}-${pad(refDate.getDate())}T${pad(onHours)}:${pad(onMinutes)}Z`;
@@ -71,4 +83,12 @@ export const mapDataToLogEntity = (data: unknown): LogEntity => {
         event: String(data.event),
         payload: Object.fromEntries(payload) as EventPayload,
     };
+};
+
+export const mapDataToControllerStatus = (data: unknown) => {
+    if (isControllerStatus(data)) {
+        return data;
+    }
+
+    throw new Error('object is not a controller status');
 };

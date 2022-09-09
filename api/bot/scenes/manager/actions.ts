@@ -1,12 +1,14 @@
 import { addController, removeController } from '../../../resolvers/controller';
-import type { ActionContext, ControllerConfigRaw } from 'types';
+import type { ActionContext } from 'types';
 
 
 export const ACTION_CONTROLLER_ADD = 'setup/controller/add';
 
 export const ACTION_CONTROLLER_REMOVE = 'setup/controller/remove';
 
-export const DEFAULT_CONFIG: ControllerConfigRaw = {
+export const DEFAULT_CONFIG = {
+    chatId: -1,
+    controllerId: '',
     light: {
         onTime: '09:00',
         duration: 43200000,

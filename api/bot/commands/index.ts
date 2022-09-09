@@ -1,9 +1,10 @@
 import { MiddlewareFn } from 'telegraf';
 import { getControllerIds } from '../../resolvers/controller';
 import { getControllerStatus } from '../../resolvers/status';
-import { formatResponse } from 'helpers/formatters';
+import { formatControllerStatus, formatControllerStatusError } from '../../helpers/formatters';
+import { mapDataToControllerStatus } from '../../helpers/validation';
 import { WEBSOCKET_ACTIONS } from '../../constants';
-import { BotContext } from 'types';
+import { BotContext } from '../../types';
 
 
 const HELP_PLACEHOLDER =
@@ -40,22 +41,24 @@ export const now: MiddlewareFn<BotContext> = async ctx => {
     const controllerIds = await getControllerIds({ chatId });
 
     if (controllerIds.length > 0) {
-        const resultPromises = controllerIds.map(controllerId => {
+        const promises = controllerIds.map(controllerId => {
             const ws = ctx.ws.cache.get(controllerId);
 
             return ws
-                ? getControllerStatus(controllerId, ws)
-                : {
-                    controllerId,
-                    error: { message: 'controller offline' },
-                };
+                ? getControllerStatus(controllerId, ws).then(mapDataToControllerStatus)
+                : Promise.reject('controller is offline');
         });
 
         return Promise
-            .all(resultPromises)
-            .then(results => results.map((result, index) => formatResponse({ ...result, controllerId: controllerIds[index] })))
+            .allSettled(promises)
+            .then(results =>
+                results.map((result, index) =>
+                    result.status === 'fulfilled'
+                        ? formatControllerStatus(controllerIds[index], result.value)
+                        : formatControllerStatusError(controllerIds[index], String(result.reason))
+                ))
             .then(results => results.join('\n\r'))
-            .then(result => ctx.replyWithMarkdownV2(result));
+            .then(message => ctx.replyWithMarkdownV2(message));
     }
 
     return ctx.reply('controller not found');

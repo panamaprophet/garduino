@@ -61,7 +61,7 @@ export const flattenObject = <T extends { [k: string]: unknown }>(obj: T) => {
     return result;
 };
 
-export const returnDefault = <T>(result?: T) => (error: Error) => {
+export const returnDefault = <T>(result: T) => (error: Error): T => {
     console.log(`Error: ${error.name}. ${JSON.stringify(result)} will be returned`);
 
     return result;
