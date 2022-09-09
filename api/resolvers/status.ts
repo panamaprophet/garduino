@@ -1,43 +1,29 @@
+import { WEBSOCKET_ACTIONS } from '../constants';
 import { WebSocket } from 'ws';
-import { getWebSocketServerPayload } from '../websocket/index';
-import { WEBSOCKET_ACTIONS, WEBSOCKET_RESPONSE_TIMEOUT } from '../constants';
-import { StatusResponse } from 'types';
 
 
-export const getControllerStatus = (controllerId: string, ws: WebSocket): Promise<StatusResponse> => {
-    return new Promise((resolve) => {
-        const getWebSocketResponse = (arrayBuffer: ArrayBuffer) => {
-            const response = getWebSocketServerPayload(arrayBuffer);
+const promisifyWebsocketRequest = (ws: WebSocket, payload: any, options = { timeout: 5000 }) => new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+        ws.off('message', callback);
+        reject(`no response received in ${options.timeout}ms`);
+    }, options.timeout);
 
-            if (
-                response === null ||
-                response.controllerId !== controllerId ||
-                response.action !== WEBSOCKET_ACTIONS.STATUS
-            ) {
-                return;
-            }
+    const callback = (arrayBuffer: ArrayBuffer) => {
+        clearTimeout(timeoutId);
+        ws.off('message', callback);
+        resolve(JSON.parse(arrayBuffer.toString()));
+    };
 
-            ws.off('message', getWebSocketResponse);
-            clearTimeout(timeoutId);
+    ws.on('message', callback);
+    ws.send(JSON.stringify(payload));
+});
 
-            resolve(response.payload as StatusResponse);
-        };
 
-        const timeoutId = setTimeout(() => {
-            clearTimeout(timeoutId);
-            ws.off('message', getWebSocketResponse);
+export const getControllerStatus = (controllerId: string, ws: WebSocket) => {
+    const message = {
+        action: WEBSOCKET_ACTIONS.STATUS,
+        payload: { controllerId },
+    };
 
-            resolve({
-                controllerId,
-                error: { message: `no response received in ${WEBSOCKET_RESPONSE_TIMEOUT}ms` },
-            });
-        }, WEBSOCKET_RESPONSE_TIMEOUT);
-
-        ws.on('message', getWebSocketResponse);
-
-        ws.send(JSON.stringify({
-            action: WEBSOCKET_ACTIONS.STATUS,
-            payload: { controllerId },
-        }));
-    });
+    return promisifyWebsocketRequest(ws, message);
 };

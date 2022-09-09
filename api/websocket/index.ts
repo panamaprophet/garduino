@@ -1,27 +1,7 @@
+import { isObject } from 'helpers';
 import { Server } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 
-
-interface WebSocketPayload {
-    action: string,
-    controllerId: string,
-    payload: {
-        controllerId: string,
-    },
-}
-
-
-export const getWebSocketServerPayload = (arrayBuffer: ArrayBuffer): WebSocketPayload | null => {
-    let payload = null;
-
-    try {
-        payload = JSON.parse(arrayBuffer.toString()) as WebSocketPayload;
-    } catch (error) {
-        console.log('error on parsing ws payload attempt', error);
-    }
-
-    return payload;
-};
 
 export const getWebSocketServer = (server: Server): [WebSocketServer, Map<string, WebSocket>] => {
     const wss = new WebSocketServer({ server });
@@ -40,21 +20,17 @@ export const getWebSocketServer = (server: Server): [WebSocketServer, Map<string
             }
         });
 
-        const cacheByControllerId = (message: ArrayBuffer) => {
-            const messagePayload = getWebSocketServerPayload(message);
+        const cacheByControllerId = (arrayBuffer: ArrayBuffer) => {
+            const message: unknown = JSON.parse(arrayBuffer.toString());
 
-            if (!messagePayload) {
+            if (!isObject(message)) {
                 return;
             }
 
-            const { controllerId } = messagePayload.payload;
+            cache.set(String(message.controllerId), ws);
+            ws.off('message', cacheByControllerId);
 
-            if (controllerId) {
-                cache.set(controllerId, ws);
-                ws.off('message', cacheByControllerId);
-
-                console.log('[ws] cached:', controllerId);
-            }
+            console.log('[ws] cached:', message.controllerId);
         };
 
         ws.on('message', cacheByControllerId);
