@@ -2,22 +2,7 @@ import { config } from 'dotenv';
 
 config();
 
-type Config = {
-    db: {
-        user: string,
-        pass: string,
-        host: string,
-        db: string,
-    },
-    bot: {
-        token: string,
-        path: string,
-    },
-    port: number,
-    hostname: string,
-};
-
-export const getConfig = (): Config => ({
+export const getConfig = () => ({
     db: {
         user: String(process.env.DB_USERNAME),
         pass: String(process.env.DB_PASSWORD),
