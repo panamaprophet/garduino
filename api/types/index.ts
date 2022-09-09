@@ -19,6 +19,7 @@ export type ControllerEventPayload = ErrorEventPayload | RunEventPayload | Switc
 
 
 export interface ControllerEvent {
+    controllerId: string,
     date: Date,
     event: string,
     payload: ControllerEventPayload,

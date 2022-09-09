@@ -74,7 +74,7 @@ export const mapDataToModuleConfiguration = (config: ModuleConfigurationSerializ
     };
 };
 
-export const mapDataToLogEntity = (data: unknown): ControllerEvent => {
+export const mapDataToControllerEvent = (data: unknown): ControllerEvent => {
     if (!isObject(data)) {
         throw new Error('log extraction error: data is not an object');
     }
@@ -86,6 +86,7 @@ export const mapDataToLogEntity = (data: unknown): ControllerEvent => {
     const payload = Array.isArray(data.payload) ? data.payload : [];
 
     return {
+        controllerId: String(data.controllerId),
         date: new Date(),
         event: String(data.event),
         payload: Object.fromEntries(payload) as ControllerEventPayload,

@@ -1,6 +1,6 @@
 import { Telegraf } from 'telegraf';
 import Router from '@koa/router';
-import { mapDataToLogEntity } from '../helpers/validation';
+import { mapDataToControllerEvent } from '../helpers/validation';
 import { formatErrorMessage } from '../helpers/formatters';
 import { isCriticalError } from '../helpers/index';
 import { getLastUpdateEvent, saveEvent, getUpdateEvents, getErrorEvents } from '../resolvers/log';
@@ -32,7 +32,7 @@ router.get('/errors', async (ctx) => {
 
 router.post('/', async (ctx) => {
     const { controllerId } = ctx.params;
-    const data = mapDataToLogEntity(ctx.request.body);
+    const data = mapDataToControllerEvent({ controllerId, ...ctx.request.body  });
     const bot = ctx.bot as Telegraf<BotContext>;
 
     if (!data) {

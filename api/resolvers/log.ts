@@ -19,7 +19,7 @@ export const getEvent = (controllerId: string, conditions = {}) => {
 
 export const saveEvent = (controllerId: string, data: ControllerEvent) => {
     return getDb()
-        .then(db => db.collection<ControllerEvent & { controllerId: string }>('log').insertOne({ controllerId, ...data }))
+        .then(db => db.collection('log').insertOne({ ...data, controllerId }))
         .then(() => ({ success: true }))
         .catch(returnDefault({ success: false }));
 };
